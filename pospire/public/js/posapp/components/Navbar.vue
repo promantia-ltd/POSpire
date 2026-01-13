@@ -173,7 +173,7 @@ export default {
       snack: false,
       snackColor: '',
       snackText: '',
-      company: 'POS Awesome',
+      company: 'POSpire',
       company_img: '/assets/erpnext/images/erpnext-logo.svg',
       pos_profile: '',
       freeze: false,
