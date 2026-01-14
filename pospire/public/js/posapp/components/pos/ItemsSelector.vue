@@ -1,6 +1,6 @@
 <template>
-  <div class="enhanced-items-container">
-    <v-card class="selection mx-auto" elevation="2" rounded="lg">
+  <div class="enhanced-items-container pos-panel-container">
+    <v-card class="selection mx-auto pos-scrollable-content" elevation="2" rounded="lg">
       <v-progress-linear :active="loading" :indeterminate="loading" absolute :location="top"
         color="info"></v-progress-linear>
       <v-row class="items px-3 py-2">
@@ -48,23 +48,23 @@
                 <v-card
                   hover
                   @click="add_item(item, idx)"
-                  class="posmati-product-card hover-vibrant ripple-effect"
+                  class="pospire-product-card hover-vibrant ripple-effect"
                   :class="{
                     'out-of-stock': item.actual_qty <= 0,
                     'item-selected': selectedItemIdx === idx
                   }">
 
                   <!-- 1:1 Square Image Container -->
-                  <div class="posmati-product-image-wrapper">
+                  <div class="pospire-product-image-wrapper">
                     <v-img
                       :src="item.image || '/assets/pospire/js/posapp/components/pos/placeholder-image.png'"
                       :aspect-ratio="1"
                       cover
-                      class="posmati-product-image">
+                      class="pospire-product-image">
                     </v-img>
 
                     <!-- Stock Badge Overlay -->
-                    <div class="posmati-stock-badge"
+                    <div class="pospire-stock-badge"
                       :class="{
                         'badge-success': item.actual_qty > 5,
                         'badge-warning animate-pulse': item.actual_qty > 0 && item.actual_qty <= 5,
@@ -75,19 +75,19 @@
                   </div>
 
                   <!-- Product Info -->
-                  <div class="posmati-product-info">
+                  <div class="pospire-product-info">
                     <!-- HEADLINE TEXT: 16px Semibold -->
-                    <div class="posmati-product-name" :title="item.item_name">
+                    <div class="pospire-product-name" :title="item.item_name">
                       {{ item.item_name }}
                     </div>
 
                     <!-- BODY TEXT: 14px Medium -->
-                    <div class="posmati-product-price">
+                    <div class="pospire-product-price">
                       {{ currencySymbol(item.currency) || "" }} {{ formatCurrency(item.rate) || 0 }}
                     </div>
 
                     <!-- SUPPORT TEXT: 12px Regular -->
-                    <div class="posmati-product-stock">
+                    <div class="pospire-product-stock">
                       <span class="stock-dot" :class="{
                         'dot-success': item.actual_qty > 5,
                         'dot-warning': item.actual_qty > 0 && item.actual_qty <= 5,
@@ -120,7 +120,7 @@
             <!-- Data Table -->
             <div v-else class="my-0 py-0 overflow-y-auto enhanced-data-table items-list-scroll">
               <v-data-table :headers="getItemsHeaders()" :items="filtered_items" item-key="item_code" item-value="item-"
-                class="elevation-1 posmati-items-table" :items-per-page="itemsPerPage" hide-default-footer
+                class="elevation-1 pospire-items-table" :items-per-page="itemsPerPage" hide-default-footer
                 @click:row="click_item_row" :row-props="getRowProps">
                 <template v-slot:item.rate="{ item }">
                   <span class="font-weight-medium" style="color: #34495E;">{{ currencySymbol(item.currency) }}
@@ -148,7 +148,7 @@
         </v-col>
       </v-row>
     </v-card>
-    <v-card class="enhanced-controls mb-0 mt-3" elevation="2">
+    <v-card class="enhanced-controls mb-0 pos-footer-section" elevation="2">
       <v-row no-gutters align="center" justify="center" class="pa-1 mt-2">
         <v-col cols="12" class="mb-2">
           <v-select 
@@ -162,7 +162,7 @@
             prepend-inner-icon="mdi-tag-outline"
             color="grey-darken-2">
             <template v-slot:selection="{ item }">
-              <v-chip size="small" variant="tonal" class="posmati-chip-neutral">
+              <v-chip size="small" variant="tonal" class="pospire-chip-neutral">
                 {{ item.title }}
               </v-chip>
             </template>
@@ -173,7 +173,7 @@
         <v-col cols="12">
           <v-row no-gutters align="center" class="enhanced-bottom-controls flex-nowrap pr-4">
             <v-col cols="4">
-              <div class="posmati-view-toggle">
+              <div class="pospire-view-toggle">
                 <button
                   class="btn-toggle"
                   :class="{ active: items_view === 'list' }"
@@ -837,11 +837,12 @@ export default {
 
 /*
  * Scrollable areas for items list/grid
- * Height = viewport - navbar(72) - search(70) - itemsgroup(70) - buttons(56) - margins(32) = 300px
+ * Height is handled by flexbox - DO NOT use viewport calc here!
  */
 .items-grid-scroll,
 .items-list-scroll {
-  max-height: calc(100vh - 300px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -929,69 +930,77 @@ export default {
 }
 
 /* Product Card */
-.posmati-product-card {
-  background: var(--posmati-clean-white);
-  border: 1px solid var(--posmati-border-gray);
-  border-radius: var(--posmati-radius-lg);
+.pospire-product-card {
+  background: var(--pospire-clean-white);
+  border: 1px solid var(--pospire-border-gray);
+  border-radius: var(--pospire-radius-lg);
   cursor: pointer;
   transition: all 0.2s ease;
   overflow: hidden;
 }
 
-.posmati-product-card:hover {
+.pospire-product-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--posmati-shadow-md);
-  border-color: var(--posmati-vibrant-teal);
+  box-shadow: var(--pospire-shadow-md);
+  border-color: var(--pospire-vibrant-teal);
 }
 
-.posmati-product-card.out-of-stock {
+.pospire-product-card.out-of-stock {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 /* Product Image */
-.posmati-product-image-wrapper {
+.pospire-product-image-wrapper {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  background: var(--posmati-light-gray);
+  background: var(--pospire-light-gray);
 }
 
-.posmati-product-image {
+.pospire-product-image {
   width: 100%;
   height: 100%;
 }
 
 /* Stock Badge */
-.posmati-stock-badge {
+.pospire-stock-badge {
   position: absolute;
   top: 8px;
   right: 8px;
   padding: 4px 10px;
   border-radius: 12px;
-  font: var(--posmati-font-support);
+  font: var(--pospire-font-support);
   font-weight: 700;
-  color: var(--posmati-clean-white);
+  color: var(--pospire-clean-white);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.badge-success { background: var(--posmati-grass-green); }
-.badge-warning { background: var(--posmati-safety-amber); }
-.badge-error { background: var(--posmati-vivid-red); }
+.badge-success { 
+  background: var(--pospire-grass-green) !important; 
+}
+
+.badge-warning { 
+  background: var(--pospire-safety-amber) !important; 
+}
+
+.badge-error { 
+  background: var(--pospire-vivid-red) !important; 
+}
 
 /* Product Info */
-.posmati-product-info {
-  padding: var(--posmati-spacing-md);
+.pospire-product-info {
+  padding: var(--pospire-spacing-md);
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 /* Product Name */
-.posmati-product-name {
-  font: var(--posmati-font-headline);
-  color: var(--posmati-deep-slate);
+.pospire-product-name {
+  font: var(--pospire-font-headline);
+  color: var(--pospire-deep-slate);
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1001,15 +1010,15 @@ export default {
 }
 
 /* Product Price */
-.posmati-product-price {
-  font: var(--posmati-font-body-medium);
-  color: var(--posmati-vibrant-teal);
+.pospire-product-price {
+  font: var(--pospire-font-body-medium);
+  color: var(--pospire-vibrant-teal);
 }
 
 /* Product Stock */
-.posmati-product-stock {
-  font: var(--posmati-font-support);
-  color: var(--posmati-text-secondary);
+.pospire-product-stock {
+  font: var(--pospire-font-support);
+  color: var(--pospire-text-secondary);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1019,11 +1028,20 @@ export default {
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.dot-success { background: var(--posmati-grass-green); }
-.dot-warning { background: var(--posmati-safety-amber); }
-.dot-error { background: var(--posmati-vivid-red); }
+.dot-success { 
+  background: var(--pospire-grass-green) !important; 
+}
+
+.dot-warning { 
+  background: var(--pospire-safety-amber) !important; 
+}
+
+.dot-error { 
+  background: var(--pospire-vivid-red) !important; 
+}
 
 .enhanced-controls {
   background: var(--itemselect-color-bg-card);
@@ -1033,10 +1051,10 @@ export default {
 }
 
 /* View Toggle */
-.posmati-view-toggle {
+.pospire-view-toggle {
   display: flex;
-  background: var(--posmati-light-gray);
-  border-radius: var(--posmati-radius-sm);
+  background: var(--pospire-light-gray);
+  border-radius: var(--pospire-radius-sm);
   padding: 4px;
   width: 100%;
   gap: 4px;

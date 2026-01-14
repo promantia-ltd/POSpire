@@ -1,22 +1,22 @@
 <template>
-  <div style="height: 100%; display: flex; flex-direction: column">
+  <div class="pos-panel-container">
     <v-dialog v-model="cancel_dialog" max-width="480px">
-      <v-card class="posmati-modal">
-        <v-card-title class="posmati-modal-header">
-          <div class="posmati-modal-icon icon-warning">
+      <v-card class="pospire-modal">
+        <v-card-title class="pospire-modal-header">
+          <div class="pospire-modal-icon icon-warning">
             <v-icon size="24">mdi-alert-circle-outline</v-icon>
           </div>
           <div>
-            <div class="posmati-modal-title">{{ __("Cancel Sale?") }}</div>
+            <div class="pospire-modal-title">{{ __("Cancel Sale?") }}</div>
           </div>
         </v-card-title>
-        <v-card-text class="posmati-modal-body">
+        <v-card-text class="pospire-modal-body">
           {{ __("This will cancel and delete the current sale. To save it as a draft, use 'Save and Clear' instead.") }}
         </v-card-text>
-        <v-card-actions class="posmati-modal-actions">
+        <v-card-actions class="pospire-modal-actions">
           <v-spacer></v-spacer>
           <v-btn
-            class="posmati-modal-btn-secondary"
+            class="pospire-modal-btn-secondary"
             @click="cancel_dialog = false"
           >
             <v-icon start size="18">mdi-arrow-left</v-icon>
@@ -33,42 +33,33 @@
       </v-card>
     </v-dialog>
     <v-card
-      style="
-        flex: 1 1 auto;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      "
-      class="cards my-0 py-0 bg-grey-lighten-5"
+      class="cards my-0 py-0 bg-grey-lighten-5 pos-scrollable-content"
     >
-      <div :style="$vuetify.display.mdAndDown ? 'height: 70vh;' : ''">
+      <!-- Fixed Customer Selector Section (Fixed at Top) -->
+      <div class="invoice-header-section">
         <v-row
           align="center"
-          class="items px-2 pt-4 pb-1 flex-wrap"
-          :class="$vuetify.display.mdAndDown ? 'pa-2' : ''"
-          :style="{
-            rowGap: $vuetify.display.mdAndDown ? '0' : '12px',
-            flex: '0 0 auto',
-          }"
+          no-gutters
+          class="px-3 py-2"
         >
+          <!-- Customer: 8 cols with sales order, 9 cols without -->
           <v-col
             :cols="
               $vuetify.display.mdAndDown
                 ? 12
                 : pos_profile.posa_allow_sales_order
-                ? 6
+                ? 8
                 : 9
             "
-            :class="$vuetify.display.mdAndDown ? '0' : 'pb-2 pr-0'"
+            class="pr-2"
           >
             <Customer />
           </v-col>
+          <!-- Type: 2 cols (only shown when sales order enabled) -->
           <v-col
             v-if="pos_profile.posa_allow_sales_order"
-            :cols="$vuetify.display.mdAndDown ? 12 : 3"
-            :style="{ paddingTop: $vuetify.display.mdAndDown ? '0px' : '5px' }"
-            :class="$vuetify.display.mdAndDown ? '0' : 'pb-2'"
+            :cols="$vuetify.display.mdAndDown ? 12 : 2"
+            class="px-2"
           >
             <v-select
               density="compact"
@@ -82,31 +73,22 @@
               :disabled="invoiceType == 'Return'"
             />
           </v-col>
-          <!-- Inclusive Tax Switch -->
+          <!-- Inclusive Tax: 2 cols with sales order, 3 cols without -->
           <v-col
-            :cols="$vuetify.display.mdAndDown ? 12 : 2"
-            :class="
-              $vuetify.display.mdAndDown
-                ? '0'
-                : 'pb-0 mb-0 pt-0 d-flex align-start'
-            "
+            :cols="$vuetify.display.mdAndDown ? 12 : pos_profile.posa_allow_sales_order ? 2 : 3"
+            class="pl-2 d-flex align-center justify-end"
           >
             <v-switch
               v-model="inclusive_tax"
               :color="inclusive_tax ? '#00BCD4' : '#BDBDBD'"
               :base-color="inclusive_tax ? '#00BCD4' : '#BDBDBD'"
               inset
-              dense
+              density="compact"
               hide-details
-              class="small-switch mt-n2 items-start"
+              class="small-switch flex-shrink-0"
             >
               <template v-slot:label>
-                <div class="flex flex-col leading-tight mt-1">
-                  <span class="pr-1 text-nowrap">{{
-                    frappe._("Inclusive")
-                  }}</span>
-                  <span class="text-nowrap">{{ frappe._("Tax") }}</span>
-                </div>
+                <span class="text-nowrap text-body-2">{{ frappe._("Inclusive Tax") }}</span>
               </template>
             </v-switch>
           </v-col>
@@ -238,14 +220,8 @@
         </v-row>
       </div>
 
-      <div
-        class="my-0 py-0 pt-4 overflow-y-auto"
-        :style="
-          $vuetify.display.mdAndDown
-            ? 'flex: 0 0 30vh; min-height: 0; overflow-y: auto;'
-            : 'flex: 1 1 auto; min-height: 0; overflow-y: auto;'
-        "
-      >
+      <!-- Scrollable Cart Section (Fixed Height) -->
+      <div class="invoice-cart-section">
         <v-data-table
           :headers="items_headers"
           :items="items"
@@ -856,14 +832,27 @@
               </v-row>
             </td>
           </template>
+          <template v-slot:no-data>
+            <div class="empty-cart-state">
+              <div class="empty-cart-icon-wrapper">
+                <v-icon size="72" color="#00BCD4">mdi-cart-plus</v-icon>
+              </div>
+              <h3 class="empty-cart-title">{{ __('No items yet') }}</h3>
+              <p class="empty-cart-description">{{ __('Select items from the catalog') }}</p>
+              <div class="empty-cart-hints">
+                <span><v-icon size="14" color="#00BCD4">mdi-magnify</v-icon> {{ __('Search') }}</span>
+                <span><v-icon size="14" color="#00BCD4">mdi-barcode-scan</v-icon> {{ __('Scan') }}</span>
+                <span><v-icon size="14" color="#00BCD4">mdi-gesture-tap</v-icon> {{ __('Click') }}</span>
+              </div>
+            </div>
+          </template>
         </v-data-table>
       </div>
     </v-card>
     <v-card
-      class="cards mb-0 mt-3 py-0 posmati-invoice-footer"
-      elevation="2"
-      rounded="lg"
-      style="flex: 0 0 auto"
+      class="cards mb-0 py-0 pospire-invoice-footer pos-footer-section"
+      :elevation="0"
+      style="border: 2px solid #00BCD4 !important;"
     >
       <v-row no-gutters>
         <v-col cols="12" sm="6" class="pa-1">
@@ -960,7 +949,7 @@
             </v-col>
           </v-row>
         </v-col>
-        <v-col no-gutters class="pa-1 pt-2 pl-0 flex-wrap">
+        <v-col cols="12" sm="6" no-gutters class="pa-1 pt-2 pl-0 flex-wrap">
           <div class="flex-grow-1 d-flex flex-wrap">
             <v-row no-gutters class="pa-1 pt-2 pl-0">
               <v-col cols="6" class="pa-1">
@@ -1054,7 +1043,7 @@
           </div>
 
           <div class="d-flex justify-center">
-            <v-col cols="12" sm="6" md="6" class="pa-0">
+            <v-col cols="12" class="pa-0">
               <v-btn
                 block
                 class="btn-primary-action pay-button ma-1"
@@ -3670,20 +3659,30 @@ export default {
   text-transform: none !important;
 }
 
-/* Invoice Footer */
-.posmati-invoice-footer {
-  background: var(--posmati-gradient-card) !important;
-  border: 2px solid var(--posmati-vibrant-teal) !important;
-  border-radius: var(--posmati-radius-lg) !important;
+/* Invoice Footer - teal border highlight */
+.pospire-invoice-footer {
+  background: var(--pospire-gradient-card) !important;
+  border: 2px solid var(--pospire-vibrant-teal) !important;
+  border-style: solid !important;
+  border-width: 2px !important;
+  border-color: #00BCD4 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.15) !important;
+}
+
+/* Override v-card default border */
+:deep(.v-card.pospire-invoice-footer) {
+  border: 2px solid #00BCD4 !important;
+  border-radius: 12px !important;
 }
 
 /* Items table styling */
 :deep(.v-data-table thead th) {
-  background: var(--posmati-light-gray) !important;
-  font: var(--posmati-font-body-medium) !important;
-  color: var(--posmati-deep-slate) !important;
+  background: var(--pospire-light-gray) !important;
+  font: var(--pospire-font-body-medium) !important;
+  color: var(--pospire-deep-slate) !important;
   height: 40px !important;
-  border-bottom: 2px solid var(--posmati-border-gray) !important;
+  border-bottom: 2px solid var(--pospire-border-gray) !important;
 }
 
 :deep(.v-data-table tbody tr) {
@@ -3700,7 +3699,7 @@ export default {
 
 /* PAY button text styling */
 .pay-text {
-  font: var(--posmati-font-headline) !important;
+  font: var(--pospire-font-headline) !important;
   letter-spacing: 0.5px;
 }
 </style>

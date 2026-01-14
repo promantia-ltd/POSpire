@@ -35,9 +35,7 @@
 
     </v-autocomplete>
 
-    <div class="mb-8">
-      <UpdateCustomer></UpdateCustomer>
-    </div>
+    <UpdateCustomer />
   </div>
 </template>
 

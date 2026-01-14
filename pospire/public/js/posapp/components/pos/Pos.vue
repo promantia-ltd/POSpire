@@ -193,18 +193,39 @@ export default {
 </script>
 
 <style scoped>
+/*
+ * Height chain: viewport -> pos-page -> itemselector-section -> columns -> panels
+ * Only pos-page calculates from viewport. Children use 100% to fill parent.
+ */
 .pos-page {
-  height: calc(100vh - 72px );
-  /* max-height: calc(100vh - 73px); */
+  /* Use viewport height minus navbar offset (48px) */
+  height: calc(100dvh - var(--v-layout-top, 48px));
+  max-height: calc(100dvh - var(--v-layout-top, 48px));
+  overflow: hidden;
 }
+
 .itemselector-section {
-  height: calc(100vh - 84px);
+  /* Fill parent height using explicit height, not flex */
+  /* v-row children need explicit parent height for height: 100% to work */
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden;
 }
+
 /* Ensure columns pass height to children */
 .pos {
   height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.invoice-section{
+
+.invoice-section {
   height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 </style>

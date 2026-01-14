@@ -3,6 +3,13 @@
  * Colors: White (#FFFFFF), Deep Slate (#34495E), Vibrant Teal (#00BCD4)
  */
 
+/* Prevent zoom - ensure initial-scale=1.0 is respected */
+html, body {
+  zoom: 1 !important;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
 /* Fonts */
 
 @font-face {
@@ -22,7 +29,7 @@
 .v-main,
 body,
 .pos-enhanced {
-  font-family: var(--posmati-font-family) !important;
+  font-family: var(--pospire-font-family) !important;
 }
 
 /* Header & Navigation */
@@ -171,14 +178,14 @@ nav[role="navigation"] .v-list-item:hover {
 /* Section Headers */
 
 .section-header,
-.posmati-section-header {
+.pospire-section-header {
   background-color: #ECEFF1 !important;
-  border-radius: var(--posmati-radius-md, 6px) !important;
+  border-radius: var(--pospire-radius-md, 6px) !important;
 }
 
 .section-header .v-card-title,
 .section-header-title,
-.posmati-section-title {
+.pospire-section-title {
   color: #34495E !important;
   font-weight: 600 !important;
   font-size: 1rem !important;
@@ -189,7 +196,7 @@ nav[role="navigation"] .v-list-item:hover {
 
 .section-header .v-icon,
 .section-header-title .v-icon,
-.posmati-section-title .v-icon {
+.pospire-section-title .v-icon {
   color: #00BCD4 !important;
   margin-right: 8px;
 }
@@ -218,7 +225,7 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 .enhanced-search-input:focus {
-  border-color: var(--posmati-vibrant-teal);
+  border-color: var(--pospire-vibrant-teal);
   box-shadow:
     0 0 0 3px rgba(0, 188, 212, 0.2),
     0 0 25px rgba(0, 188, 212, 0.15);
@@ -238,13 +245,13 @@ nav[role="navigation"] .v-list-item:hover {
 /* Card View */
 /* Per Design: White fill, #E0E0E0 border, 4px radius, 12px padding */
 .enhanced-item-card {
-  background: var(--posmati-clean-white);
-  border-radius: var(--posmati-radius-sm);
+  background: var(--pospire-clean-white);
+  border-radius: var(--pospire-radius-sm);
   overflow: hidden;
   transition: all 0.3s ease;
   cursor: pointer;
-  border: 1px solid var(--posmati-border-gray);
-  box-shadow: var(--posmati-shadow-sm);
+  border: 1px solid var(--pospire-border-gray);
+  box-shadow: var(--pospire-shadow-sm);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -252,8 +259,8 @@ nav[role="navigation"] .v-list-item:hover {
 
 .enhanced-item-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--posmati-shadow-lg);
-  border-color: var(--posmati-vibrant-teal);
+  box-shadow: var(--pospire-shadow-lg);
+  border-color: var(--pospire-vibrant-teal);
 }
 
 .enhanced-item-card.enhanced-out-of-stock {
@@ -509,7 +516,7 @@ nav[role="navigation"] .v-list-item:hover {
 
 .enhanced-cart-panel .v-text-field .v-field:hover,
 .enhanced-totals-section .v-text-field .v-field:hover {
-  border-color: var(--posmati-vibrant-teal) !important;
+  border-color: var(--pospire-vibrant-teal) !important;
 }
 
 .enhanced-totals-section .v-btn.v-btn--size-large {
@@ -748,12 +755,12 @@ nav[role="navigation"] .v-list-item:hover {
 
   /* Compact table rows */
   .v-data-table :deep(tbody tr),
-  .posmati-table tbody tr {
+  .pospire-table tbody tr {
     height: 36px !important;
   }
 
   .v-data-table :deep(tbody td),
-  .posmati-table tbody td {
+  .pospire-table tbody td {
     padding: 0 8px !important;
     font-size: 12px !important;
   }
@@ -797,7 +804,7 @@ nav[role="navigation"] .v-list-item:hover {
 
   /* Table adjustments */
   .v-data-table :deep(tbody td),
-  .posmati-table tbody td {
+  .pospire-table tbody td {
     padding: 0 10px !important;
   }
 }
@@ -814,11 +821,11 @@ nav[role="navigation"] .v-list-item:hover {
 
   /* Standard button sizes */
   .btn-primary-action {
-    height: var(--posmati-btn-primary-height) !important;
+    height: var(--pospire-btn-primary-height) !important;
   }
 
   .btn-secondary {
-    height: var(--posmati-btn-secondary-height) !important;
+    height: var(--pospire-btn-secondary-height) !important;
   }
 }
 
@@ -870,7 +877,7 @@ nav[role="navigation"] .v-list-item:hover {
 
   /* Larger table rows */
   .v-data-table :deep(tbody tr),
-  .posmati-table tbody tr {
+  .pospire-table tbody tr {
     height: 44px !important;
   }
 }
@@ -921,18 +928,18 @@ nav[role="navigation"] .v-list-item:hover {
 
   /* Larger table rows */
   .v-data-table :deep(tbody tr),
-  .posmati-table tbody tr {
+  .pospire-table tbody tr {
     height: 48px !important;
   }
 
   .v-data-table :deep(tbody td),
-  .posmati-table tbody td {
+  .pospire-table tbody td {
     font-size: 15px !important;
     padding: 0 16px !important;
   }
 
   .v-data-table :deep(thead th),
-  .posmati-table thead th {
+  .pospire-table thead th {
     font-size: 13px !important;
     height: 48px !important;
   }
@@ -995,7 +1002,7 @@ nav[role="navigation"] .v-list-item:hover {
 
   /* Larger table rows for touch */
   .v-data-table :deep(tbody tr),
-  .posmati-table tbody tr {
+  .pospire-table tbody tr {
     height: 48px !important;
   }
 
@@ -1046,7 +1053,7 @@ nav[role="navigation"] .v-list-item:hover {
   }
 
   .v-data-table :deep(tbody tr),
-  .posmati-table tbody tr {
+  .pospire-table tbody tr {
     height: 36px !important;
   }
 }
@@ -1056,8 +1063,59 @@ nav[role="navigation"] .v-list-item:hover {
   /* Sharper borders on high DPI */
   .enhanced-item-card,
   .v-data-table,
-  .posmati-table {
+  .pospire-table {
     border-width: 0.5px;
+  }
+  
+  /* Adjust layout for high DPI - system scaling typically 150-200% */
+  :root {
+    --pospire-scale-factor: 1.25;
+  }
+}
+
+/* System Scaling 150% (Windows/Linux) */
+@media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 144dpi) {
+  :root {
+    --pospire-scale-factor: 1.15;
+  }
+  
+  /* Ensure footer sections scale appropriately */
+  .pos-footer-section {
+    min-height: calc(60px * var(--pospire-scale-factor));
+  }
+  
+  /* Scale button heights */
+  .btn-primary-action {
+    height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
+    min-height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
+  }
+  
+  .btn-secondary {
+    height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
+    min-height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
+  }
+}
+
+/* System Scaling 200% (Windows/Linux) */
+@media (-webkit-min-device-pixel-ratio: 2.5), (min-resolution: 240dpi) {
+  :root {
+    --pospire-scale-factor: 1.5;
+  }
+  
+  .pos-footer-section {
+    min-height: calc(70px * var(--pospire-scale-factor));
+    padding: calc(16px * var(--pospire-scale-factor)) calc(24px * var(--pospire-scale-factor)) !important;
+  }
+  
+  .btn-primary-action {
+    height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
+    min-height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
+    font-size: calc(14px * var(--pospire-scale-factor)) !important;
+  }
+  
+  .btn-secondary {
+    height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
+    min-height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
   }
 }
 
@@ -1171,23 +1229,23 @@ nav[role="navigation"] .v-list-item:hover {
 
 /* Enhanced Modal Legacy Classes - Override with new design */
 .enhanced-modal-header {
-  background: var(--posmati-clean-white) !important;
-  border-bottom: 2px solid var(--posmati-border-gray) !important;
+  background: var(--pospire-clean-white) !important;
+  border-bottom: 2px solid var(--pospire-border-gray) !important;
   padding: 20px 24px !important;
 }
 
 .enhanced-add-section {
-  background: var(--posmati-light-gray);
+  background: var(--pospire-light-gray);
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid var(--posmati-border-gray);
+  border: 1px solid var(--pospire-border-gray);
 }
 
 .enhanced-add-btn {
   height: 38px !important;
-  background: var(--posmati-gradient-teal) !important;
-  color: var(--posmati-clean-white) !important;
-  font: var(--posmati-font-body-medium) !important;
+  background: var(--pospire-gradient-teal) !important;
+  color: var(--pospire-clean-white) !important;
+  font: var(--pospire-font-body-medium) !important;
   text-transform: none !important;
 }
 
@@ -1205,21 +1263,21 @@ nav[role="navigation"] .v-list-item:hover {
 .enhanced-empty-state {
   text-align: center;
   padding: 48px 24px;
-  background: var(--posmati-light-gray);
+  background: var(--pospire-light-gray);
   border-radius: 8px;
-  border: 2px dashed var(--posmati-border-gray);
+  border: 2px dashed var(--pospire-border-gray);
 }
 
 .enhanced-empty-state-title {
-  font: var(--posmati-font-headline);
-  color: var(--posmati-deep-slate);
+  font: var(--pospire-font-headline);
+  color: var(--pospire-deep-slate);
   margin-top: 16px;
   margin-bottom: 8px;
 }
 
 .enhanced-empty-state-description {
-  font: var(--posmati-font-body-regular);
-  color: var(--posmati-text-secondary);
+  font: var(--pospire-font-body-regular);
+  color: var(--pospire-text-secondary);
   line-height: 1.6;
 }
 
@@ -1254,7 +1312,7 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 /* Main modal card styling */
-.posmati-modal,
+.pospire-modal,
 .v-dialog > .v-overlay__content > .v-card {
   border-radius: 16px !important;
   box-shadow:
@@ -1266,7 +1324,7 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 /* Modal header styling */
-.posmati-modal-header,
+.pospire-modal-header,
 .v-dialog .v-card > .v-card-title {
   background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%) !important;
   border-bottom: 1px solid #e2e8f0 !important;
@@ -1277,7 +1335,7 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 /* Modal title text */
-.posmati-modal-title,
+.pospire-modal-title,
 .v-dialog .v-card > .v-card-title .text-h5,
 .v-dialog .v-card > .v-card-title > span {
   font-family: 'Inter', sans-serif !important;
@@ -1296,7 +1354,7 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 /* Modal body styling */
-.posmati-modal-body,
+.pospire-modal-body,
 .v-dialog .v-card > .v-card-text {
   padding: 24px !important;
   color: #64748b !important;
@@ -1306,7 +1364,7 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 /* Modal actions/footer styling */
-.posmati-modal-actions,
+.pospire-modal-actions,
 .v-dialog .v-card > .v-card-actions {
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
   border-top: 1px solid #e2e8f0 !important;
@@ -1315,7 +1373,7 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 /* Modal action buttons - Secondary/Cancel */
-.posmati-modal-btn-secondary,
+.pospire-modal-btn-secondary,
 .v-dialog .v-card-actions .v-btn[color="grey-darken-1"],
 .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action) {
   background: transparent !important;
@@ -1330,7 +1388,7 @@ nav[role="navigation"] .v-list-item:hover {
   transition: all 0.2s ease !important;
 }
 
-.posmati-modal-btn-secondary:hover,
+.pospire-modal-btn-secondary:hover,
 .v-dialog .v-card-actions .v-btn[color="grey-darken-1"]:hover,
 .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action):hover {
   background: #f1f5f9 !important;
@@ -1339,7 +1397,7 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 /* Modal action buttons - Primary/Confirm */
-.posmati-modal-btn-primary,
+.pospire-modal-btn-primary,
 .v-dialog .v-card-actions .v-btn[variant="elevated"],
 .v-dialog .v-card-actions .v-btn[color="primary"] {
   background: linear-gradient(135deg, #00BCD4 0%, #00ACC1 100%) !important;
@@ -1354,7 +1412,7 @@ nav[role="navigation"] .v-list-item:hover {
   transition: all 0.2s ease !important;
 }
 
-.posmati-modal-btn-primary:hover,
+.pospire-modal-btn-primary:hover,
 .v-dialog .v-card-actions .v-btn[variant="elevated"]:hover,
 .v-dialog .v-card-actions .v-btn[color="primary"]:hover {
   background: linear-gradient(135deg, #00ACC1 0%, #0097A7 100%) !important;
@@ -1363,20 +1421,20 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 /* Danger/Warning modal variant */
-.posmati-modal-danger .posmati-modal-btn-primary,
+.pospire-modal-danger .pospire-modal-btn-primary,
 .v-dialog .v-card-actions .v-btn.btn-danger {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35) !important;
 }
 
-.posmati-modal-danger .posmati-modal-btn-primary:hover,
+.pospire-modal-danger .pospire-modal-btn-primary:hover,
 .v-dialog .v-card-actions .v-btn.btn-danger:hover {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45) !important;
 }
 
 /* Modal icon styling */
-.posmati-modal-icon {
+.pospire-modal-icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -1386,33 +1444,33 @@ nav[role="navigation"] .v-list-item:hover {
   flex-shrink: 0;
 }
 
-.posmati-modal-icon.icon-warning {
+.pospire-modal-icon.icon-warning {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   color: #d97706;
 }
 
-.posmati-modal-icon.icon-danger {
+.pospire-modal-icon.icon-danger {
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #dc2626;
 }
 
-.posmati-modal-icon.icon-success {
+.pospire-modal-icon.icon-success {
   background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
   color: #059669;
 }
 
-.posmati-modal-icon.icon-info {
+.pospire-modal-icon.icon-info {
   background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
   color: #0284c7;
 }
 
-.posmati-modal-icon.icon-teal {
+.pospire-modal-icon.icon-teal {
   background: linear-gradient(135deg, rgba(0, 188, 212, 0.15) 0%, rgba(0, 188, 212, 0.25) 100%);
   color: #00BCD4;
 }
 
 /* Modal close button */
-.posmati-modal-close {
+.pospire-modal-close {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -1429,7 +1487,7 @@ nav[role="navigation"] .v-list-item:hover {
   border: none;
 }
 
-.posmati-modal-close:hover {
+.pospire-modal-close:hover {
   background: #f1f5f9;
   color: #475569;
 }
@@ -1441,7 +1499,7 @@ nav[role="navigation"] .v-list-item:hover {
 
 /* Small modal adjustments */
 .v-dialog[max-width="400px"] .v-card,
-.posmati-modal-sm {
+.pospire-modal-sm {
   border-radius: 12px !important;
 }
 
@@ -1450,24 +1508,24 @@ nav[role="navigation"] .v-list-item:hover {
 /* Primary Action Buttons (44px height) - Used for PAY, SUBMIT, etc. */
 .btn-primary-action,
 .v-btn.btn-primary-action {
-  height: var(--posmati-btn-primary-height) !important;
-  min-height: var(--posmati-btn-primary-height) !important;
-  background: var(--posmati-gradient-teal) !important;
-  color: var(--posmati-clean-white) !important;
-  border-radius: var(--posmati-radius-md) !important;
-  font: var(--posmati-font-body-medium) !important;
+  height: var(--pospire-btn-primary-height) !important;
+  min-height: var(--pospire-btn-primary-height) !important;
+  background: var(--pospire-gradient-teal) !important;
+  color: var(--pospire-clean-white) !important;
+  border-radius: var(--pospire-radius-md) !important;
+  font: var(--pospire-font-body-medium) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
-  box-shadow: var(--posmati-shadow-md) !important;
+  box-shadow: var(--pospire-shadow-md) !important;
   border: none !important;
-  padding: 0 var(--posmati-spacing-xl) !important;
+  padding: 0 var(--pospire-spacing-xl) !important;
   transition: all 0.2s ease !important;
 }
 
 .btn-primary-action:hover:not(:disabled),
 .v-btn.btn-primary-action:hover:not(:disabled) {
   background: linear-gradient(135deg, #00ACC1 0%, #0097A7 100%) !important;
-  box-shadow: var(--posmati-shadow-lg) !important;
+  box-shadow: var(--pospire-shadow-lg) !important;
   transform: translateY(-1px);
 }
 
@@ -1480,16 +1538,16 @@ nav[role="navigation"] .v-list-item:hover {
 /* Secondary Buttons (38px height) - For utility actions */
 .btn-secondary,
 .v-btn.btn-secondary {
-  height: var(--posmati-btn-secondary-height) !important;
-  min-height: var(--posmati-btn-secondary-height) !important;
-  background: var(--posmati-light-gray) !important;
-  color: var(--posmati-deep-slate) !important;
-  border: 1px solid var(--posmati-border-gray) !important;
-  border-radius: var(--posmati-radius-md) !important;
-  font: var(--posmati-font-body-regular) !important;
+  height: var(--pospire-btn-secondary-height) !important;
+  min-height: var(--pospire-btn-secondary-height) !important;
+  background: var(--pospire-light-gray) !important;
+  color: var(--pospire-deep-slate) !important;
+  border: 1px solid var(--pospire-border-gray) !important;
+  border-radius: var(--pospire-radius-md) !important;
+  font: var(--pospire-font-body-regular) !important;
   text-transform: none !important;
-  box-shadow: var(--posmati-shadow-sm) !important;
-  padding: 0 var(--posmati-spacing-lg) !important;
+  box-shadow: var(--pospire-shadow-sm) !important;
+  padding: 0 var(--pospire-spacing-lg) !important;
   transition: all 0.2s ease !important;
 }
 
@@ -1503,15 +1561,15 @@ nav[role="navigation"] .v-list-item:hover {
 /* Danger Buttons (38px height) - For cancel/destructive actions */
 .btn-danger,
 .v-btn.btn-danger {
-  height: var(--posmati-btn-secondary-height) !important;
-  min-height: var(--posmati-btn-secondary-height) !important;
-  background: linear-gradient(135deg, var(--posmati-vivid-red) 0%, #EF4343 100%) !important;
-  color: var(--posmati-clean-white) !important;
-  border-radius: var(--posmati-radius-md) !important;
-  font: var(--posmati-font-body-regular) !important;
+  height: var(--pospire-btn-secondary-height) !important;
+  min-height: var(--pospire-btn-secondary-height) !important;
+  background: linear-gradient(135deg, var(--pospire-vivid-red) 0%, #EF4343 100%) !important;
+  color: var(--pospire-clean-white) !important;
+  border-radius: var(--pospire-radius-md) !important;
+  font: var(--pospire-font-body-regular) !important;
   text-transform: none !important;
-  box-shadow: var(--posmati-shadow-sm) !important;
-  padding: 0 var(--posmati-spacing-lg) !important;
+  box-shadow: var(--pospire-shadow-sm) !important;
+  padding: 0 var(--pospire-spacing-lg) !important;
   transition: all 0.2s ease !important;
   border: none !important;
 }
@@ -1519,21 +1577,21 @@ nav[role="navigation"] .v-list-item:hover {
 .btn-danger:hover:not(:disabled),
 .v-btn.btn-danger:hover:not(:disabled) {
   background: linear-gradient(135deg, #E03E3E 0%, #D63838 100%) !important;
-  box-shadow: var(--posmati-shadow-md) !important;
+  box-shadow: var(--pospire-shadow-md) !important;
 }
 
 /* Search/Warning Buttons (38px height) - Amber color scheme */
 .btn-search,
 .v-btn.btn-search {
-  height: var(--posmati-btn-secondary-height) !important;
-  min-height: var(--posmati-btn-secondary-height) !important;
-  background: var(--posmati-safety-amber) !important;
-  color: var(--posmati-clean-white) !important;
-  border-radius: var(--posmati-radius-md) !important;
-  font: var(--posmati-font-body-regular) !important;
+  height: var(--pospire-btn-secondary-height) !important;
+  min-height: var(--pospire-btn-secondary-height) !important;
+  background: var(--pospire-safety-amber) !important;
+  color: var(--pospire-clean-white) !important;
+  border-radius: var(--pospire-radius-md) !important;
+  font: var(--pospire-font-body-regular) !important;
   text-transform: none !important;
-  box-shadow: var(--posmati-shadow-sm) !important;
-  padding: 0 var(--posmati-spacing-lg) !important;
+  box-shadow: var(--pospire-shadow-sm) !important;
+  padding: 0 var(--pospire-spacing-lg) !important;
   transition: all 0.2s ease !important;
   border: none !important;
 }
@@ -1541,20 +1599,20 @@ nav[role="navigation"] .v-list-item:hover {
 .btn-search:hover:not(:disabled),
 .v-btn.btn-search:hover:not(:disabled) {
   background: #E58800 !important;
-  box-shadow: var(--posmati-shadow-md) !important;
+  box-shadow: var(--pospire-shadow-md) !important;
 }
 
 /* Toggle Buttons (36px height) - For list/card view, filters, etc. */
 .btn-toggle {
-  height: var(--posmati-btn-toggle-height) !important;
-  min-height: var(--posmati-btn-toggle-height) !important;
+  height: var(--pospire-btn-toggle-height) !important;
+  min-height: var(--pospire-btn-toggle-height) !important;
   background: transparent !important;
-  color: var(--posmati-text-secondary) !important;
-  border-radius: var(--posmati-radius-sm) !important;
-  font: var(--posmati-font-body-regular) !important;
+  color: var(--pospire-text-secondary) !important;
+  border-radius: var(--pospire-radius-sm) !important;
+  font: var(--pospire-font-body-regular) !important;
   text-transform: none !important;
   border: none !important;
-  padding: 0 var(--posmati-spacing-md) !important;
+  padding: 0 var(--pospire-spacing-md) !important;
   transition: all 0.2s ease !important;
   display: inline-flex;
   align-items: center;
@@ -1564,13 +1622,13 @@ nav[role="navigation"] .v-list-item:hover {
 
 .btn-toggle:hover:not(.active) {
   background: rgba(0, 188, 212, 0.05) !important;
-  color: var(--posmati-vibrant-teal) !important;
+  color: var(--pospire-vibrant-teal) !important;
 }
 
 .btn-toggle.active {
-  background: var(--posmati-clean-white) !important;
-  color: var(--posmati-vibrant-teal) !important;
-  box-shadow: var(--posmati-shadow-sm) !important;
+  background: var(--pospire-clean-white) !important;
+  color: var(--pospire-vibrant-teal) !important;
+  box-shadow: var(--pospire-shadow-sm) !important;
   font-weight: 500 !important;
 }
 
@@ -1586,10 +1644,10 @@ nav[role="navigation"] .v-list-item:hover {
 .v-autocomplete .v-field,
 .v-combobox .v-field,
 .v-textarea .v-field {
-  min-height: var(--posmati-input-height) !important;
-  border-radius: var(--posmati-input-border-radius) !important;
-  background: var(--posmati-clean-white) !important;
-  font: var(--posmati-font-body-regular) !important;
+  min-height: var(--pospire-input-height) !important;
+  border-radius: var(--pospire-input-border-radius) !important;
+  background: var(--pospire-clean-white) !important;
+  font: var(--pospire-font-body-regular) !important;
 }
 
 /* Textarea specific - remove min-height constraint */
@@ -1602,39 +1660,39 @@ nav[role="navigation"] .v-list-item:hover {
 
 /* Default label color - black for visibility */
 .v-field--variant-outlined .v-label {
-  color: var(--posmati-deep-slate) !important;
+  color: var(--pospire-deep-slate) !important;
 }
 
 /* Focus state - teal border */
 .v-field--variant-outlined.v-field--focused .v-field__outline {
   --v-field-border-opacity: 1;
-  color: var(--posmati-vibrant-teal) !important;
+  color: var(--pospire-vibrant-teal) !important;
 }
 
 /* Focus state - teal label */
 .v-field--variant-outlined.v-field--focused .v-label {
-  color: var(--posmati-vibrant-teal) !important;
+  color: var(--pospire-vibrant-teal) !important;
 }
 
 /* Default border color - gray */
 .v-field--variant-outlined:not(.v-field--focused) .v-field__outline {
-  color: var(--posmati-border-gray) !important;
+  color: var(--pospire-border-gray) !important;
 }
 
 /* Filled Inputs */
 /* Override outlined with filled style - no border overlap possible */
 .v-field--variant-filled {
   border: none !important;
-  border-bottom: 2px solid var(--posmati-border-gray) !important;
-  background: var(--posmati-light-gray) !important;
+  border-bottom: 2px solid var(--pospire-border-gray) !important;
+  background: var(--pospire-light-gray) !important;
   border-radius: 4px 4px 0 0 !important;
   box-shadow: none !important;
 }
 
 .v-field--variant-filled.v-field--focused {
-  border-bottom: 2px solid var(--posmati-vibrant-teal) !important;
+  border-bottom: 2px solid var(--pospire-vibrant-teal) !important;
   background: #F5F5F5 !important;
-  box-shadow: 0 1px 0 0 var(--posmati-vibrant-teal) !important;
+  box-shadow: 0 1px 0 0 var(--pospire-vibrant-teal) !important;
 }
 
 /* Filled variant labels don't need background */
@@ -1644,18 +1702,18 @@ nav[role="navigation"] .v-list-item:hover {
 
 /* Error state for filled variant */
 .v-field--variant-filled.v-field--error {
-  border-bottom-color: var(--posmati-vivid-red) !important;
+  border-bottom-color: var(--pospire-vivid-red) !important;
 }
 
 .v-field--variant-filled.v-field--error.v-field--focused {
-  border-bottom-color: var(--posmati-vivid-red) !important;
-  box-shadow: 0 1px 0 0 var(--posmati-vivid-red) !important;
+  border-bottom-color: var(--pospire-vivid-red) !important;
+  box-shadow: 0 1px 0 0 var(--pospire-vivid-red) !important;
 }
 
 /* Placeholder Styling */
 .v-field__input::placeholder {
-  font: var(--posmati-font-support) !important;
-  color: var(--posmati-text-light) !important;
+  font: var(--pospire-font-support) !important;
+  color: var(--pospire-text-light) !important;
 }
 
 /* Read-only Fields */
@@ -1699,42 +1757,42 @@ nav[role="navigation"] .v-list-item:hover {
 
 /* Error State */
 .v-field--error.v-field--variant-outlined {
-  border-color: var(--posmati-vivid-red) !important;
+  border-color: var(--pospire-vivid-red) !important;
 }
 
 .v-field--error.v-field--focused.v-field--variant-outlined {
-  border-color: var(--posmati-vivid-red) !important;
+  border-color: var(--pospire-vivid-red) !important;
   box-shadow: 0 0 0 3px rgba(244, 67, 67, 0.1) !important;
 }
 
 .v-field--error .v-label {
-  color: var(--posmati-vivid-red) !important;
+  color: var(--pospire-vivid-red) !important;
 }
 
 /* Success State */
 .v-field--success.v-field--variant-outlined {
-  border-color: var(--posmati-grass-green) !important;
+  border-color: var(--pospire-grass-green) !important;
 }
 
 .v-field--success.v-field--focused.v-field--variant-outlined {
-  border-color: var(--posmati-grass-green) !important;
+  border-color: var(--pospire-grass-green) !important;
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1) !important;
 }
 
 .v-field--success .v-label {
-  color: var(--posmati-grass-green) !important;
+  color: var(--pospire-grass-green) !important;
 }
 
 /* Input Icons */
 .v-field__prepend-inner .v-icon,
 .v-field__append-inner .v-icon {
-  color: var(--posmati-text-secondary) !important;
+  color: var(--pospire-text-secondary) !important;
   opacity: 0.7;
 }
 
 .v-field--focused .v-field__prepend-inner .v-icon,
 .v-field--focused .v-field__append-inner .v-icon {
-  color: var(--posmati-vibrant-teal) !important;
+  color: var(--pospire-vibrant-teal) !important;
   opacity: 1;
 }
 
@@ -1742,7 +1800,7 @@ nav[role="navigation"] .v-list-item:hover {
 
 /* Switch thumb - always white */
 .v-switch .v-switch__thumb {
-  background-color: var(--posmati-clean-white) !important;
+  background-color: var(--pospire-clean-white) !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
@@ -1755,8 +1813,8 @@ nav[role="navigation"] .v-list-item:hover {
 
 /* Switch label styling - Deep Slate for readability */
 .v-switch .v-label {
-  font: var(--posmati-font-body-regular) !important;
-  color: var(--posmati-deep-slate) !important;
+  font: var(--pospire-font-body-regular) !important;
+  color: var(--pospire-deep-slate) !important;
 }
 
 /* On/Off States */
@@ -1773,17 +1831,17 @@ nav[role="navigation"] .v-list-item:hover {
 .switch-on .v-switch__track,
 .switch-on .v-selection-control .v-switch__track,
 .switch-on.v-switch .v-switch__track {
-  background-color: var(--posmati-vibrant-teal) !important;
+  background-color: var(--pospire-vibrant-teal) !important;
   opacity: 1 !important;
 }
 
 /* Override any Vuetify color prop */
-.posmati-switch.switch-off .v-switch__track {
+.pospire-switch.switch-off .v-switch__track {
   background-color: #BDBDBD !important;
 }
 
-.posmati-switch.switch-on .v-switch__track {
-  background-color: var(--posmati-vibrant-teal) !important;
+.pospire-switch.switch-on .v-switch__track {
+  background-color: var(--pospire-vibrant-teal) !important;
 }
 
 /* Focused switch - subtle teal glow */
@@ -1801,39 +1859,39 @@ nav[role="navigation"] .v-list-item:hover {
  */
 
 /* Neutral chip - for informational tags (Items Group, Profile, etc.) */
-.posmati-chip-neutral {
+.pospire-chip-neutral {
   background-color: rgba(52, 73, 94, 0.08) !important;
-  color: var(--posmati-deep-slate) !important;
+  color: var(--pospire-deep-slate) !important;
 }
 
-.posmati-chip-neutral .v-icon {
-  color: var(--posmati-deep-slate) !important;
+.pospire-chip-neutral .v-icon {
+  color: var(--pospire-deep-slate) !important;
 }
 
 /* Teal chip - ONLY for selected/active states */
-.posmati-chip-active {
+.pospire-chip-active {
   background-color: rgba(0, 188, 212, 0.12) !important;
-  color: var(--posmati-vibrant-teal) !important;
+  color: var(--pospire-vibrant-teal) !important;
 }
 
-.posmati-chip-active .v-icon {
-  color: var(--posmati-vibrant-teal) !important;
+.pospire-chip-active .v-icon {
+  color: var(--pospire-vibrant-teal) !important;
 }
 
 /* Status chips */
-.posmati-chip-success {
+.pospire-chip-success {
   background-color: rgba(76, 175, 80, 0.12) !important;
-  color: var(--posmati-grass-green) !important;
+  color: var(--pospire-grass-green) !important;
 }
 
-.posmati-chip-warning {
+.pospire-chip-warning {
   background-color: rgba(255, 152, 0, 0.12) !important;
-  color: var(--posmati-safety-amber) !important;
+  color: var(--pospire-safety-amber) !important;
 }
 
-.posmati-chip-error {
+.pospire-chip-error {
   background-color: rgba(244, 67, 67, 0.12) !important;
-  color: var(--posmati-vivid-red) !important;
+  color: var(--pospire-vivid-red) !important;
 }
 
 
@@ -1852,20 +1910,20 @@ nav[role="navigation"] .v-list-item:hover {
 /* Primary action buttons explicitly using teal */
 .btn-primary-action,
 .v-btn.bg-teal {
-  background-color: var(--posmati-vibrant-teal) !important;
+  background-color: var(--pospire-vibrant-teal) !important;
   color: #FFFFFF !important;
 }
 
 /* Active/selected toggle states */
 .btn-toggle.active {
-  background: var(--posmati-clean-white) !important;
-  color: var(--posmati-vibrant-teal) !important;
-  box-shadow: var(--posmati-shadow-sm) !important;
+  background: var(--pospire-clean-white) !important;
+  color: var(--pospire-vibrant-teal) !important;
+  box-shadow: var(--pospire-shadow-sm) !important;
 }
 
 /* Totals highlight text */
-.posmati-total-highlight {
-  color: var(--posmati-vibrant-teal) !important;
+.pospire-total-highlight {
+  color: var(--pospire-vibrant-teal) !important;
   font-weight: 600 !important;
 }
 
@@ -1875,64 +1933,73 @@ nav[role="navigation"] .v-list-item:hover {
   /* Design System Variables */
 
   /* Core Colors */
-  --posmati-clean-white: #FFFFFF;
-  --posmati-deep-slate: #34495E;
-  --posmati-vibrant-teal: #00BCD4;
+  --pospire-clean-white: #FFFFFF;
+  --pospire-deep-slate: #34495E;
+  --pospire-vibrant-teal: #00BCD4;
 
   /* Status Colors */
-  --posmati-grass-green: #4CAF50;
-  --posmati-safety-amber: #FF9800;
-  --posmati-vivid-red: #F44343;
+  --pospire-grass-green: #4CAF50;
+  --pospire-safety-amber: #FF9800;
+  --pospire-vivid-red: #F44343;
 
   /* Neutral Colors */
-  --posmati-light-gray: #F5F5F5;
-  --posmati-medium-gray: #9E9E9E;
-  --posmati-border-gray: #B0BEC5;
-  --posmati-text-secondary: #757575;
-  --posmati-text-light: #8C8C8C;
+  --pospire-light-gray: #F5F5F5;
+  --pospire-medium-gray: #9E9E9E;
+  --pospire-border-gray: #B0BEC5;
+  --pospire-text-secondary: #757575;
+  --pospire-text-light: #8C8C8C;
 
   /* Typography */
-  --posmati-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --posmati-font-headline: 600 16px/1.5 var(--posmati-font-family);
-  --posmati-font-body-medium: 500 14px/1.5 var(--posmati-font-family);
-  --posmati-font-body-regular: 400 14px/1.5 var(--posmati-font-family);
-  --posmati-font-support: 400 12px/1.4 var(--posmati-font-family);
+  --pospire-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --pospire-font-headline: 600 16px/1.5 var(--pospire-font-family);
+  --pospire-font-body-medium: 500 14px/1.5 var(--pospire-font-family);
+  --pospire-font-body-regular: 400 14px/1.5 var(--pospire-font-family);
+  --pospire-font-support: 400 12px/1.4 var(--pospire-font-family);
 
   /* Button Heights */
-  --posmati-btn-primary-height: 44px;
-  --posmati-btn-secondary-height: 38px;
-  --posmati-btn-toggle-height: 36px;
+  --pospire-btn-primary-height: 44px;
+  --pospire-btn-secondary-height: 38px;
+  --pospire-btn-toggle-height: 36px;
 
   /* Input Specifications */
-  --posmati-input-height: 40px;
-  --posmati-input-border-radius: 4px;
-  --posmati-input-padding: 12px;
-  --posmati-input-border: 1px solid var(--posmati-border-gray);
-  --posmati-input-border-focus: 1px solid var(--posmati-vibrant-teal);
+  --pospire-input-height: 40px;
+  --pospire-input-border-radius: 4px;
+  --pospire-input-padding: 12px;
+  --pospire-input-border: 1px solid var(--pospire-border-gray);
+  --pospire-input-border-focus: 1px solid var(--pospire-vibrant-teal);
 
   /* Gradients */
-  --posmati-gradient-teal: linear-gradient(135deg, #00BCD4 0%, #00ACC1 100%);
-  --posmati-gradient-green: linear-gradient(135deg, #4CAF50 0%, #43A047 100%);
-  --posmati-gradient-card: linear-gradient(180deg, #FFFFFF 0%, #F9F9F9 100%);
-  --posmati-gradient-background: linear-gradient(180deg, #FFFFFF 0%, #F5F5F5 100%);
+  --pospire-gradient-teal: linear-gradient(135deg, #00BCD4 0%, #00ACC1 100%);
+  --pospire-gradient-green: linear-gradient(135deg, #4CAF50 0%, #43A047 100%);
+  --pospire-gradient-card: linear-gradient(180deg, #FFFFFF 0%, #F9F9F9 100%);
+  --pospire-gradient-background: linear-gradient(180deg, #FFFFFF 0%, #F5F5F5 100%);
 
   /* Shadows */
-  --posmati-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-  --posmati-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.15);
-  --posmati-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.18);
+  --pospire-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --pospire-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --pospire-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.18);
 
   /* Border Radius */
-  --posmati-radius-sm: 4px;
-  --posmati-radius-md: 6px;
-  --posmati-radius-lg: 8px;
-  --posmati-radius-xl: 12px;
+  --pospire-radius-sm: 4px;
+  --pospire-radius-md: 6px;
+  --pospire-radius-lg: 8px;
+  --pospire-radius-xl: 12px;
 
   /* Spacing */
-  --posmati-spacing-xs: 4px;
-  --posmati-spacing-sm: 8px;
-  --posmati-spacing-md: 12px;
-  --posmati-spacing-lg: 16px;
-  --posmati-spacing-xl: 24px;
+  --pospire-spacing-xs: 4px;
+  --pospire-spacing-sm: 8px;
+  --pospire-spacing-md: 12px;
+  --pospire-spacing-lg: 16px;
+  --pospire-spacing-xl: 24px;
+
+  /* Layout Heights - Following DRY principle */
+  --pospire-panel-height: 100%;
+  --pospire-scrollable-content-height: calc(100% - var(--pospire-footer-height));
+  --pospire-footer-height: auto; /* Will be calculated based on content */
+  --pospire-footer-border-width: 2px; /* Used for footer borders and container padding */
+
+  /* System scaling detection - adjust offsets based on device pixel ratio */
+  --pospire-scale-factor: 1;
 
   /* Brand Variables */
   --brand-font-samarkan: 'Samarkan', sans-serif;
@@ -1959,103 +2026,103 @@ nav[role="navigation"] .v-list-item:hover {
   --brand-font-devanagari: "Devanagari Sangam MN", "Noto Sans Devanagari", "Mangal", sans-serif;
 
   /* Backgrounds */
-  --card-bg: var(--posmati-gradient-card);
+  --card-bg: var(--pospire-gradient-card);
   --section-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   --subsection-bg: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%);
   --difference-bg: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
 
   /* Borders */
-  --border-light: var(--posmati-border-gray);
+  --border-light: var(--pospire-border-gray);
   --border-subsection: #ddd6fe;
   --border-difference: #bbf7d0;
 
   /* Text Colors */
-  --text-main: var(--posmati-deep-slate);
-  --text-sub: var(--posmati-text-secondary);
+  --text-main: var(--pospire-deep-slate);
+  --text-sub: var(--pospire-text-secondary);
   --text-subsection: #374151;
 
   /* Icon Colors */
-  --icon-section: var(--posmati-vibrant-teal);
+  --icon-section: var(--pospire-vibrant-teal);
   --icon-subsection: #6366f1;
   --icon-section-bg: rgba(0, 188, 212, 0.1);
   --icon-subsection-bg: rgba(99, 102, 241, 0.1);
 
   /* Button Variables */
-  --btn-radius: var(--posmati-radius-md);
-  --btn-shadow: var(--posmati-shadow-sm);
+  --btn-radius: var(--pospire-radius-md);
+  --btn-shadow: var(--pospire-shadow-sm);
   --btn-text-transform: none;
   --btn-font-weight: 600;
 
   /* Chips */
-  --chip-radius: var(--posmati-radius-lg);
+  --chip-radius: var(--pospire-radius-lg);
 
   /* Modals */
-  --modal-radius: var(--posmati-radius-xl);
+  --modal-radius: var(--pospire-radius-xl);
   --modal-bg: #f8fafc;
-  --modal-border: 1px solid var(--posmati-border-gray);
+  --modal-border: 1px solid var(--pospire-border-gray);
   --add-section-bg: #f8fafc;
-  --add-section-border: 1px solid var(--posmati-border-gray);
-  --add-section-radius: var(--posmati-radius-xl);
+  --add-section-border: 1px solid var(--pospire-border-gray);
+  --add-section-radius: var(--pospire-radius-xl);
 
   /* Tables */
-  --table-radius: var(--posmati-radius-xl);
+  --table-radius: var(--pospire-radius-xl);
 
   /* Empty States */
-  --coupons-empty-title-color: var(--posmati-deep-slate);
-  --coupons-empty-text-color: var(--posmati-text-secondary);
+  --coupons-empty-title-color: var(--pospire-deep-slate);
+  --coupons-empty-text-color: var(--pospire-text-secondary);
   --coupons-empty-title-size: 1.1rem;
   --coupons-empty-desc-size: 0.9rem;
   --empty-bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  --empty-border: 2px dashed var(--posmati-border-gray);
-  --empty-radius: var(--posmati-radius-xl);
-  --empty-text-color: var(--posmati-text-secondary);
-  --empty-title-color: var(--posmati-deep-slate);
+  --empty-border: 2px dashed var(--pospire-border-gray);
+  --empty-radius: var(--pospire-radius-xl);
+  --empty-text-color: var(--pospire-text-secondary);
+  --empty-title-color: var(--pospire-deep-slate);
   --empty-title-size: 1.25rem;
   --empty-desc-size: 0.95rem;
-  --empty-btn-bg: var(--posmati-gradient-teal);
-  --empty-btn-color: var(--posmati-clean-white);
-  --empty-btn-radius: var(--posmati-radius-lg);
+  --empty-btn-bg: var(--pospire-gradient-teal);
+  --empty-btn-color: var(--pospire-clean-white);
+  --empty-btn-radius: var(--pospire-radius-lg);
   --empty-btn-font-weight: 500;
-  --empty-btn-shadow: var(--posmati-shadow-md);
+  --empty-btn-shadow: var(--pospire-shadow-md);
 
   /* Item Selector */
-  --itemselect-color-primary: var(--posmati-vibrant-teal);
+  --itemselect-color-primary: var(--pospire-vibrant-teal);
   --itemselect-color-primary-dark: #00ACC1;
-  --itemselect-color-success: var(--posmati-grass-green);
-  --itemselect-color-warning: var(--posmati-safety-amber);
-  --itemselect-color-error: var(--posmati-vivid-red);
-  --itemselect-color-bg-card: var(--posmati-clean-white);
-  --itemselect-color-bg-container: var(--posmati-light-gray);
+  --itemselect-color-success: var(--pospire-grass-green);
+  --itemselect-color-warning: var(--pospire-safety-amber);
+  --itemselect-color-error: var(--pospire-vivid-red);
+  --itemselect-color-bg-card: var(--pospire-clean-white);
+  --itemselect-color-bg-container: var(--pospire-light-gray);
   --itemselect-color-bg-empty: #f1f5f9;
-  --itemselect-color-border: var(--posmati-border-gray);
-  --itemselect-color-text-main: var(--posmati-deep-slate);
-  --itemselect-color-text-muted: var(--posmati-text-secondary);
-  --itemselect-color-text-secondary: var(--posmati-text-light);
-  --itemselect-font-base: var(--posmati-font-family);
-  --itemselect-gradient-card: var(--posmati-gradient-card);
-  --itemselect-gradient-empty: linear-gradient(135deg, var(--posmati-light-gray) 0%, #f1f5f9 100%);
-  --itemselect-gradient-action-btn: var(--posmati-gradient-teal);
+  --itemselect-color-border: var(--pospire-border-gray);
+  --itemselect-color-text-main: var(--pospire-deep-slate);
+  --itemselect-color-text-muted: var(--pospire-text-secondary);
+  --itemselect-color-text-secondary: var(--pospire-text-light);
+  --itemselect-font-base: var(--pospire-font-family);
+  --itemselect-gradient-card: var(--pospire-gradient-card);
+  --itemselect-gradient-empty: linear-gradient(135deg, var(--pospire-light-gray) 0%, #f1f5f9 100%);
+  --itemselect-gradient-action-btn: var(--pospire-gradient-teal);
 
   /* Offers Modal */
-  --offersmodal-color-primary: var(--posmati-vibrant-teal);
+  --offersmodal-color-primary: var(--pospire-vibrant-teal);
   --offersmodal-color-primary-dark: #00ACC1;
-  --offersmodal-color-text-main: var(--posmati-deep-slate);
-  --offersmodal-color-text-muted: var(--posmati-text-secondary);
-  --offersmodal-color-border: var(--posmati-border-gray);
+  --offersmodal-color-text-main: var(--pospire-deep-slate);
+  --offersmodal-color-text-muted: var(--pospire-text-secondary);
+  --offersmodal-color-border: var(--pospire-border-gray);
   --offersmodal-color-bg: #f8fafc;
-  --offersmodal-color-bg-card: var(--posmati-clean-white);
-  --offersmodal-font-base: var(--posmati-font-family);
-  --offersmodal-radius-card: var(--posmati-radius-xl);
-  --offersmodal-radius-table: var(--posmati-radius-xl);
+  --offersmodal-color-bg-card: var(--pospire-clean-white);
+  --offersmodal-font-base: var(--pospire-font-family);
+  --offersmodal-radius-card: var(--pospire-radius-xl);
+  --offersmodal-radius-table: var(--pospire-radius-xl);
   --offersmodal-empty-padding: 3rem 2rem;
   --offersmodal-empty-max-width: 300px;
 
   /* Payments */
-  --payments-shadow-btn: var(--posmati-shadow-md);
-  --payments-shadow-btn-hover: var(--posmati-shadow-lg);
-  --payments-gradient-submit: var(--posmati-gradient-teal);
-  --payments-gradient-print: var(--posmati-gradient-green);
-  --payments-gradient-cancel: linear-gradient(45deg, var(--posmati-vivid-red) 0%, #EF4343 100%);
+  --payments-shadow-btn: var(--pospire-shadow-md);
+  --payments-shadow-btn-hover: var(--pospire-shadow-lg);
+  --payments-gradient-submit: var(--pospire-gradient-teal);
+  --payments-gradient-print: var(--pospire-gradient-green);
+  --payments-gradient-cancel: linear-gradient(45deg, var(--pospire-vivid-red) 0%, #EF4343 100%);
 
   /* Animation System */
 
@@ -2223,7 +2290,7 @@ nav[role="navigation"] .v-list-item:hover {
 
 @keyframes pulseBorder {
   0%, 100% {
-    border-color: var(--posmati-vibrant-teal);
+    border-color: var(--pospire-vibrant-teal);
   }
   50% {
     border-color: rgba(0, 188, 212, 0.4);
@@ -2450,7 +2517,7 @@ nav[role="navigation"] .v-list-item:hover {
 /* Primary action buttons - subtle glow on hover */
 .v-btn.bg-primary:hover:not(:disabled),
 .v-btn[style*="00BCD4"]:hover:not(:disabled),
-.posmati-btn-primary:hover:not(:disabled) {
+.pospire-btn-primary:hover:not(:disabled) {
   box-shadow: 0 4px 15px rgba(0, 188, 212, 0.35);
 }
 
@@ -2468,7 +2535,7 @@ nav[role="navigation"] .v-list-item:hover {
 .product-card:hover,
 .item-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--posmati-shadow-lg);
+  box-shadow: var(--pospire-shadow-lg);
 }
 
 /* Product card click feedback */
@@ -2478,18 +2545,18 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 /* Product Card Animations */
-.posmati-product-card {
+.pospire-product-card {
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
-.posmati-product-card:hover {
+.pospire-product-card:hover {
   transform: translateY(-6px) scale(1.02) !important;
   box-shadow:
     0 12px 28px rgba(0, 188, 212, 0.25),
     0 0 0 2px rgba(0, 188, 212, 0.3) !important;
 }
 
-.posmati-product-card:active {
+.pospire-product-card:active {
   transform: translateY(-2px) scale(0.98) !important;
   transition-duration: 0.1s !important;
 }
@@ -2567,42 +2634,57 @@ nav[role="navigation"] .v-list-item:hover {
   }
 }
 
-.posmati-items-table .list-item-selected {
+.pospire-items-table .list-item-selected {
   animation: listRowSelected 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   position: relative;
 }
 
-.posmati-items-table .list-item-selected td {
+.pospire-items-table .list-item-selected td {
   background-color: rgba(0, 188, 212, 0.1) !important;
 }
 
 /* Enhanced hover for list rows */
-.posmati-items-table tbody tr {
+.pospire-items-table tbody tr {
   transition: all 0.2s ease !important;
   cursor: pointer;
 }
 
-.posmati-items-table tbody tr:hover {
+.pospire-items-table tbody tr:hover {
   background-color: rgba(0, 188, 212, 0.08) !important;
   transform: translateX(2px);
 }
 
-.posmati-items-table tbody tr:hover td {
+.pospire-items-table tbody tr:hover td {
   background-color: transparent !important;
 }
 
-.posmati-items-table tbody tr:active {
+.pospire-items-table tbody tr:active {
   transform: scale(0.995);
   transition-duration: 0.1s !important;
 }
 
 /* Stock badges animations */
-.posmati-stock-badge.badge-warning {
+.pospire-stock-badge.badge-warning,
+.pospire-stock-badge.badge-warning.animate-pulse {
   animation: pulse 2s ease-in-out infinite;
 }
 
-.posmati-stock-badge.badge-error {
+.pospire-stock-badge.badge-error,
+.pospire-stock-badge.badge-error.animate-heartbeat {
   animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+/* Ensure badge colors are visible */
+.pospire-stock-badge.badge-success {
+  background: var(--pospire-grass-green) !important;
+}
+
+.pospire-stock-badge.badge-warning {
+  background: var(--pospire-safety-amber) !important;
+}
+
+.pospire-stock-badge.badge-error {
+  background: var(--pospire-vivid-red) !important;
 }
 
 /* Button primary action with vibrant gradient */
@@ -2638,7 +2720,7 @@ nav[role="navigation"] .v-list-item:hover {
 
 .qty-display.animate-numberPop {
   transform: scale(1.3);
-  color: var(--posmati-vibrant-teal);
+  color: var(--pospire-vibrant-teal);
   font-weight: 700;
 }
 
@@ -2654,7 +2736,7 @@ nav[role="navigation"] .v-list-item:hover {
 .v-text-field:focus-within .v-field,
 .v-select:focus-within .v-field,
 .v-autocomplete:focus-within .v-field {
-  border-color: var(--posmati-vibrant-teal) !important;
+  border-color: var(--pospire-vibrant-teal) !important;
 }
 
 /* Switch toggle animation */
@@ -2797,8 +2879,8 @@ nav[role="navigation"] .v-list-item:hover {
 /* Spinner */
 .loading-spinner {
   animation: spin 1s linear infinite;
-  border: 2px solid var(--posmati-border-gray);
-  border-top-color: var(--posmati-vibrant-teal);
+  border: 2px solid var(--pospire-border-gray);
+  border-top-color: var(--pospire-vibrant-teal);
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -2818,7 +2900,7 @@ nav[role="navigation"] .v-list-item:hover {
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
-  border-radius: var(--posmati-radius-lg);
+  border-radius: var(--pospire-radius-lg);
 }
 
 /* Keyframes */
@@ -2846,17 +2928,17 @@ nav[role="navigation"] .v-list-item:hover {
 @keyframes neonGlow {
   0%, 100% {
     box-shadow:
-      0 0 5px var(--posmati-vibrant-teal),
-      0 0 10px var(--posmati-vibrant-teal),
-      0 0 20px var(--posmati-vibrant-teal),
-      0 0 40px var(--posmati-vibrant-teal);
+      0 0 5px var(--pospire-vibrant-teal),
+      0 0 10px var(--pospire-vibrant-teal),
+      0 0 20px var(--pospire-vibrant-teal),
+      0 0 40px var(--pospire-vibrant-teal);
   }
   50% {
     box-shadow:
-      0 0 10px var(--posmati-vibrant-teal),
-      0 0 20px var(--posmati-vibrant-teal),
-      0 0 40px var(--posmati-vibrant-teal),
-      0 0 80px var(--posmati-vibrant-teal);
+      0 0 10px var(--pospire-vibrant-teal),
+      0 0 20px var(--pospire-vibrant-teal),
+      0 0 40px var(--pospire-vibrant-teal),
+      0 0 80px var(--pospire-vibrant-teal);
   }
 }
 
@@ -3091,7 +3173,7 @@ nav[role="navigation"] .v-list-item:hover {
 
 /* Rainbow border - continuous */
 .animate-rainbowBorder {
-  border: 3px solid var(--posmati-vibrant-teal);
+  border: 3px solid var(--pospire-vibrant-teal);
   animation: rainbowBorder 3s linear infinite;
 }
 
@@ -3236,7 +3318,7 @@ nav[role="navigation"] .v-list-item:hover {
 /* Glow on hover */
 .hover-glow:hover {
   box-shadow:
-    0 0 10px var(--posmati-vibrant-teal),
+    0 0 10px var(--pospire-vibrant-teal),
     0 0 20px rgba(0, 188, 212, 0.5),
     0 0 30px rgba(0, 188, 212, 0.3);
   transition: box-shadow 0.3s ease;
@@ -3244,7 +3326,7 @@ nav[role="navigation"] .v-list-item:hover {
 
 /* Border glow on hover */
 .hover-border-glow:hover {
-  border-color: var(--posmati-vibrant-teal);
+  border-color: var(--pospire-vibrant-teal);
   box-shadow:
     inset 0 0 10px rgba(0, 188, 212, 0.1),
     0 0 15px rgba(0, 188, 212, 0.3);
@@ -3302,7 +3384,7 @@ nav[role="navigation"] .v-list-item:hover {
 .loading-dots span {
   width: 10px;
   height: 10px;
-  background: var(--posmati-vibrant-teal);
+  background: var(--pospire-vibrant-teal);
   border-radius: 50%;
   animation: float 0.6s ease-in-out infinite;
 }
@@ -3315,7 +3397,7 @@ nav[role="navigation"] .v-list-item:hover {
 .loading-ring {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--posmati-border-gray);
+  border: 3px solid var(--pospire-border-gray);
   border-radius: 50%;
   position: relative;
 }
@@ -3328,7 +3410,7 @@ nav[role="navigation"] .v-list-item:hover {
   right: -3px;
   bottom: -3px;
   border: 3px solid transparent;
-  border-top-color: var(--posmati-vibrant-teal);
+  border-top-color: var(--pospire-vibrant-teal);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -3341,7 +3423,7 @@ nav[role="navigation"] .v-list-item:hover {
   background: conic-gradient(
     from 0deg,
     transparent 0deg,
-    var(--posmati-vibrant-teal) 360deg
+    var(--pospire-vibrant-teal) 360deg
   );
   mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
@@ -3458,35 +3540,35 @@ body > .v-overlay .v-overlay__scrim,
 .v-dialog .enhanced-modal-card {
   border-radius: 16px !important;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2) !important;
-  border: 1px solid var(--posmati-border-gray) !important;
-  border-top: 4px solid var(--posmati-vibrant-teal) !important;
+  border: 1px solid var(--pospire-border-gray) !important;
+  border-top: 4px solid var(--pospire-vibrant-teal) !important;
   overflow: hidden !important;
 }
 
 /* Dialog Title/Header - Modern clean header */
 .v-dialog .v-card-title,
 .v-dialog .enhanced-modal-header {
-  background: var(--posmati-clean-white) !important;
-  border-bottom: 2px solid var(--posmati-border-gray) !important;
+  background: var(--pospire-clean-white) !important;
+  border-bottom: 2px solid var(--pospire-border-gray) !important;
   padding: 20px 24px !important;
-  font: var(--posmati-font-headline) !important;
-  color: var(--posmati-deep-slate) !important;
+  font: var(--pospire-font-headline) !important;
+  color: var(--pospire-deep-slate) !important;
 }
 
 /* Icon in Dialog Title - Moderate size, inline */
 .v-dialog .v-card-title .v-icon,
 .v-dialog .enhanced-modal-header .v-icon {
   font-size: 24px !important;
-  color: var(--posmati-vibrant-teal) !important;
+  color: var(--pospire-vibrant-teal) !important;
   margin-right: 8px !important;
 }
 
 /* Dialog Text/Body */
 .v-dialog .v-card-text {
   padding: 24px !important;
-  background: var(--posmati-clean-white) !important;
-  font: var(--posmati-font-body-regular) !important;
-  color: var(--posmati-deep-slate) !important;
+  background: var(--pospire-clean-white) !important;
+  font: var(--pospire-font-body-regular) !important;
+  color: var(--pospire-deep-slate) !important;
   line-height: 1.6 !important;
 }
 
@@ -3494,7 +3576,7 @@ body > .v-overlay .v-overlay__scrim,
 .v-dialog .v-card-actions,
 .v-dialog .enhanced-modal-actions {
   background: #F8F9FA !important;
-  border-top: 2px solid var(--posmati-border-gray) !important;
+  border-top: 2px solid var(--pospire-border-gray) !important;
   padding: 16px 24px !important;
   gap: 12px !important;
   display: flex !important;
@@ -3507,7 +3589,7 @@ body > .v-overlay .v-overlay__scrim,
   min-height: 38px !important;
   height: 38px !important;
   border-radius: 6px !important;
-  font: var(--posmati-font-body-medium) !important;
+  font: var(--pospire-font-body-medium) !important;
   text-transform: none !important;
   padding: 0 24px !important;
   min-width: 100px !important;
@@ -3522,9 +3604,9 @@ body > .v-overlay .v-overlay__scrim,
 .v-dialog .enhanced-modal-actions .v-btn.v-btn--elevated,
 .v-dialog .enhanced-modal-actions .v-btn[color="primary"],
 .v-dialog .enhanced-modal-actions .v-btn[color="success"] {
-  background: var(--posmati-gradient-teal) !important;
-  color: var(--posmati-clean-white) !important;
-  box-shadow: var(--posmati-shadow-sm) !important;
+  background: var(--pospire-gradient-teal) !important;
+  color: var(--pospire-clean-white) !important;
+  box-shadow: var(--pospire-shadow-sm) !important;
 }
 
 .v-dialog .v-card-actions .v-btn.v-btn--elevated:hover,
@@ -3534,7 +3616,7 @@ body > .v-overlay .v-overlay__scrim,
 .v-dialog .enhanced-modal-actions .v-btn[color="primary"]:hover,
 .v-dialog .enhanced-modal-actions .v-btn[color="success"]:hover {
   background: linear-gradient(135deg, #00ACC1 0%, #0097A7 100%) !important;
-  box-shadow: var(--posmati-shadow-md) !important;
+  box-shadow: var(--pospire-shadow-md) !important;
   transform: translateY(-1px);
 }
 
@@ -3542,60 +3624,60 @@ body > .v-overlay .v-overlay__scrim,
 .v-dialog .v-card-actions .v-btn[variant="text"],
 .v-dialog .enhanced-modal-actions .v-btn[variant="text"] {
   background: transparent !important;
-  color: var(--posmati-text-secondary) !important;
+  color: var(--pospire-text-secondary) !important;
   box-shadow: none !important;
 }
 
 .v-dialog .v-card-actions .v-btn[variant="text"]:hover,
 .v-dialog .enhanced-modal-actions .v-btn[variant="text"]:hover {
   background: rgba(0, 0, 0, 0.05) !important;
-  color: var(--posmati-deep-slate) !important;
+  color: var(--pospire-deep-slate) !important;
 }
 
 /* Danger Dialog Button (DELETE, REMOVE, etc.) */
 .v-dialog .v-card-actions .v-btn[color="error"],
 .v-dialog .enhanced-modal-actions .v-btn[color="error"] {
-  background: linear-gradient(135deg, var(--posmati-vivid-red) 0%, #EF4343 100%) !important;
-  color: var(--posmati-clean-white) !important;
-  box-shadow: var(--posmati-shadow-sm) !important;
+  background: linear-gradient(135deg, var(--pospire-vivid-red) 0%, #EF4343 100%) !important;
+  color: var(--pospire-clean-white) !important;
+  box-shadow: var(--pospire-shadow-sm) !important;
 }
 
 .v-dialog .v-card-actions .v-btn[color="error"]:hover,
 .v-dialog .enhanced-modal-actions .v-btn[color="error"]:hover {
   background: linear-gradient(135deg, #E03E3E 0%, #D63838 100%) !important;
-  box-shadow: var(--posmati-shadow-md) !important;
+  box-shadow: var(--pospire-shadow-md) !important;
   transform: translateY(-1px);
 }
 
 /* Custom Modal Header (with class) */
-.posmati-modal-header,
-.v-dialog .v-card-title.posmati-modal-header {
-  background: var(--posmati-gradient-card) !important;
-  border-bottom: 1px solid var(--posmati-border-gray) !important;
+.pospire-modal-header,
+.v-dialog .v-card-title.pospire-modal-header {
+  background: var(--pospire-gradient-card) !important;
+  border-bottom: 1px solid var(--pospire-border-gray) !important;
 }
 
 /* Custom Modal Body (with class) */
-.posmati-modal-body,
-.v-dialog .v-card-text.posmati-modal-body {
+.pospire-modal-body,
+.v-dialog .v-card-text.pospire-modal-body {
   padding: 24px !important;
-  background: var(--posmati-clean-white) !important;
+  background: var(--pospire-clean-white) !important;
 }
 
 /* Custom Modal Actions (with class) */
-.posmati-modal-actions,
-.v-dialog .v-card-actions.posmati-modal-actions {
-  background: var(--posmati-light-gray) !important;
-  border-top: 1px solid var(--posmati-border-gray) !important;
+.pospire-modal-actions,
+.v-dialog .v-card-actions.pospire-modal-actions {
+  background: var(--pospire-light-gray) !important;
+  border-top: 1px solid var(--pospire-border-gray) !important;
   padding: 16px 24px !important;
 }
 
 /* Modal Close Button */
-.posmati-modal-close {
+.pospire-modal-close {
   position: absolute !important;
   top: 16px !important;
   right: 16px !important;
   background: transparent !important;
-  color: var(--posmati-text-secondary) !important;
+  color: var(--pospire-text-secondary) !important;
   min-width: 32px !important;
   width: 32px !important;
   height: 32px !important;
@@ -3603,9 +3685,9 @@ body > .v-overlay .v-overlay__scrim,
   border-radius: 50% !important;
 }
 
-.posmati-modal-close:hover {
+.pospire-modal-close:hover {
   background: rgba(0, 0, 0, 0.05) !important;
-  color: var(--posmati-deep-slate) !important;
+  color: var(--pospire-deep-slate) !important;
 }
 
 /* Intent-Based Dialog Types */
@@ -3616,13 +3698,13 @@ body > .v-overlay .v-overlay__scrim,
 .v-dialog.warning .v-card,
 .v-dialog.warning .enhanced-modal-card,
 .v-dialog--confirm .v-card {
-  border-top-color: var(--posmati-safety-amber) !important;
+  border-top-color: var(--pospire-safety-amber) !important;
 }
 
 .v-dialog.warning .v-card-title .v-icon,
 .v-dialog.warning .enhanced-modal-header .v-icon,
 .v-dialog--confirm .v-card-title .v-icon {
-  color: var(--posmati-safety-amber) !important;
+  color: var(--pospire-safety-amber) !important;
 }
 
 /* Danger/Error Dialogs - Red accent */
@@ -3631,7 +3713,7 @@ body > .v-overlay .v-overlay__scrim,
 .v-dialog.error .v-card,
 .v-dialog.error .enhanced-modal-card,
 .v-dialog--error .v-card {
-  border-top-color: var(--posmati-vivid-red) !important;
+  border-top-color: var(--pospire-vivid-red) !important;
 }
 
 .v-dialog.danger .v-card-title .v-icon,
@@ -3639,36 +3721,36 @@ body > .v-overlay .v-overlay__scrim,
 .v-dialog.error .v-card-title .v-icon,
 .v-dialog.error .enhanced-modal-header .v-icon,
 .v-dialog--error .v-card-title .v-icon {
-  color: var(--posmati-vivid-red) !important;
+  color: var(--pospire-vivid-red) !important;
 }
 
 /* Success Dialogs - Green accent */
 .v-dialog.success .v-card,
 .v-dialog.success .enhanced-modal-card {
-  border-top-color: var(--posmati-grass-green) !important;
+  border-top-color: var(--pospire-grass-green) !important;
 }
 
 .v-dialog.success .v-card-title .v-icon,
 .v-dialog.success .enhanced-modal-header .v-icon {
-  color: var(--posmati-grass-green) !important;
+  color: var(--pospire-grass-green) !important;
 }
 
 /* Info Dialogs - Teal accent (default) */
 .v-dialog.info .v-card,
 .v-dialog.info .enhanced-modal-card {
-  border-top-color: var(--posmati-vibrant-teal) !important;
+  border-top-color: var(--pospire-vibrant-teal) !important;
 }
 
 /* Status Pills & Tags */
 
 /* Base Pill - Per Design: Pills 32px height, Tags 20px height, 999px radius */
-.posmati-pill {
+.pospire-pill {
   display: inline-flex !important;
   align-items: center !important;
   height: 32px !important;
   padding: 0 12px !important;
   border-radius: 999px !important;
-  font: var(--posmati-font-support) !important;
+  font: var(--pospire-font-support) !important;
   font-weight: 600 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
@@ -3676,89 +3758,89 @@ body > .v-overlay .v-overlay__scrim,
   gap: 4px !important;
 }
 
-.posmati-tag {
+.pospire-tag {
   display: inline-flex !important;
   align-items: center !important;
   height: 20px !important;
   padding: 0 8px !important;
   border-radius: 999px !important;
-  font: var(--posmati-font-support) !important;
+  font: var(--pospire-font-support) !important;
   font-weight: 500 !important;
   white-space: nowrap !important;
   gap: 4px !important;
 }
 
 /* Success Pill (Green) */
-.posmati-pill--success,
-.posmati-pill.success {
+.pospire-pill--success,
+.pospire-pill.success {
   background: rgba(76, 175, 80, 0.15) !important;
-  color: var(--posmati-grass-green) !important;
-  border: 1px solid var(--posmati-grass-green) !important;
+  color: var(--pospire-grass-green) !important;
+  border: 1px solid var(--pospire-grass-green) !important;
 }
 
 /* Warning Pill (Amber) */
-.posmati-pill--warning,
-.posmati-pill.warning {
+.pospire-pill--warning,
+.pospire-pill.warning {
   background: rgba(255, 152, 0, 0.15) !important;
-  color: var(--posmati-safety-amber) !important;
-  border: 1px solid var(--posmati-safety-amber) !important;
+  color: var(--pospire-safety-amber) !important;
+  border: 1px solid var(--pospire-safety-amber) !important;
 }
 
 /* Error/Danger Pill (Red) */
-.posmati-pill--error,
-.posmati-pill--danger,
-.posmati-pill.error,
-.posmati-pill.danger {
+.pospire-pill--error,
+.pospire-pill--danger,
+.pospire-pill.error,
+.pospire-pill.danger {
   background: rgba(244, 67, 67, 0.15) !important;
-  color: var(--posmati-vivid-red) !important;
-  border: 1px solid var(--posmati-vivid-red) !important;
+  color: var(--pospire-vivid-red) !important;
+  border: 1px solid var(--pospire-vivid-red) !important;
 }
 
 /* Info Pill (Teal) */
-.posmati-pill--info,
-.posmati-pill.info {
+.pospire-pill--info,
+.pospire-pill.info {
   background: rgba(0, 188, 212, 0.15) !important;
-  color: var(--posmati-vibrant-teal) !important;
-  border: 1px solid var(--posmati-vibrant-teal) !important;
+  color: var(--pospire-vibrant-teal) !important;
+  border: 1px solid var(--pospire-vibrant-teal) !important;
 }
 
 /* Neutral Pill (Gray) */
-.posmati-pill--neutral,
-.posmati-pill.neutral {
+.pospire-pill--neutral,
+.pospire-pill.neutral {
   background: rgba(117, 117, 117, 0.15) !important;
-  color: var(--posmati-text-secondary) !important;
-  border: 1px solid var(--posmati-border-gray) !important;
+  color: var(--pospire-text-secondary) !important;
+  border: 1px solid var(--pospire-border-gray) !important;
 }
 
 /* Pills with Icons */
-.posmati-pill .v-icon {
+.pospire-pill .v-icon {
   font-size: 14px !important;
   margin-right: 2px !important;
 }
 
 /* Solid Pill Variants */
-.posmati-pill--solid.posmati-pill--success {
-  background: var(--posmati-grass-green) !important;
-  color: var(--posmati-clean-white) !important;
+.pospire-pill--solid.pospire-pill--success {
+  background: var(--pospire-grass-green) !important;
+  color: var(--pospire-clean-white) !important;
   border: none !important;
 }
 
-.posmati-pill--solid.posmati-pill--warning {
-  background: var(--posmati-safety-amber) !important;
-  color: var(--posmati-clean-white) !important;
+.pospire-pill--solid.pospire-pill--warning {
+  background: var(--pospire-safety-amber) !important;
+  color: var(--pospire-clean-white) !important;
   border: none !important;
 }
 
-.posmati-pill--solid.posmati-pill--error,
-.posmati-pill--solid.posmati-pill--danger {
-  background: var(--posmati-vivid-red) !important;
-  color: var(--posmati-clean-white) !important;
+.pospire-pill--solid.pospire-pill--error,
+.pospire-pill--solid.pospire-pill--danger {
+  background: var(--pospire-vivid-red) !important;
+  color: var(--pospire-clean-white) !important;
   border: none !important;
 }
 
-.posmati-pill--solid.posmati-pill--info {
-  background: var(--posmati-vibrant-teal) !important;
-  color: var(--posmati-clean-white) !important;
+.pospire-pill--solid.pospire-pill--info {
+  background: var(--pospire-vibrant-teal) !important;
+  color: var(--pospire-clean-white) !important;
   border: none !important;
 }
 
@@ -3767,12 +3849,12 @@ body > .v-overlay .v-overlay__scrim,
 /* Table Headers - Per Design: Background #F7F7F7 */
 .v-data-table :deep(thead th),
 .v-table :deep(thead th),
-.posmati-table thead th {
-  font: var(--posmati-font-body-medium) !important;
-  color: var(--posmati-deep-slate) !important;
+.pospire-table thead th {
+  font: var(--pospire-font-body-medium) !important;
+  color: var(--pospire-deep-slate) !important;
   background: #F7F7F7 !important;
   height: 40px !important;
-  border-bottom: 1px solid var(--posmati-border-gray) !important;
+  border-bottom: 1px solid var(--pospire-border-gray) !important;
   padding: 0 12px !important;
   white-space: nowrap !important;
   text-transform: uppercase !important;
@@ -3784,7 +3866,7 @@ body > .v-overlay .v-overlay__scrim,
 /* Table Rows */
 .v-data-table :deep(tbody tr),
 .v-table :deep(tbody tr),
-.posmati-table tbody tr {
+.pospire-table tbody tr {
   height: 40px !important;
   transition: background-color 0.15s ease !important;
 }
@@ -3792,20 +3874,20 @@ body > .v-overlay .v-overlay__scrim,
 /* Alternating Row Backgrounds - Per Design: Default #FFFFFF, Alternate #FAFAFF */
 .v-data-table :deep(tbody tr:nth-child(even)),
 .v-table :deep(tbody tr:nth-child(even)),
-.posmati-table tbody tr:nth-child(even) {
+.pospire-table tbody tr:nth-child(even) {
   background: #FAFAFF !important;
 }
 
 .v-data-table :deep(tbody tr:nth-child(odd)),
 .v-table :deep(tbody tr:nth-child(odd)),
-.posmati-table tbody tr:nth-child(odd) {
-  background: var(--posmati-clean-white) !important;
+.pospire-table tbody tr:nth-child(odd) {
+  background: var(--pospire-clean-white) !important;
 }
 
 /* Row Hover Effect - Per Design: Hover #E6F7FA */
 .v-data-table :deep(tbody tr:hover),
 .v-table :deep(tbody tr:hover),
-.posmati-table tbody tr:hover {
+.pospire-table tbody tr:hover {
   background: #E6F7FA !important;
   cursor: pointer !important;
 }
@@ -3813,18 +3895,18 @@ body > .v-overlay .v-overlay__scrim,
 /* Table Cells - Per Design: 12px horizontal padding */
 .v-data-table :deep(tbody td),
 .v-table :deep(tbody td),
-.posmati-table tbody td {
-  font: var(--posmati-font-body-regular) !important;
-  color: var(--posmati-deep-slate) !important;
+.pospire-table tbody td {
+  font: var(--pospire-font-body-regular) !important;
+  color: var(--pospire-deep-slate) !important;
   padding: 0 12px !important;
-  border-bottom: 1px solid var(--posmati-border-gray) !important;
+  border-bottom: 1px solid var(--pospire-border-gray) !important;
 }
 
 /* Table Borders */
 .v-data-table,
 .v-table,
-.posmati-table {
-  border: 1px solid var(--posmati-border-gray) !important;
+.pospire-table {
+  border: 1px solid var(--pospire-border-gray) !important;
   border-radius: 8px !important;
   overflow: hidden !important;
 }
@@ -3834,81 +3916,81 @@ body > .v-overlay .v-overlay__scrim,
 .v-data-table :deep(tfoot td),
 .v-table :deep(tfoot th),
 .v-table :deep(tfoot td),
-.posmati-table tfoot th,
-.posmati-table tfoot td {
-  font: var(--posmati-font-body-medium) !important;
-  color: var(--posmati-deep-slate) !important;
-  background: var(--posmati-light-gray) !important;
+.pospire-table tfoot th,
+.pospire-table tfoot td {
+  font: var(--pospire-font-body-medium) !important;
+  color: var(--pospire-deep-slate) !important;
+  background: var(--pospire-light-gray) !important;
   height: 40px !important;
-  border-top: 2px solid var(--posmati-border-gray) !important;
+  border-top: 2px solid var(--pospire-border-gray) !important;
   padding: 0 16px !important;
 }
 
 /* Empty State */
 .v-data-table :deep(.v-data-table__empty),
-.posmati-table-empty {
+.pospire-table-empty {
   padding: 48px 24px !important;
   text-align: center !important;
 }
 
 .v-data-table :deep(.v-data-table__empty) .v-icon {
   font-size: 48px !important;
-  color: var(--posmati-text-secondary) !important;
+  color: var(--pospire-text-secondary) !important;
   opacity: 0.5 !important;
 }
 
-.posmati-table-empty-text {
-  font: var(--posmati-font-body-regular) !important;
-  color: var(--posmati-text-secondary) !important;
+.pospire-table-empty-text {
+  font: var(--pospire-font-body-regular) !important;
+  color: var(--pospire-text-secondary) !important;
   margin-top: 12px !important;
 }
 
 /* Pagination */
 .v-data-table :deep(.v-data-table-footer) {
-  background: var(--posmati-light-gray) !important;
-  border-top: 2px solid var(--posmati-border-gray) !important;
+  background: var(--pospire-light-gray) !important;
+  border-top: 2px solid var(--pospire-border-gray) !important;
   padding: 8px 16px !important;
-  font: var(--posmati-font-body-regular) !important;
+  font: var(--pospire-font-body-regular) !important;
 }
 
 .v-data-table :deep(.v-data-table-footer__items-per-page) {
-  font: var(--posmati-font-body-regular) !important;
+  font: var(--pospire-font-body-regular) !important;
 }
 
 .v-data-table :deep(.v-data-table-footer__pagination) {
-  font: var(--posmati-font-body-medium) !important;
-  color: var(--posmati-deep-slate) !important;
+  font: var(--pospire-font-body-medium) !important;
+  color: var(--pospire-deep-slate) !important;
 }
 
 /* Table Action Buttons */
-.posmati-table-action-btn {
+.pospire-table-action-btn {
   min-width: 32px !important;
   width: 32px !important;
   height: 32px !important;
   padding: 0 !important;
   background: transparent !important;
-  color: var(--posmati-vibrant-teal) !important;
+  color: var(--pospire-vibrant-teal) !important;
   border-radius: 4px !important;
 }
 
-.posmati-table-action-btn:hover {
+.pospire-table-action-btn:hover {
   background: rgba(0, 188, 212, 0.1) !important;
 }
 
-.posmati-table-action-btn--danger {
-  color: var(--posmati-vivid-red) !important;
+.pospire-table-action-btn--danger {
+  color: var(--pospire-vivid-red) !important;
 }
 
-.posmati-table-action-btn--danger:hover {
+.pospire-table-action-btn--danger:hover {
   background: rgba(244, 67, 67, 0.1) !important;
 }
 
 /* Responsive Wrapper */
-.posmati-table-wrapper {
+.pospire-table-wrapper {
   width: 100%;
   overflow-x: auto;
   border-radius: 8px;
-  box-shadow: var(--posmati-shadow-sm);
+  box-shadow: var(--pospire-shadow-sm);
 }
 
 /* Dense/Compact Variant */
@@ -3926,9 +4008,667 @@ body > .v-overlay .v-overlay__scrim,
 }
 
 .v-data-table :deep(.v-data-table-progress .v-progress-linear) {
-  background: var(--posmati-vibrant-teal) !important;
+  background: var(--pospire-vibrant-teal) !important;
 }
 
+/* Viewport Height Constraint - prevents page scrolling */
 
+/* Reset Frappe container padding for POS page */
+body:has(.pos-page),
+html:has(.pos-page) {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
 
+/* Frappe's page containers - reset padding when on POS */
+body:has(.pos-page) .main-section,
+body:has(.pos-page) .page-container,
+body:has(.pos-page) [data-page-container],
+body:has(.pos-page) .container-fluid,
+body:has(.pos-page) .page-body {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Override Vuetify's --v-layout-top on v-main for correct layout offset */
+/* Reduced to 48px to ensure footer borders are fully visible */
+.v-main:has(.pos-page) {
+  --v-layout-top: 48px !important;
+}
+
+/* Level 1: Page Container - Constrain to viewport */
+.pos-page {
+  /* Override mt-2 margin from template that causes viewport overflow */
+  margin: 0 !important;
+  margin-top: 0 !important;
+  padding: 0 !important;
+  /* Use viewport height minus navbar offset (48px) */
+  height: calc(100dvh - var(--v-layout-top, 48px));
+  max-height: calc(100dvh - var(--v-layout-top, 48px));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Level 2: Main Row - Fill page height */
+.pos-page > .itemselector-section {
+  flex: 1 1 auto;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  /* Add padding for breathing space and footer borders */
+  padding-bottom: calc(var(--pospire-footer-border-width, 2px) * 4) !important;
+}
+
+/* Level 3: Panel Columns - Fill row height */
+/* Applies to both ItemsSelector/Payments column and Invoice column */
+.v-col.test-pos,
+.v-col.invoice-section {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  position: relative;
+  /* Add padding for breathing space and footer borders */
+  padding-bottom: calc(var(--pospire-footer-border-width, 2px) * 4) !important;
+}
+
+/* ItemsSelector column z-index (above invoice for dropdowns) */
+.v-col.test-pos {
+  z-index: 2;
+}
+
+/* Invoice column z-index */
+.v-col.invoice-section {
+  z-index: 1;
+}
+
+/* Panel Container - shared by ItemsSelector, Payments, and Invoice */
+.pos-panel-container {
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Ensure footer borders are not clipped by overflow:hidden */
+  /* Using 8px for breathing space */
+  padding-bottom: calc(var(--pospire-footer-border-width, 2px) * 4);
+}
+
+.pos-scrollable-content {
+  flex: 1 1 auto; /* Grow to fill, start from content size */
+  min-height: 0; /* Allow shrinking below content size */
+  overflow: hidden; /* Let child sections handle scrolling */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure v-card acts as proper flex container */
+.v-card.pos-scrollable-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+}
+
+/* Footer Section - fixed at bottom, never shrinks (ItemsSelector, Payments, Invoice) */
+.pos-footer-section {
+  flex: 0 0 auto !important; /* Don't grow or shrink - stay at natural size */
+  flex-shrink: 0 !important; /* NEVER shrink - prevent footer cutoff */
+  flex-grow: 0 !important; /* Don't grow either */
+  /* NO position: sticky - doesn't work with overflow: hidden parent */
+  background: var(--pospire-gradient-card, var(--pospire-clean-white));
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.15);
+  /* Scale-aware minimum height */
+  min-height: calc(60px * var(--pospire-scale-factor, 1));
+  /* Ensure consistent alignment across all panels */
+  width: 100%;
+  /* Teal border for all footer sections - consistent branding */
+  border: var(--pospire-footer-border-width, 2px) solid var(--pospire-vibrant-teal, #00BCD4) !important;
+  border-radius: var(--pospire-radius-lg, 8px) !important;
+  box-sizing: border-box !important;
+  /* Padding for floating labels in text fields */
+  padding-top: 8px !important;
+  overflow: visible !important; /* Allow labels to show above border */
+}
+
+/* Explicit footer protection for all panel types */
+.pos-panel-container > .pos-footer-section,
+.pos-panel-container > .v-card.pos-footer-section {
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+}
+
+/* Invoice Header Section - Fixed at Top (flexbox, no sticky needed) */
+.invoice-header-section {
+  flex: 0 0 auto; /* Don't grow or shrink vertically */
+  width: 100%; /* Take full width */
+  z-index: 15;
+  background: var(--pospire-clean-white);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--pospire-border-gray);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  /* Prevent dropdown clipping */
+  overflow: visible;
+}
+
+/* Ensure all elements in header row are vertically centered */
+.invoice-header-section .v-row {
+  align-items: center !important;
+  width: 100%;
+}
+
+/* Columns should stretch their content */
+.invoice-header-section .v-row > .v-col {
+  display: flex;
+  align-items: center;
+}
+
+/* Wrapper divs (like Customer component) must stretch to fill column */
+.invoice-header-section .v-col > div {
+  width: 100% !important;
+  flex: 1 1 100%;
+  /* Use block display so v-autocomplete takes full width */
+  /* The UpdateCustomer component inside renders a v-row even when dialog is closed */
+  display: block;
+}
+
+/* UpdateCustomer dialog wrapper should not affect layout */
+.invoice-header-section .v-col > div > .v-row {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* All v-input fields must stretch to fill their container */
+.invoice-header-section .v-input,
+.invoice-header-section .v-input.v-input--horizontal,
+.invoice-header-section .v-autocomplete,
+.invoice-header-section .v-select {
+  width: 100% !important;
+  max-width: 100% !important;
+  /* Vuetify uses grid internally - keep it but ensure full width */
+  box-sizing: border-box !important;
+}
+
+/* Ensure the input inner container stretches */
+.invoice-header-section .v-input__control {
+  width: 100% !important;
+}
+
+/* Ensure the input field element itself stretches */
+.invoice-header-section .v-input .v-field,
+.invoice-header-section .v-field {
+  width: 100% !important;
+}
+
+/* Override any inline flex-grow restrictions */
+.invoice-header-section .v-input--horizontal > .v-input__control {
+  flex-grow: 1 !important;
+}
+
+/* Ensure autocomplete dropdown in header appears above footer */
+.invoice-header-section .v-overlay-container,
+.invoice-header-section .v-autocomplete .v-overlay__content,
+.invoice-header-section .v-select .v-overlay__content,
+.invoice-header-section .v-menu > .v-overlay__content {
+  z-index: 1000 !important;
+}
+
+/* Invoice Cart Section - Fills remaining space, table wrapper handles scrolling */
+.invoice-cart-section {
+  flex: 1 1 auto;
+  min-height: 150px; /* Ensure minimum visible height for empty state */
+  overflow: hidden; /* Let table wrapper handle scrolling for sticky headers */
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Data table fills the cart section */
+.invoice-cart-section .v-data-table {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Allow proper flex shrinking */
+}
+
+/* Table wrapper - the actual scroll container */
+.invoice-cart-section .v-data-table .v-table__wrapper {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+/* Normal cart items - align to top (default behavior) */
+.invoice-cart-section .v-data-table .v-table__wrapper tbody {
+  vertical-align: top;
+}
+
+/* Empty cart state - ONLY center when empty state is present */
+/* Use :has() to apply height only when empty-cart-state exists */
+.invoice-cart-section .v-data-table .v-table__wrapper:has(.empty-cart-state) table {
+  height: 100%;
+}
+
+.invoice-cart-section .v-data-table .v-table__wrapper:has(.empty-cart-state) tbody {
+  height: 100%;
+}
+
+.invoice-cart-section .v-data-table .v-table__wrapper tbody tr:has(.empty-cart-state) {
+  height: 100%;
+}
+
+.invoice-cart-section .v-data-table .v-table__wrapper tbody tr:has(.empty-cart-state) td {
+  height: 100%;
+  vertical-align: middle;
+}
+
+/* STICKY TABLE HEADERS - Stay fixed when scrolling cart items */
+.invoice-cart-section .v-data-table thead,
+.invoice-cart-section .v-data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--pospire-light-gray, #F5F5F5) !important;
+}
+
+.invoice-cart-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+.invoice-cart-section::-webkit-scrollbar-track {
+  background: var(--pospire-light-gray);
+  border-radius: 4px;
+}
+
+.invoice-cart-section::-webkit-scrollbar-thumb {
+  background: var(--pospire-border-gray);
+  border-radius: 4px;
+}
+
+.invoice-cart-section::-webkit-scrollbar-thumb:hover {
+  background: var(--pospire-medium-gray);
+}
+
+/* Invoice footer specific styling - ensure teal border is visible */
+.pos-footer-section.pospire-invoice-footer,
+.v-card.pospire-invoice-footer,
+.v-card.pos-footer-section.pospire-invoice-footer {
+  background: var(--pospire-gradient-card) !important;
+  border: var(--pospire-footer-border-width, 2px) solid var(--pospire-vibrant-teal) !important;
+  border-style: solid !important;
+  border-width: var(--pospire-footer-border-width, 2px) !important;
+  border-color: var(--pospire-vibrant-teal) !important;
+  border-radius: var(--pospire-radius-lg) !important;
+  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.15) !important;
+  /* Prevent overflow from padding/border */
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+  /* Extra padding-top for floating labels in text fields */
+  padding-top: 12px !important;
+}
+
+/* Invoice footer row - ensure proper width */
+.pos-footer-section.pospire-invoice-footer .v-row {
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Invoice footer columns - box sizing only, no overflow hidden */
+/* Note: overflow-x: hidden was clipping floating labels - removed */
+/* max-width: 100% provides horizontal constraint without clipping labels */
+.pos-footer-section.pospire-invoice-footer .v-col {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+
+/* PAY button wrapper - ensure it fits */
+.pos-footer-section.pospire-invoice-footer .d-flex.justify-center {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* ItemsSelector scrollable areas */
+.items-grid-scroll,
+.items-list-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important; /* Override scoped max-height calc that breaks at certain resolutions */
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+/* Ensure list/grid fills available space in the flex container */
+.enhanced-items-container .items-list-scroll,
+.enhanced-items-container .items-grid-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
+}
+
+.items-grid-scroll::-webkit-scrollbar,
+.items-list-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.items-grid-scroll::-webkit-scrollbar-track,
+.items-list-scroll::-webkit-scrollbar-track {
+  background: var(--pospire-light-gray);
+  border-radius: 4px;
+}
+
+.items-grid-scroll::-webkit-scrollbar-thumb,
+.items-list-scroll::-webkit-scrollbar-thumb {
+  background: var(--pospire-border-gray);
+  border-radius: 4px;
+}
+
+/* ItemsSelector v-card - ensure it's a proper flex container */
+.enhanced-items-container .v-card.selection.pos-scrollable-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important; /* Grow to fill available space */
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ItemsSelector footer - ensure it never shrinks */
+.enhanced-items-container .pos-footer-section,
+.enhanced-items-container .enhanced-controls.pos-footer-section {
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+}
+
+/* ItemsSelector outer row - contains search bar and items column */
+.enhanced-items-container .pos-scrollable-content > .v-row.items {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto; /* auto basis ensures content is visible */
+  flex-wrap: nowrap !important;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ItemsSelector search bar v-cols - stay fixed, don't shrink */
+.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:not(:has(> div.items)) {
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  position: relative;
+  z-index: 10;
+  background: white;
+}
+
+/* First v-col (main search bar) specific styling */
+.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:first-child {
+  flex: 0 0 auto !important;
+  min-height: 48px; /* Ensure minimum height for search field */
+}
+
+/* Search wrapper needs solid background */
+.enhanced-items-container .enhanced-search-wrapper {
+  background: white;
+  position: relative;
+  z-index: 10;
+}
+
+/* Ensure search field has proper height */
+.enhanced-items-container .enhanced-search-field {
+  min-height: 40px;
+}
+
+/* ItemsSelector items column - needs to fill remaining space */
+/* Target any v-col that contains the items div */
+.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:has(> div.items) {
+  flex: 1 1 auto !important; /* Grow to fill remaining space */
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden;
+}
+
+/* Fallback: also target last v-col (which usually contains items) */
+.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:last-of-type:has(> div.items) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ItemsSelector inner items container - needs to scroll */
+.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col > div.items {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure the items div fills height regardless of which view mode */
+.enhanced-items-container div.items.enhanced-scrollbar {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* ItemsSelector list view container */
+.items-list-scroll.enhanced-data-table,
+div.items-list-scroll {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important; /* Let v-data-table handle scroll */
+}
+
+/* Override Vuetify overflow-y-auto if present */
+.items-list-scroll.overflow-y-auto {
+  overflow: hidden !important;
+}
+
+.items-list-scroll .v-data-table,
+.items-list-scroll > .v-data-table {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+.items-list-scroll .v-data-table .v-table__wrapper {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+}
+
+/* Payments scrollable content */
+.pos-panel-container > .pos-scrollable-content > .overflow-y-auto {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Responsive adjustments for layout utilities */
+/* Small screens - reduce footer padding */
+@media (max-width: 959px) {
+  .pos-footer-section {
+    padding: 8px 12px !important;
+  }
+  
+  .pos-scrollable-content {
+    padding: 8px !important;
+  }
+}
+
+/* Medium screens - standard padding */
+@media (min-width: 960px) and (max-width: 1919px) {
+  .pos-footer-section {
+    padding: 12px 16px !important;
+  }
+}
+
+/* Large screens - more padding for better spacing */
+@media (min-width: 1920px) {
+  .pos-footer-section {
+    padding: 16px 24px !important;
+  }
+}
+
+/* Aspect ratio adjustments for layout */
+/* Note: Panel height is now controlled by the height chain from .pos-page
+   These media queries only adjust footer padding for different screen ratios */
+
+/* 4:3 Aspect Ratio - optimize vertical space */
+@media (min-aspect-ratio: 1.2/1) and (max-aspect-ratio: 1.4/1) {
+  .pos-footer-section {
+    min-height: calc(60px * var(--pospire-scale-factor, 1));
+  }
+}
+
+/* 16:9 Aspect Ratio - wider screens */
+@media (min-aspect-ratio: 1.7/1) {
+  .pos-footer-section {
+    padding-left: calc(24px * var(--pospire-scale-factor, 1)) !important;
+    padding-right: calc(24px * var(--pospire-scale-factor, 1)) !important;
+  }
+}
+
+/* Ultra-wide 21:9 - maximize horizontal space */
+@media (min-aspect-ratio: 2.2/1) {
+  .pos-footer-section {
+    padding-left: calc(32px * var(--pospire-scale-factor, 1)) !important;
+    padding-right: calc(32px * var(--pospire-scale-factor, 1)) !important;
+  }
+}
+
+/* Portrait orientation adjustments */
+@media (orientation: portrait) and (max-width: 1024px) {
+  /* Stack panels vertically in portrait mode - each panel gets half height */
+  .pos-page > .itemselector-section {
+    flex-direction: column;
+  }
+
+  .v-col.test-pos,
+  .v-col.invoice-section {
+    height: 50%;
+    max-height: 50%;
+  }
+  
+  .pos-footer-section {
+    /* position: relative not needed - flexbox handles layout */
+    margin-top: calc(16px * var(--pospire-scale-factor, 1));
+  }
+}
+
+/* Touch devices - ensure adequate spacing */
+@media (pointer: coarse) {
+  .pos-footer-section {
+    min-height: 60px;
+    padding: 12px 16px !important;
+  }
+
+  .pos-scrollable-content {
+    padding-bottom: 8px;
+  }
+}
+
+/* Empty Cart State Styles */
+
+.empty-cart-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  min-height: 200px;
+}
+
+.empty-cart-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 16px;
+  background: rgba(0, 188, 212, 0.08);
+  border-radius: 50%;
+}
+
+.empty-cart-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--pospire-dark-text, #333);
+  margin: 0 0 8px 0;
+}
+
+.empty-cart-description {
+  font-size: 0.9rem;
+  color: var(--pospire-muted-text, #666);
+  margin: 0 0 16px 0;
+}
+
+.empty-cart-hints {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.empty-cart-hints span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--pospire-muted-text, #888);
+  background: var(--pospire-light-gray, #F5F5F5);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.empty-cart-hints .v-icon {
+  opacity: 0.8;
+}
+
+/* Responsive adjustments for empty cart */
+@media (max-width: 600px) {
+  .empty-cart-state {
+    padding: 24px 12px;
+    min-height: 150px;
+  }
+
+  .empty-cart-icon-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+
+  .empty-cart-icon-wrapper .v-icon {
+    font-size: 48px !important;
+  }
+
+  .empty-cart-title {
+    font-size: 1rem;
+  }
+
+  .empty-cart-hints {
+    gap: 8px;
+  }
+
+  .empty-cart-hints span {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+  }
+}
 
