@@ -49,10 +49,10 @@
 
         <!-- Change Details Section -->
         <div class="mb-4" v-if="diff_payment < 0 && !invoice_doc.is_return">
-          <v-card variant="flat" color="success" class="mb-3 section-header">
-            <v-card-title class="text-subtitle-1 py-2 text-white">
-              <v-icon start size="20" color="white">mdi-cash-refund</v-icon>
-              Change Details
+          <v-card variant="flat" class="mb-3 section-header">
+            <v-card-title class="section-header-title font-weight-bold">
+              <v-icon start size="20" color="#00BCD4">mdi-cash-refund</v-icon>
+              <span style="color: #34495E;">Change Details</span>
             </v-card-title>
           </v-card>
           <v-row>
@@ -111,6 +111,8 @@
                 v-model="payment.amount"
                 :rules="[isNumber]"
                 :prefix="currencySymbol(invoice_doc.currency)"
+                placeholder="0"
+                persistent-placeholder
                 @focus="set_rest_amount(payment.idx)"
                 :readonly="invoice_doc.is_return ? true : false"></v-text-field>
             </v-col>

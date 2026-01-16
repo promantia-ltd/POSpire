@@ -5,3 +5,6 @@
 tags
 node_modules
 __pycache__
+
+# Local issue tracking (not committed)
+ISSUES.md
