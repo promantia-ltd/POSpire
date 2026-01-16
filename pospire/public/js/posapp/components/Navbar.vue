@@ -46,7 +46,7 @@
 
       <v-spacer></v-spacer>
       <div class="user-info">
-        <v-chip class="user-chip posmati-chip-neutral" variant="tonal" color="grey-darken-2">
+        <v-chip class="user-chip pospire-chip-neutral" variant="tonal" color="grey-darken-2">
           <v-icon start size="small">mdi-account-circle</v-icon>
           {{ pos_profile.name || 'User' }}
         </v-chip>

@@ -1,17 +1,16 @@
 <template>
-  <div>
+  <div class="pos-panel-container">
     <v-card
       elevation="2"
       rounded="lg"
-      class="selection mx-auto"
-      style="max-height: 76vh; height: 76vh">
+      class="selection mx-auto pos-scrollable-content">
       <v-progress-linear
         :active="loading"
         :indeterminate="loading"
         absolute
         :location="top"
         color="info"></v-progress-linear>
-      <div class="overflow-y-auto pa-4" style="max-height: 75vh">
+      <div class="overflow-y-auto pa-4">
         <!-- Payment Status Section -->
         <div class="mb-4 blue-grey-lighten-5" v-if="invoice_doc">
           <v-card variant="flat" class="mb-3 section-header">
@@ -592,7 +591,7 @@
     </v-card>
 
     <!-- Action Buttons -->
-  <v-card elevation="2" rounded="lg" class="mt-3">
+  <v-card elevation="2" rounded="lg" class="pos-footer-section">
     <v-card-text class="pa-4">
       <v-row align="center" justify="space-between" no-gutters class="flex-wrap">
         <v-col cols="12" md="6" class="pa-1">
