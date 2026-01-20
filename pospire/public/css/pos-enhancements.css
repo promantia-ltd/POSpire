@@ -270,7 +270,8 @@ body:has(.pos-page) .modern-payments-card .customer-section-wrapper,
 .modern-payments-card .customer-section-wrapper {
   position: relative !important;
   z-index: 10 !important;
-  margin-bottom: 2rem !important;
+  margin-bottom: 3rem !important;
+  padding-bottom: 1rem !important;
 }
 
 body:has(.pos-page) .modern-payments-card .customer-section-wrapper .v-input,

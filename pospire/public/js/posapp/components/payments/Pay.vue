@@ -862,8 +862,8 @@ export default {
 }
 
 .section-icon {
-  color: var(--icon-section) !important;
-  background: var(--icon-section-bg);
+  color: var(--icon-section, #00BCD4) !important;
+  background: var(--icon-section-bg, rgba(0, 188, 212, 0.1));
   border-radius: 8px;
   padding: 6px;
 }
