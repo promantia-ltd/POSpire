@@ -16,7 +16,6 @@ app_license = "GPLv3"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/pospire/css/pos-enhancements.css"
-# app_include_js = "/assets/pospire/js/pospire.js"
 app_include_js = [
     "pospire.bundle.js",
 ]

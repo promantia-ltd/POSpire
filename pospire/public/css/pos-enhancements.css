@@ -3,8 +3,8 @@
  * Colors: White (#FFFFFF), Deep Slate (#34495E), Vibrant Teal (#00BCD4)
  */
 
-/* Prevent zoom - ensure initial-scale=1.0 is respected */
-html, body {
+/* Prevent zoom - ensure initial-scale=1.0 is respected (scoped to POS pages only) */
+html:has(.pos-page), body:has(.pos-page) {
   zoom: 1 !important;
   -webkit-text-size-adjust: 100% !important;
   text-size-adjust: 100% !important;
@@ -25,44 +25,45 @@ html, body {
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Raleway:wght@700;800&family=Dancing+Script:wght@500;600;700&display=swap');
 
-.v-application,
-.v-main,
-body,
-.pos-enhanced {
+/* Font family - scoped to POS pages only */
+body:has(.pos-page) .v-application,
+body:has(.pos-page) .v-main,
+body:has(.pos-page),
+.pos-page .pos-enhanced {
   font-family: var(--pospire-font-family) !important;
 }
 
-/* Header & Navigation */
-.v-app-bar.v-toolbar {
+/* Header & Navigation - scoped to POS pages only */
+body:has(.pos-page) .v-app-bar.v-toolbar {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
   border-bottom: 1px solid #e2e8f0 !important;
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08) !important;
 }
 
-.v-app-bar .v-toolbar__content {
+body:has(.pos-page) .v-app-bar .v-toolbar__content {
   padding: 0 1.5rem !important;
 }
 
-.v-app-bar .v-btn {
+body:has(.pos-page) .v-app-bar .v-btn {
   border-radius: 8px !important;
   text-transform: none !important;
   font-weight: 500 !important;
   transition: all 0.3s ease !important;
 }
 
-.v-app-bar .v-btn:hover {
+body:has(.pos-page) .v-app-bar .v-btn:hover {
   background: rgba(59, 130, 246, 0.1) !important;
   transform: translateY(-1px);
 }
 
-/* Modern logo styling */
-.v-app-bar img {
+/* Modern logo styling - scoped to POS pages */
+body:has(.pos-page) .v-app-bar img {
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Enhanced brand text */
-.v-app-bar .v-toolbar__title {
+/* Enhanced brand text - scoped to POS pages */
+body:has(.pos-page) .v-app-bar .v-toolbar__title {
   font-weight: 700 !important;
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   -webkit-background-clip: text;
@@ -71,44 +72,44 @@ body,
   letter-spacing: -0.025em;
 }
 
-/* Secondary navigation bar */
-.v-navigation-drawer {
+/* Secondary navigation bar - scoped to POS pages only */
+body:has(.pos-page) .v-navigation-drawer {
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
   border-right: 1px solid #e2e8f0 !important;
 }
 
-.v-navigation-drawer .v-list {
+body:has(.pos-page) .v-navigation-drawer .v-list {
   background: transparent !important;
 }
 
-.v-navigation-drawer .v-list-item {
+body:has(.pos-page) .v-navigation-drawer .v-list-item {
   border-radius: 8px !important;
   margin: 0.25rem 0.5rem !important;
   transition: all 0.3s ease !important;
 }
 
-.v-navigation-drawer .v-list-item:hover {
+body:has(.pos-page) .v-navigation-drawer .v-list-item:hover {
   background: rgba(59, 130, 246, 0.1) !important;
   transform: translateX(4px);
 }
 
-.v-navigation-drawer .v-list-item--active {
+body:has(.pos-page) .v-navigation-drawer .v-list-item--active {
   background: rgba(59, 130, 246, 0.15) !important;
   color: #3b82f6 !important;
 }
 
-/* Modern breadcrumb navigation */
-nav[role="navigation"] {
+/* Modern breadcrumb navigation - scoped to POS pages only */
+body:has(.pos-page) nav[role="navigation"] {
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
   border-bottom: 1px solid #cbd5e1 !important;
   padding: 0.75rem 1.5rem !important;
 }
 
-nav[role="navigation"] .v-list {
+body:has(.pos-page) nav[role="navigation"] .v-list {
   background: transparent !important;
 }
 
-nav[role="navigation"] .v-list-item {
+body:has(.pos-page) nav[role="navigation"] .v-list-item {
   background: rgba(255, 255, 255, 0.7) !important;
   border-radius: 20px !important;
   margin: 0 0.25rem !important;
@@ -117,14 +118,15 @@ nav[role="navigation"] .v-list-item {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
 
-nav[role="navigation"] .v-list-item:hover {
+body:has(.pos-page) nav[role="navigation"] .v-list-item:hover {
   background: rgba(255, 255, 255, 1) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
   transform: translateY(-1px);
 }
 
-/* Empty States */
-.enhanced-empty-state {
+/* Empty States - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-empty-state,
+.pos-page .enhanced-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -138,27 +140,31 @@ nav[role="navigation"] .v-list-item:hover {
   margin: 2rem 0;
 }
 
-.enhanced-empty-state-icon {
+body:has(.pos-page) .enhanced-empty-state-icon,
+.pos-page .enhanced-empty-state-icon {
   font-size: 4rem;
   color: #94a3b8;
   margin-bottom: 1rem;
 }
 
-.enhanced-empty-state-title {
+body:has(.pos-page) .enhanced-empty-state-title,
+.pos-page .enhanced-empty-state-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #475569;
   margin-bottom: 0.5rem;
 }
 
-.enhanced-empty-state-description {
+body:has(.pos-page) .enhanced-empty-state-description,
+.pos-page .enhanced-empty-state-description {
   font-size: 0.95rem;
   color: #64748b;
   margin-bottom: 1.5rem;
   max-width: 400px;
 }
 
-.enhanced-empty-state-action {
+body:has(.pos-page) .enhanced-empty-state-action,
+.pos-page .enhanced-empty-state-action {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: white;
   padding: 0.75rem 1.5rem;
@@ -170,22 +176,138 @@ nav[role="navigation"] .v-list-item:hover {
   cursor: pointer;
 }
 
-.enhanced-empty-state-action:hover {
+body:has(.pos-page) .enhanced-empty-state-action:hover,
+.pos-page .enhanced-empty-state-action:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25);
 }
 
-/* Section Headers */
+/* Section Headers - SCOPED to POS pages */
 
-.section-header,
-.pospire-section-header {
+body:has(.pos-page) .section-header,
+body:has(.pos-page) .pospire-section-header,
+.pos-page .section-header,
+.pos-page .pospire-section-header {
   background-color: #ECEFF1 !important;
   border-radius: var(--pospire-radius-md, 6px) !important;
 }
 
-.section-header .v-card-title,
-.section-header-title,
-.pospire-section-title {
+/* Payment Section z-index fix - ensure inputs are not overlapped */
+.pos-panel-container .v-text-field,
+.pos-panel-container .v-input {
+  position: relative;
+  z-index: auto;
+}
+
+/* Payment section cards establish proper stacking context */
+.pos-panel-container .section-header {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure payment input overlays appear above section headers */
+.pos-panel-container .v-input .v-overlay__content,
+.pos-panel-container .v-select .v-overlay__content {
+  z-index: 100 !important;
+}
+
+/* Dropdown overlay z-index */
+body:has(.pos-page) .v-overlay--active .v-overlay__content,
+.pos-page .v-overlay--active .v-overlay__content {
+  z-index: 2400 !important;
+}
+
+/* Payments page - fix v-autocomplete fieldset extending beyond bounds */
+body:has(.pos-page) .modern-payments-card .v-autocomplete,
+body:has(.pos-page) .modern-payments-card .v-select,
+.pos-page .modern-payments-card .v-autocomplete,
+.pos-page .modern-payments-card .v-select {
+  display: inline-flex !important;
+  width: 100% !important;
+}
+
+body:has(.pos-page) .modern-payments-card .v-input__control,
+.pos-page .modern-payments-card .v-input__control {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+body:has(.pos-page) .modern-payments-card .v-field,
+.pos-page .modern-payments-card .v-field {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 0 auto !important;
+}
+
+body:has(.pos-page) .modern-payments-card .v-field__outline,
+.pos-page .modern-payments-card .v-field__outline {
+  --v-field-border-width: 1px;
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  pointer-events: none !important;
+  contain: strict !important;
+}
+
+/* Payments page section-header - transparent background */
+body:has(.pos-page) .modern-payments-card .section-header,
+.pos-page .modern-payments-card .section-header,
+.modern-payments-card .section-header {
+  background-color: transparent !important;
+  padding: 0 !important;
+  margin: 0 0 1rem 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  position: relative !important;
+}
+
+/* Customer section - z-index: 10 (above Invoices) */
+body:has(.pos-page) .modern-payments-card .customer-section-wrapper,
+.pos-page .modern-payments-card .customer-section-wrapper,
+.modern-payments-card .customer-section-wrapper {
+  position: relative !important;
+  z-index: 10 !important;
+  margin-bottom: 3rem !important;
+  padding-bottom: 1rem !important;
+}
+
+body:has(.pos-page) .modern-payments-card .customer-section-wrapper .v-input,
+.pos-page .modern-payments-card .customer-section-wrapper .v-input {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* Customer dropdown overlays - z-index: 100 */
+body:has(.pos-page) .modern-payments-card .v-autocomplete .v-overlay__content,
+body:has(.pos-page) .modern-payments-card .v-select .v-overlay__content,
+.pos-page .modern-payments-card .v-autocomplete .v-overlay__content,
+.pos-page .modern-payments-card .v-select .v-overlay__content {
+  z-index: 100 !important;
+}
+
+/* Invoices section - z-index: 1 (below Customer) */
+body:has(.pos-page) .modern-payments-card .invoices-section-wrapper,
+.pos-page .modern-payments-card .invoices-section-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+body:has(.pos-page) .modern-payments-card .section-header .modern-section-card,
+.pos-page .modern-payments-card .section-header .modern-section-card {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Section header title - SCOPED to POS pages */
+body:has(.pos-page) .section-header .v-card-title,
+body:has(.pos-page) .section-header-title,
+body:has(.pos-page) .pospire-section-title,
+.pos-page .section-header .v-card-title,
+.pos-page .section-header-title,
+.pos-page .pospire-section-title {
   color: #34495E !important;
   font-weight: 600 !important;
   font-size: 1rem !important;
@@ -194,26 +316,34 @@ nav[role="navigation"] .v-list-item:hover {
   padding: 12px 16px !important;
 }
 
-.section-header .v-icon,
-.section-header-title .v-icon,
-.pospire-section-title .v-icon {
+/* Section header icons - SCOPED to POS pages */
+body:has(.pos-page) .section-header .v-icon,
+body:has(.pos-page) .section-header-title .v-icon,
+body:has(.pos-page) .pospire-section-title .v-icon,
+.pos-page .section-header .v-icon,
+.pos-page .section-header-title .v-icon,
+.pos-page .pospire-section-title .v-icon {
   color: #00BCD4 !important;
   margin-right: 8px;
 }
 
-/* Override Vuetify text-primary on section headers */
-.section-header .text-primary,
-.section-header-title.text-primary {
+/* Override Vuetify text-primary on section headers - SCOPED to POS pages */
+body:has(.pos-page) .section-header .text-primary,
+body:has(.pos-page) .section-header-title.text-primary,
+.pos-page .section-header .text-primary,
+.pos-page .section-header-title.text-primary {
   color: #34495E !important;
 }
 
-/* Search Bar */
-.enhanced-search-container {
+/* Search Bar - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-search-container,
+.pos-page .enhanced-search-container {
   position: relative;
   margin-bottom: 1.5rem;
 }
 
-.enhanced-search-input {
+body:has(.pos-page) .enhanced-search-input,
+.pos-page .enhanced-search-input {
   background: white;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
@@ -224,7 +354,8 @@ nav[role="navigation"] .v-list-item:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.enhanced-search-input:focus {
+body:has(.pos-page) .enhanced-search-input:focus,
+.pos-page .enhanced-search-input:focus {
   border-color: var(--pospire-vibrant-teal);
   box-shadow:
     0 0 0 3px rgba(0, 188, 212, 0.2),
@@ -233,7 +364,8 @@ nav[role="navigation"] .v-list-item:hover {
   transform: scale(1.01);
 }
 
-.enhanced-search-icon {
+body:has(.pos-page) .enhanced-search-icon,
+.pos-page .enhanced-search-icon {
   position: absolute;
   left: 1rem;
   top: 50%;
@@ -242,9 +374,10 @@ nav[role="navigation"] .v-list-item:hover {
   font-size: 1.25rem;
 }
 
-/* Card View */
+/* Card View - SCOPED to POS pages */
 /* Per Design: White fill, #E0E0E0 border, 4px radius, 12px padding */
-.enhanced-item-card {
+body:has(.pos-page) .enhanced-item-card,
+.pos-page .enhanced-item-card {
   background: var(--pospire-clean-white);
   border-radius: var(--pospire-radius-sm);
   overflow: hidden;
@@ -257,18 +390,21 @@ nav[role="navigation"] .v-list-item:hover {
   flex-direction: column;
 }
 
-.enhanced-item-card:hover {
+body:has(.pos-page) .enhanced-item-card:hover,
+.pos-page .enhanced-item-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--pospire-shadow-lg);
   border-color: var(--pospire-vibrant-teal);
 }
 
-.enhanced-item-card.enhanced-out-of-stock {
+body:has(.pos-page) .enhanced-item-card.enhanced-out-of-stock,
+.pos-page .enhanced-item-card.enhanced-out-of-stock {
   opacity: 0.6;
   background: #f8f9fa;
 }
 
-.enhanced-item-image {
+body:has(.pos-page) .enhanced-item-image,
+.pos-page .enhanced-item-image {
   position: relative;
   overflow: hidden;
   height: 140px;
@@ -276,18 +412,21 @@ nav[role="navigation"] .v-list-item:hover {
   flex-shrink: 0;
 }
 
-.enhanced-item-image img {
+body:has(.pos-page) .enhanced-item-image img,
+.pos-page .enhanced-item-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
 }
 
-.enhanced-item-card:hover .enhanced-item-image img {
+body:has(.pos-page) .enhanced-item-card:hover .enhanced-item-image img,
+.pos-page .enhanced-item-card:hover .enhanced-item-image img {
   transform: scale(1.05);
 }
 
-.enhanced-item-badge {
+body:has(.pos-page) .enhanced-item-badge,
+.pos-page .enhanced-item-badge {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -299,11 +438,13 @@ nav[role="navigation"] .v-list-item:hover {
   font-weight: 600;
 }
 
-.enhanced-item-badge.out-of-stock {
+body:has(.pos-page) .enhanced-item-badge.out-of-stock,
+.pos-page .enhanced-item-badge.out-of-stock {
   background: rgba(239, 68, 68, 0.9);
 }
 
-.enhanced-item-info {
+body:has(.pos-page) .enhanced-item-info,
+.pos-page .enhanced-item-info {
   padding: 0.75rem;
   flex-grow: 1;
   display: flex;
@@ -311,7 +452,8 @@ nav[role="navigation"] .v-list-item:hover {
   justify-content: space-between;
 }
 
-.enhanced-item-name {
+body:has(.pos-page) .enhanced-item-name,
+.pos-page .enhanced-item-name {
   font-size: 0.9rem;
   font-weight: 600;
   color: #1e293b;
@@ -323,14 +465,16 @@ nav[role="navigation"] .v-list-item:hover {
   overflow: hidden;
 }
 
-.enhanced-item-price {
+body:has(.pos-page) .enhanced-item-price,
+.pos-page .enhanced-item-price {
   font-size: 1.1rem;
   font-weight: 700;
   color: #059669;
   margin-bottom: 0.25rem;
 }
 
-.enhanced-item-stock {
+body:has(.pos-page) .enhanced-item-stock,
+.pos-page .enhanced-item-stock {
   font-size: 0.8rem;
   color: #6b7280;
   display: flex;
@@ -338,29 +482,35 @@ nav[role="navigation"] .v-list-item:hover {
   gap: 0.25rem;
 }
 
-.enhanced-stock-indicator {
+body:has(.pos-page) .enhanced-stock-indicator,
+.pos-page .enhanced-stock-indicator {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #10b981;
 }
 
-.enhanced-stock-indicator.low-stock {
+body:has(.pos-page) .enhanced-stock-indicator.low-stock,
+.pos-page .enhanced-stock-indicator.low-stock {
   background: #f59e0b;
 }
 
-.enhanced-stock-indicator.out-of-stock {
+body:has(.pos-page) .enhanced-stock-indicator.out-of-stock,
+.pos-page .enhanced-stock-indicator.out-of-stock {
   background: #ef4444;
 }
 
-/* Action Buttons */
-.enhanced-action-buttons {
+/* Action Buttons - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-action-buttons,
+.pos-page .enhanced-action-buttons {
   display: flex;
   gap: 0.75rem;
   margin-top: 1rem;
 }
 
-.enhanced-btn-primary {
+/* Enhanced buttons - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-btn-primary,
+.pos-page .enhanced-btn-primary {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   color: white;
   border: none;
@@ -374,12 +524,14 @@ nav[role="navigation"] .v-list-item:hover {
   letter-spacing: 0.025em;
 }
 
-.enhanced-btn-primary:hover {
+body:has(.pos-page) .enhanced-btn-primary:hover,
+.pos-page .enhanced-btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(5, 150, 105, 0.25);
 }
 
-.enhanced-btn-secondary {
+body:has(.pos-page) .enhanced-btn-secondary,
+.pos-page .enhanced-btn-secondary {
   background: white;
   color: #374151;
   border: 2px solid #e5e7eb;
@@ -393,13 +545,15 @@ nav[role="navigation"] .v-list-item:hover {
   letter-spacing: 0.025em;
 }
 
-.enhanced-btn-secondary:hover {
+body:has(.pos-page) .enhanced-btn-secondary:hover,
+.pos-page .enhanced-btn-secondary:hover {
   border-color: #d1d5db;
   background: #f9fafb;
   transform: translateY(-1px);
 }
 
-.enhanced-btn-danger {
+body:has(.pos-page) .enhanced-btn-danger,
+.pos-page .enhanced-btn-danger {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   color: white;
   border: none;
@@ -413,13 +567,15 @@ nav[role="navigation"] .v-list-item:hover {
   letter-spacing: 0.025em;
 }
 
-.enhanced-btn-danger:hover {
+body:has(.pos-page) .enhanced-btn-danger:hover,
+.pos-page .enhanced-btn-danger:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(220, 38, 38, 0.25);
 }
 
-/* Cart/Invoice Panel */
-.enhanced-cart-panel {
+/* Cart/Invoice Panel - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-cart-panel,
+.pos-page .enhanced-cart-panel {
   background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%) !important;
   border-radius: 16px !important;
   border: 3px solid #3b82f6 !important;
@@ -428,15 +584,18 @@ nav[role="navigation"] .v-list-item:hover {
   transform: translateY(-2px) !important;
 }
 
-.enhanced-cart-panel .items {
+body:has(.pos-page) .enhanced-cart-panel .items,
+.pos-page .enhanced-cart-panel .items {
   padding: 1rem 0.5rem;
 }
 
-.enhanced-cart-panel .v-data-table {
+body:has(.pos-page) .enhanced-cart-panel .v-data-table,
+.pos-page .enhanced-cart-panel .v-data-table {
   background: transparent;
 }
 
-.enhanced-cart-panel .v-data-table th {
+body:has(.pos-page) .enhanced-cart-panel .v-data-table th,
+.pos-page .enhanced-cart-panel .v-data-table th {
   background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%) !important;
   font-weight: 700 !important;
   color: #1e40af !important;
@@ -444,15 +603,18 @@ nav[role="navigation"] .v-list-item:hover {
   font-size: 0.9rem !important;
 }
 
-.enhanced-cart-panel .v-data-table td {
+body:has(.pos-page) .enhanced-cart-panel .v-data-table td,
+.pos-page .enhanced-cart-panel .v-data-table td {
   border-bottom: 1px solid #f1f5f9 !important;
 }
 
-.enhanced-cart-panel .v-data-table tbody tr:hover {
+body:has(.pos-page) .enhanced-cart-panel .v-data-table tbody tr:hover,
+.pos-page .enhanced-cart-panel .v-data-table tbody tr:hover {
   background: #f8fafc !important;
 }
 
-.enhanced-cart-header {
+body:has(.pos-page) .enhanced-cart-header,
+.pos-page .enhanced-cart-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -461,13 +623,15 @@ nav[role="navigation"] .v-list-item:hover {
   border-bottom: 2px solid #f1f5f9;
 }
 
-.enhanced-cart-title {
+body:has(.pos-page) .enhanced-cart-title,
+.pos-page .enhanced-cart-title {
   font-size: 1.25rem;
   font-weight: 700;
   color: #1e293b;
 }
 
-.enhanced-cart-count {
+body:has(.pos-page) .enhanced-cart-count,
+.pos-page .enhanced-cart-count {
   background: #3b82f6;
   color: white;
   border-radius: 20px;
@@ -476,7 +640,8 @@ nav[role="navigation"] .v-list-item:hover {
   font-weight: 600;
 }
 
-.enhanced-totals-section {
+body:has(.pos-page) .enhanced-totals-section,
+.pos-page .enhanced-totals-section {
   background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%) !important;
   border-radius: 16px !important;
   border: 3px solid #10b981 !important;
@@ -485,7 +650,8 @@ nav[role="navigation"] .v-list-item:hover {
   transform: translateY(-2px) !important;
 }
 
-.enhanced-totals-section .v-btn {
+body:has(.pos-page) .enhanced-totals-section .v-btn,
+.pos-page .enhanced-totals-section .v-btn {
   border-radius: 12px !important;
   font-weight: 700 !important;
   text-transform: none !important;
@@ -495,42 +661,52 @@ nav[role="navigation"] .v-list-item:hover {
   font-size: 0.95rem !important;
 }
 
-.enhanced-totals-section .v-btn:hover {
+body:has(.pos-page) .enhanced-totals-section .v-btn:hover,
+.pos-page .enhanced-totals-section .v-btn:hover {
   transform: translateY(-3px) !important;
   box-shadow: 0 10px 30px rgba(16, 185, 129, 0.25) !important;
 }
 
-/* Enhanced input fields in right panel */
-.enhanced-cart-panel .v-text-field,
-.enhanced-totals-section .v-text-field {
+/* Enhanced input fields in right panel - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-cart-panel .v-text-field,
+body:has(.pos-page) .enhanced-totals-section .v-text-field,
+.pos-page .enhanced-cart-panel .v-text-field,
+.pos-page .enhanced-totals-section .v-text-field {
   background: rgba(255, 255, 255, 0.8) !important;
   border-radius: 8px !important;
 }
 
-.enhanced-cart-panel .v-text-field .v-field,
-.enhanced-totals-section .v-text-field .v-field {
+body:has(.pos-page) .enhanced-cart-panel .v-text-field .v-field,
+body:has(.pos-page) .enhanced-totals-section .v-text-field .v-field,
+.pos-page .enhanced-cart-panel .v-text-field .v-field,
+.pos-page .enhanced-totals-section .v-text-field .v-field {
   background: rgba(255, 255, 255, 0.9) !important;
   border-radius: 8px !important;
   border: 2px solid #e2e8f0 !important;
 }
 
-.enhanced-cart-panel .v-text-field .v-field:hover,
-.enhanced-totals-section .v-text-field .v-field:hover {
+body:has(.pos-page) .enhanced-cart-panel .v-text-field .v-field:hover,
+body:has(.pos-page) .enhanced-totals-section .v-text-field .v-field:hover,
+.pos-page .enhanced-cart-panel .v-text-field .v-field:hover,
+.pos-page .enhanced-totals-section .v-text-field .v-field:hover {
   border-color: var(--pospire-vibrant-teal) !important;
 }
 
-.enhanced-totals-section .v-btn.v-btn--size-large {
+body:has(.pos-page) .enhanced-totals-section .v-btn.v-btn--size-large,
+.pos-page .enhanced-totals-section .v-btn.v-btn--size-large {
   min-height: 48px;
 }
 
-.enhanced-total-row {
+body:has(.pos-page) .enhanced-total-row,
+.pos-page .enhanced-total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0;
 }
 
-.enhanced-total-row.grand-total {
+body:has(.pos-page) .enhanced-total-row.grand-total,
+.pos-page .enhanced-total-row.grand-total {
   border-top: 2px solid #e2e8f0;
   margin-top: 1rem;
   padding-top: 1rem;
@@ -538,13 +714,15 @@ nav[role="navigation"] .v-list-item:hover {
   font-size: 1.1rem;
 }
 
-.enhanced-total-amount {
+body:has(.pos-page) .enhanced-total-amount,
+.pos-page .enhanced-total-amount {
   color: #059669;
   font-weight: 600;
 }
 
-/* Filter & View Controls */
-.enhanced-controls {
+/* Filter & View Controls - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-controls,
+.pos-page .enhanced-controls {
   background: white;
   border-radius: 12px;
   padding: 1rem;
@@ -553,14 +731,16 @@ nav[role="navigation"] .v-list-item:hover {
   border: 1px solid #f1f5f9;
 }
 
-.enhanced-view-toggle {
+body:has(.pos-page) .enhanced-view-toggle,
+.pos-page .enhanced-view-toggle {
   display: flex;
   background: #f1f5f9;
   border-radius: 8px;
   padding: 4px;
 }
 
-.enhanced-view-btn {
+body:has(.pos-page) .enhanced-view-btn,
+.pos-page .enhanced-view-btn {
   flex: 1;
   padding: 0.5rem 1rem;
   border: none;
@@ -572,20 +752,23 @@ nav[role="navigation"] .v-list-item:hover {
   color: #64748b;
 }
 
-.enhanced-view-btn.active {
+body:has(.pos-page) .enhanced-view-btn.active,
+.pos-page .enhanced-view-btn.active {
   background: white;
   color: #3b82f6;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
   font-weight: 600;
 }
 
-.enhanced-filter-chips {
+body:has(.pos-page) .enhanced-filter-chips,
+.pos-page .enhanced-filter-chips {
   display: flex;
   gap: 0.5rem;
   margin-top: 1rem;
 }
 
-.enhanced-chip {
+body:has(.pos-page) .enhanced-chip,
+.pos-page .enhanced-chip {
   background: #eff6ff;
   color: #3b82f6;
   padding: 0.5rem 1rem;
@@ -597,19 +780,22 @@ nav[role="navigation"] .v-list-item:hover {
   transition: all 0.3s ease;
 }
 
-.enhanced-chip.active {
+body:has(.pos-page) .enhanced-chip.active,
+.pos-page .enhanced-chip.active {
   background: #3b82f6;
   color: white;
   border-color: #3b82f6;
 }
 
-.enhanced-chip:hover {
+body:has(.pos-page) .enhanced-chip:hover,
+.pos-page .enhanced-chip:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
-/* Data Tables */
-.enhanced-data-table {
+/* Data Tables - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-data-table,
+.pos-page .enhanced-data-table {
   background: white;
   border-radius: 12px;
   overflow: hidden;
@@ -617,24 +803,28 @@ nav[role="navigation"] .v-list-item:hover {
   border: 1px solid #f1f5f9;
 }
 
-.enhanced-table-header {
+body:has(.pos-page) .enhanced-table-header,
+.pos-page .enhanced-table-header {
   background: #f8fafc;
   font-weight: 600;
   color: #374151;
   border-bottom: 2px solid #e2e8f0;
 }
 
-.enhanced-table-row {
+body:has(.pos-page) .enhanced-table-row,
+.pos-page .enhanced-table-row {
   border-bottom: 1px solid #f1f5f9;
   transition: all 0.2s ease;
 }
 
-.enhanced-table-row:hover {
+body:has(.pos-page) .enhanced-table-row:hover,
+.pos-page .enhanced-table-row:hover {
   background: #f8fafc;
 }
 
-/* Loading States */
-.enhanced-loading {
+/* Loading States - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-loading,
+.pos-page .enhanced-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -643,7 +833,8 @@ nav[role="navigation"] .v-list-item:hover {
   color: #64748b;
 }
 
-.enhanced-spinner {
+body:has(.pos-page) .enhanced-spinner,
+.pos-page .enhanced-spinner {
   width: 40px;
   height: 40px;
   border: 4px solid #e2e8f0;
@@ -662,8 +853,9 @@ nav[role="navigation"] .v-list-item:hover {
   }
 }
 
-/* Notifications */
-.enhanced-notification {
+/* Notifications - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-notification,
+.pos-page .enhanced-notification {
   position: fixed;
   top: 20px;
   right: 20px;
@@ -676,11 +868,13 @@ nav[role="navigation"] .v-list-item:hover {
   transition: all 0.3s ease;
 }
 
-.enhanced-notification.error {
+body:has(.pos-page) .enhanced-notification.error,
+.pos-page .enhanced-notification.error {
   border-left-color: #ef4444;
 }
 
-.enhanced-notification.warning {
+body:has(.pos-page) .enhanced-notification.warning,
+.pos-page .enhanced-notification.warning {
   border-left-color: #f59e0b;
 }
 
@@ -1119,13 +1313,15 @@ nav[role="navigation"] .v-list-item:hover {
   }
 }
 
-/* Accessibility */
-.enhanced-focus-visible:focus {
+/* Accessibility - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-focus-visible:focus,
+.pos-page .enhanced-focus-visible:focus {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
-.enhanced-screen-reader-only {
+body:has(.pos-page) .enhanced-screen-reader-only,
+.pos-page .enhanced-screen-reader-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -1137,8 +1333,9 @@ nav[role="navigation"] .v-list-item:hover {
   border: 0;
 }
 
-/* Animations */
-.enhanced-fade-in {
+/* Animations - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-fade-in,
+.pos-page .enhanced-fade-in {
   animation: enhanced-fadeIn 0.3s ease-in-out;
 }
 
@@ -1153,7 +1350,8 @@ nav[role="navigation"] .v-list-item:hover {
   }
 }
 
-.enhanced-scale-in {
+body:has(.pos-page) .enhanced-scale-in,
+.pos-page .enhanced-scale-in {
   animation: enhanced-scaleIn 0.2s ease-out;
 }
 
@@ -1168,22 +1366,26 @@ nav[role="navigation"] .v-list-item:hover {
   }
 }
 
-/* Custom Scrollbar */
-.enhanced-scrollbar::-webkit-scrollbar {
+/* Custom Scrollbar - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-scrollbar::-webkit-scrollbar,
+.pos-page .enhanced-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
 
-.enhanced-scrollbar::-webkit-scrollbar-track {
+body:has(.pos-page) .enhanced-scrollbar::-webkit-scrollbar-track,
+.pos-page .enhanced-scrollbar::-webkit-scrollbar-track {
   background: #f1f5f9;
   border-radius: 4px;
 }
 
-.enhanced-scrollbar::-webkit-scrollbar-thumb {
+body:has(.pos-page) .enhanced-scrollbar::-webkit-scrollbar-thumb,
+.pos-page .enhanced-scrollbar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
 
-.enhanced-scrollbar::-webkit-scrollbar-thumb:hover {
+body:has(.pos-page) .enhanced-scrollbar::-webkit-scrollbar-thumb:hover,
+.pos-page .enhanced-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
@@ -1227,21 +1429,24 @@ nav[role="navigation"] .v-list-item:hover {
 .pos-content-table {  }
 .pos-footer-card {  } */
 
-/* Enhanced Modal Legacy Classes - Override with new design */
-.enhanced-modal-header {
+/* Enhanced Modal Legacy Classes - Override with new design - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-modal-header,
+.pos-page .enhanced-modal-header {
   background: var(--pospire-clean-white) !important;
   border-bottom: 2px solid var(--pospire-border-gray) !important;
   padding: 20px 24px !important;
 }
 
-.enhanced-add-section {
+body:has(.pos-page) .enhanced-add-section,
+.pos-page .enhanced-add-section {
   background: var(--pospire-light-gray);
   padding: 16px;
   border-radius: 8px;
   border: 1px solid var(--pospire-border-gray);
 }
 
-.enhanced-add-btn {
+body:has(.pos-page) .enhanced-add-btn,
+.pos-page .enhanced-add-btn {
   height: 38px !important;
   background: var(--pospire-gradient-teal) !important;
   color: var(--pospire-clean-white) !important;
@@ -1249,18 +1454,22 @@ nav[role="navigation"] .v-list-item:hover {
   text-transform: none !important;
 }
 
-.enhanced-add-btn:hover {
+body:has(.pos-page) .enhanced-add-btn:hover,
+.pos-page .enhanced-add-btn:hover {
   background: linear-gradient(135deg, #00ACC1 0%, #0097A7 100%) !important;
   transform: translateY(-1px);
 }
 
-.enhanced-coupons-table,
-.enhanced-list-section {
+body:has(.pos-page) .enhanced-coupons-table,
+body:has(.pos-page) .enhanced-list-section,
+.pos-page .enhanced-coupons-table,
+.pos-page .enhanced-list-section {
   border-radius: 8px;
   overflow: hidden;
 }
 
-.enhanced-empty-state {
+body:has(.pos-page) .enhanced-empty-state,
+.pos-page .enhanced-empty-state {
   text-align: center;
   padding: 48px 24px;
   background: var(--pospire-light-gray);
@@ -1268,14 +1477,16 @@ nav[role="navigation"] .v-list-item:hover {
   border: 2px dashed var(--pospire-border-gray);
 }
 
-.enhanced-empty-state-title {
+body:has(.pos-page) .enhanced-empty-state-title,
+.pos-page .enhanced-empty-state-title {
   font: var(--pospire-font-headline);
   color: var(--pospire-deep-slate);
   margin-top: 16px;
   margin-bottom: 8px;
 }
 
-.enhanced-empty-state-description {
+body:has(.pos-page) .enhanced-empty-state-description,
+.pos-page .enhanced-empty-state-description {
   font: var(--pospire-font-body-regular);
   color: var(--pospire-text-secondary);
   line-height: 1.6;
@@ -1304,16 +1515,18 @@ nav[role="navigation"] .v-list-item:hover {
   }
 }
 
-/* Modal overlay/scrim styling */
-.v-overlay--active .v-overlay__scrim {
+/* Modal overlay/scrim styling - SCOPED to POS pages */
+body:has(.pos-page) .v-overlay--active .v-overlay__scrim,
+.pos-page .v-overlay--active .v-overlay__scrim {
   background: rgba(52, 73, 94, 0.6) !important;
   backdrop-filter: blur(4px);
   animation: modalBackdropFade 0.2s ease-out;
 }
 
-/* Main modal card styling */
+/* Main modal card styling - SCOPED to POS pages */
 .pospire-modal,
-.v-dialog > .v-overlay__content > .v-card {
+body:has(.pos-page) .v-dialog > .v-overlay__content > .v-card,
+.pos-page .v-dialog > .v-overlay__content > .v-card {
   border-radius: 16px !important;
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
@@ -1323,9 +1536,10 @@ nav[role="navigation"] .v-list-item:hover {
   background: #FFFFFF !important;
 }
 
-/* Modal header styling */
+/* Modal header styling - SCOPED to POS pages */
 .pospire-modal-header,
-.v-dialog .v-card > .v-card-title {
+body:has(.pos-page) .v-dialog .v-card > .v-card-title,
+.pos-page .v-dialog .v-card > .v-card-title {
   background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%) !important;
   border-bottom: 1px solid #e2e8f0 !important;
   padding: 20px 24px !important;
@@ -1334,10 +1548,12 @@ nav[role="navigation"] .v-list-item:hover {
   gap: 12px;
 }
 
-/* Modal title text */
+/* Modal title text - SCOPED to POS pages */
 .pospire-modal-title,
-.v-dialog .v-card > .v-card-title .text-h5,
-.v-dialog .v-card > .v-card-title > span {
+body:has(.pos-page) .v-dialog .v-card > .v-card-title .text-h5,
+body:has(.pos-page) .v-dialog .v-card > .v-card-title > span,
+.pos-page .v-dialog .v-card > .v-card-title .text-h5,
+.pos-page .v-dialog .v-card > .v-card-title > span {
   font-family: 'Inter', sans-serif !important;
   font-size: 1.25rem !important;
   font-weight: 600 !important;
@@ -1347,15 +1563,17 @@ nav[role="navigation"] .v-list-item:hover {
   line-height: 1.4;
 }
 
-/* Override text-primary in modal titles */
-.v-dialog .v-card .text-primary {
+/* Override text-primary in modal titles - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card .text-primary,
+.pos-page .v-dialog .v-card .text-primary {
   color: #34495E !important;
   -webkit-text-fill-color: #34495E !important;
 }
 
-/* Modal body styling */
+/* Modal body styling - SCOPED to POS pages */
 .pospire-modal-body,
-.v-dialog .v-card > .v-card-text {
+body:has(.pos-page) .v-dialog .v-card > .v-card-text,
+.pos-page .v-dialog .v-card > .v-card-text {
   padding: 24px !important;
   color: #64748b !important;
   font-size: 0.95rem !important;
@@ -1363,19 +1581,22 @@ nav[role="navigation"] .v-list-item:hover {
   background: #FFFFFF;
 }
 
-/* Modal actions/footer styling */
+/* Modal actions/footer styling - SCOPED to POS pages */
 .pospire-modal-actions,
-.v-dialog .v-card > .v-card-actions {
+body:has(.pos-page) .v-dialog .v-card > .v-card-actions,
+.pos-page .v-dialog .v-card > .v-card-actions {
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
   border-top: 1px solid #e2e8f0 !important;
   padding: 16px 24px !important;
   gap: 12px;
 }
 
-/* Modal action buttons - Secondary/Cancel */
+/* Modal action buttons - Secondary/Cancel - SCOPED to POS pages */
 .pospire-modal-btn-secondary,
-.v-dialog .v-card-actions .v-btn[color="grey-darken-1"],
-.v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action) {
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="grey-darken-1"],
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action),
+.pos-page .v-dialog .v-card-actions .v-btn[color="grey-darken-1"],
+.pos-page .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action) {
   background: transparent !important;
   color: #64748b !important;
   font-weight: 500 !important;
@@ -1389,17 +1610,21 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 .pospire-modal-btn-secondary:hover,
-.v-dialog .v-card-actions .v-btn[color="grey-darken-1"]:hover,
-.v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action):hover {
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="grey-darken-1"]:hover,
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action):hover,
+.pos-page .v-dialog .v-card-actions .v-btn[color="grey-darken-1"]:hover,
+.pos-page .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action):hover {
   background: #f1f5f9 !important;
   color: #34495E !important;
   border-color: #cbd5e1 !important;
 }
 
-/* Modal action buttons - Primary/Confirm */
+/* Modal action buttons - Primary/Confirm - SCOPED to POS pages */
 .pospire-modal-btn-primary,
-.v-dialog .v-card-actions .v-btn[variant="elevated"],
-.v-dialog .v-card-actions .v-btn[color="primary"] {
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[variant="elevated"],
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="primary"],
+.pos-page .v-dialog .v-card-actions .v-btn[variant="elevated"],
+.pos-page .v-dialog .v-card-actions .v-btn[color="primary"] {
   background: linear-gradient(135deg, #00BCD4 0%, #00ACC1 100%) !important;
   color: #FFFFFF !important;
   font-weight: 600 !important;
@@ -1413,22 +1638,26 @@ nav[role="navigation"] .v-list-item:hover {
 }
 
 .pospire-modal-btn-primary:hover,
-.v-dialog .v-card-actions .v-btn[variant="elevated"]:hover,
-.v-dialog .v-card-actions .v-btn[color="primary"]:hover {
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[variant="elevated"]:hover,
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="primary"]:hover,
+.pos-page .v-dialog .v-card-actions .v-btn[variant="elevated"]:hover,
+.pos-page .v-dialog .v-card-actions .v-btn[color="primary"]:hover {
   background: linear-gradient(135deg, #00ACC1 0%, #0097A7 100%) !important;
   box-shadow: 0 6px 20px rgba(0, 188, 212, 0.45) !important;
   transform: translateY(-1px);
 }
 
-/* Danger/Warning modal variant */
+/* Danger/Warning modal variant - SCOPED to POS pages */
 .pospire-modal-danger .pospire-modal-btn-primary,
-.v-dialog .v-card-actions .v-btn.btn-danger {
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn.btn-danger,
+.pos-page .v-dialog .v-card-actions .v-btn.btn-danger {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35) !important;
 }
 
 .pospire-modal-danger .pospire-modal-btn-primary:hover,
-.v-dialog .v-card-actions .v-btn.btn-danger:hover {
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn.btn-danger:hover,
+.pos-page .v-dialog .v-card-actions .v-btn.btn-danger:hover {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45) !important;
 }
@@ -1492,22 +1721,27 @@ nav[role="navigation"] .v-list-item:hover {
   color: #475569;
 }
 
-/* Fullscreen/Large modal adjustments */
-.v-dialog--fullscreen .v-card {
+/* Fullscreen/Large modal adjustments - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog--fullscreen .v-card,
+.pos-page .v-dialog--fullscreen .v-card {
   border-radius: 0 !important;
 }
 
-/* Small modal adjustments */
-.v-dialog[max-width="400px"] .v-card,
-.pospire-modal-sm {
+/* Small modal adjustments - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog[max-width="400px"] .v-card,
+body:has(.pos-page) .pospire-modal-sm,
+.pos-page .v-dialog[max-width="400px"] .v-card,
+.pos-page .pospire-modal-sm {
   border-radius: 12px !important;
 }
 
 /* Button System */
 
-/* Primary Action Buttons (44px height) - Used for PAY, SUBMIT, etc. */
-.btn-primary-action,
-.v-btn.btn-primary-action {
+/* Primary Action Buttons (44px height) - Used for PAY, SUBMIT, etc. - SCOPED to POS pages */
+body:has(.pos-page) .btn-primary-action,
+body:has(.pos-page) .v-btn.btn-primary-action,
+.pos-page .btn-primary-action,
+.pos-page .v-btn.btn-primary-action {
   height: var(--pospire-btn-primary-height) !important;
   min-height: var(--pospire-btn-primary-height) !important;
   background: var(--pospire-gradient-teal) !important;
@@ -1522,22 +1756,28 @@ nav[role="navigation"] .v-list-item:hover {
   transition: all 0.2s ease !important;
 }
 
-.btn-primary-action:hover:not(:disabled),
-.v-btn.btn-primary-action:hover:not(:disabled) {
+body:has(.pos-page) .btn-primary-action:hover:not(:disabled),
+body:has(.pos-page) .v-btn.btn-primary-action:hover:not(:disabled),
+.pos-page .btn-primary-action:hover:not(:disabled),
+.pos-page .v-btn.btn-primary-action:hover:not(:disabled) {
   background: linear-gradient(135deg, #00ACC1 0%, #0097A7 100%) !important;
   box-shadow: var(--pospire-shadow-lg) !important;
   transform: translateY(-1px);
 }
 
-.btn-primary-action:disabled,
-.v-btn.btn-primary-action:disabled {
+body:has(.pos-page) .btn-primary-action:disabled,
+body:has(.pos-page) .v-btn.btn-primary-action:disabled,
+.pos-page .btn-primary-action:disabled,
+.pos-page .v-btn.btn-primary-action:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
 }
 
-/* Secondary Buttons (38px height) - For utility actions */
-.btn-secondary,
-.v-btn.btn-secondary {
+/* Secondary Buttons (38px height) - For utility actions - SCOPED to POS pages */
+body:has(.pos-page) .btn-secondary,
+body:has(.pos-page) .v-btn.btn-secondary,
+.pos-page .btn-secondary,
+.pos-page .v-btn.btn-secondary {
   height: var(--pospire-btn-secondary-height) !important;
   min-height: var(--pospire-btn-secondary-height) !important;
   background: var(--pospire-light-gray) !important;
@@ -1551,16 +1791,20 @@ nav[role="navigation"] .v-list-item:hover {
   transition: all 0.2s ease !important;
 }
 
-.btn-secondary:hover:not(:disabled),
-.v-btn.btn-secondary:hover:not(:disabled) {
+body:has(.pos-page) .btn-secondary:hover:not(:disabled),
+body:has(.pos-page) .v-btn.btn-secondary:hover:not(:disabled),
+.pos-page .btn-secondary:hover:not(:disabled),
+.pos-page .v-btn.btn-secondary:hover:not(:disabled) {
   background: #EBEBEB !important;
   border-color: #D0D0D0 !important;
   transform: translateY(-1px);
 }
 
-/* Danger Buttons (38px height) - For cancel/destructive actions */
-.btn-danger,
-.v-btn.btn-danger {
+/* Danger Buttons (38px height) - For cancel/destructive actions - SCOPED to POS pages */
+body:has(.pos-page) .btn-danger,
+body:has(.pos-page) .v-btn.btn-danger,
+.pos-page .btn-danger,
+.pos-page .v-btn.btn-danger {
   height: var(--pospire-btn-secondary-height) !important;
   min-height: var(--pospire-btn-secondary-height) !important;
   background: linear-gradient(135deg, var(--pospire-vivid-red) 0%, #EF4343 100%) !important;
@@ -1574,15 +1818,19 @@ nav[role="navigation"] .v-list-item:hover {
   border: none !important;
 }
 
-.btn-danger:hover:not(:disabled),
-.v-btn.btn-danger:hover:not(:disabled) {
+body:has(.pos-page) .btn-danger:hover:not(:disabled),
+body:has(.pos-page) .v-btn.btn-danger:hover:not(:disabled),
+.pos-page .btn-danger:hover:not(:disabled),
+.pos-page .v-btn.btn-danger:hover:not(:disabled) {
   background: linear-gradient(135deg, #E03E3E 0%, #D63838 100%) !important;
   box-shadow: var(--pospire-shadow-md) !important;
 }
 
-/* Search/Warning Buttons (38px height) - Amber color scheme */
-.btn-search,
-.v-btn.btn-search {
+/* Search/Warning Buttons (38px height) - Amber color scheme - SCOPED to POS pages */
+body:has(.pos-page) .btn-search,
+body:has(.pos-page) .v-btn.btn-search,
+.pos-page .btn-search,
+.pos-page .v-btn.btn-search {
   height: var(--pospire-btn-secondary-height) !important;
   min-height: var(--pospire-btn-secondary-height) !important;
   background: var(--pospire-safety-amber) !important;
@@ -1596,14 +1844,17 @@ nav[role="navigation"] .v-list-item:hover {
   border: none !important;
 }
 
-.btn-search:hover:not(:disabled),
-.v-btn.btn-search:hover:not(:disabled) {
+body:has(.pos-page) .btn-search:hover:not(:disabled),
+body:has(.pos-page) .v-btn.btn-search:hover:not(:disabled),
+.pos-page .btn-search:hover:not(:disabled),
+.pos-page .v-btn.btn-search:hover:not(:disabled) {
   background: #E58800 !important;
   box-shadow: var(--pospire-shadow-md) !important;
 }
 
-/* Toggle Buttons (36px height) - For list/card view, filters, etc. */
-.btn-toggle {
+/* Toggle Buttons (36px height) - For list/card view, filters, etc. - SCOPED to POS pages */
+body:has(.pos-page) .btn-toggle,
+.pos-page .btn-toggle {
   height: var(--pospire-btn-toggle-height) !important;
   min-height: var(--pospire-btn-toggle-height) !important;
   background: transparent !important;
@@ -1620,68 +1871,82 @@ nav[role="navigation"] .v-list-item:hover {
   cursor: pointer;
 }
 
-.btn-toggle:hover:not(.active) {
+body:has(.pos-page) .btn-toggle:hover:not(.active),
+.pos-page .btn-toggle:hover:not(.active) {
   background: rgba(0, 188, 212, 0.05) !important;
   color: var(--pospire-vibrant-teal) !important;
 }
 
-.btn-toggle.active {
+body:has(.pos-page) .btn-toggle.active,
+.pos-page .btn-toggle.active {
   background: var(--pospire-clean-white) !important;
   color: var(--pospire-vibrant-teal) !important;
   box-shadow: var(--pospire-shadow-sm) !important;
   font-weight: 500 !important;
 }
 
-.btn-toggle .v-icon {
+body:has(.pos-page) .btn-toggle .v-icon,
+.pos-page .btn-toggle .v-icon {
   font-size: 16px !important;
 }
 
-/* Input System */
+/* Input System - SCOPED to POS pages */
 
-/* Universal Input Styling - 40px height for all input types */
-.v-text-field .v-field,
-.v-select .v-field,
-.v-autocomplete .v-field,
-.v-combobox .v-field,
-.v-textarea .v-field {
+/* Universal Input Styling - 40px height for all input types - SCOPED */
+body:has(.pos-page) .v-text-field .v-field,
+body:has(.pos-page) .v-select .v-field,
+body:has(.pos-page) .v-autocomplete .v-field,
+body:has(.pos-page) .v-combobox .v-field,
+body:has(.pos-page) .v-textarea .v-field,
+.pos-page .v-text-field .v-field,
+.pos-page .v-select .v-field,
+.pos-page .v-autocomplete .v-field,
+.pos-page .v-combobox .v-field,
+.pos-page .v-textarea .v-field {
   min-height: var(--pospire-input-height) !important;
   border-radius: var(--pospire-input-border-radius) !important;
   background: var(--pospire-clean-white) !important;
   font: var(--pospire-font-body-regular) !important;
 }
 
-/* Textarea specific - remove min-height constraint */
-.v-textarea .v-field {
+/* Textarea specific - remove min-height constraint - SCOPED */
+body:has(.pos-page) .v-textarea .v-field,
+.pos-page .v-textarea .v-field {
   min-height: 80px !important;
 }
 
-/* Outlined Inputs */
+/* Outlined Inputs - SCOPED to POS pages */
 /* Minimal overrides - let Vuetify handle the structure */
 
-/* Default label color - black for visibility */
-.v-field--variant-outlined .v-label {
+/* Default label color - black for visibility - SCOPED */
+body:has(.pos-page) .v-field--variant-outlined .v-label,
+.pos-page .v-field--variant-outlined .v-label {
   color: var(--pospire-deep-slate) !important;
 }
 
-/* Focus state - teal border */
-.v-field--variant-outlined.v-field--focused .v-field__outline {
+/* Focus state - teal border - SCOPED */
+body:has(.pos-page) .v-field--variant-outlined.v-field--focused .v-field__outline,
+.pos-page .v-field--variant-outlined.v-field--focused .v-field__outline {
   --v-field-border-opacity: 1;
   color: var(--pospire-vibrant-teal) !important;
 }
 
-/* Focus state - teal label */
-.v-field--variant-outlined.v-field--focused .v-label {
+/* Focus state - teal label - SCOPED */
+body:has(.pos-page) .v-field--variant-outlined.v-field--focused .v-label,
+.pos-page .v-field--variant-outlined.v-field--focused .v-label {
   color: var(--pospire-vibrant-teal) !important;
 }
 
-/* Default border color - gray */
-.v-field--variant-outlined:not(.v-field--focused) .v-field__outline {
+/* Default border color - gray - SCOPED */
+body:has(.pos-page) .v-field--variant-outlined:not(.v-field--focused) .v-field__outline,
+.pos-page .v-field--variant-outlined:not(.v-field--focused) .v-field__outline {
   color: var(--pospire-border-gray) !important;
 }
 
-/* Filled Inputs */
+/* Filled Inputs - SCOPED to POS pages */
 /* Override outlined with filled style - no border overlap possible */
-.v-field--variant-filled {
+body:has(.pos-page) .v-field--variant-filled,
+.pos-page .v-field--variant-filled {
   border: none !important;
   border-bottom: 2px solid var(--pospire-border-gray) !important;
   background: var(--pospire-light-gray) !important;
@@ -1689,39 +1954,49 @@ nav[role="navigation"] .v-list-item:hover {
   box-shadow: none !important;
 }
 
-.v-field--variant-filled.v-field--focused {
+body:has(.pos-page) .v-field--variant-filled.v-field--focused,
+.pos-page .v-field--variant-filled.v-field--focused {
   border-bottom: 2px solid var(--pospire-vibrant-teal) !important;
   background: #F5F5F5 !important;
   box-shadow: 0 1px 0 0 var(--pospire-vibrant-teal) !important;
 }
 
-/* Filled variant labels don't need background */
-.v-field--variant-filled .v-label.v-field-label--floating {
+/* Filled variant labels don't need background - SCOPED */
+body:has(.pos-page) .v-field--variant-filled .v-label.v-field-label--floating,
+.pos-page .v-field--variant-filled .v-label.v-field-label--floating {
   background: transparent !important;
 }
 
-/* Error state for filled variant */
-.v-field--variant-filled.v-field--error {
+/* Error state for filled variant - SCOPED */
+body:has(.pos-page) .v-field--variant-filled.v-field--error,
+.pos-page .v-field--variant-filled.v-field--error {
   border-bottom-color: var(--pospire-vivid-red) !important;
 }
 
-.v-field--variant-filled.v-field--error.v-field--focused {
+body:has(.pos-page) .v-field--variant-filled.v-field--error.v-field--focused,
+.pos-page .v-field--variant-filled.v-field--error.v-field--focused {
   border-bottom-color: var(--pospire-vivid-red) !important;
   box-shadow: 0 1px 0 0 var(--pospire-vivid-red) !important;
 }
 
-/* Placeholder Styling */
-.v-field__input::placeholder {
+/* Placeholder Styling - SCOPED to POS pages */
+body:has(.pos-page) .v-field__input::placeholder,
+.pos-page .v-field__input::placeholder {
   font: var(--pospire-font-support) !important;
   color: var(--pospire-text-light) !important;
 }
 
-/* Read-only Fields */
-.v-text-field--readonly .v-field,
-.v-select--readonly .v-field,
-.v-autocomplete--readonly .v-field,
-.v-combobox--readonly .v-field,
-.v-textarea--readonly .v-field {
+/* Read-only Fields - SCOPED to POS pages */
+body:has(.pos-page) .v-text-field--readonly .v-field,
+body:has(.pos-page) .v-select--readonly .v-field,
+body:has(.pos-page) .v-autocomplete--readonly .v-field,
+body:has(.pos-page) .v-combobox--readonly .v-field,
+body:has(.pos-page) .v-textarea--readonly .v-field,
+.pos-page .v-text-field--readonly .v-field,
+.pos-page .v-select--readonly .v-field,
+.pos-page .v-autocomplete--readonly .v-field,
+.pos-page .v-combobox--readonly .v-field,
+.pos-page .v-textarea--readonly .v-field {
   background: #ECEFF1 !important;
   border-color: transparent !important;
   border-style: dashed !important;
@@ -1729,90 +2004,112 @@ nav[role="navigation"] .v-list-item:hover {
   cursor: default !important;
 }
 
-.v-text-field--readonly .v-field input,
-.v-text-field--readonly .v-field .v-field__input {
+body:has(.pos-page) .v-text-field--readonly .v-field input,
+body:has(.pos-page) .v-text-field--readonly .v-field .v-field__input,
+.pos-page .v-text-field--readonly .v-field input,
+.pos-page .v-text-field--readonly .v-field .v-field__input {
   color: #78909C !important;
 }
 
-.v-text-field--readonly .v-label,
-.v-select--readonly .v-label {
+body:has(.pos-page) .v-text-field--readonly .v-label,
+body:has(.pos-page) .v-select--readonly .v-label,
+.pos-page .v-text-field--readonly .v-label,
+.pos-page .v-select--readonly .v-label {
   color: #90A4AE !important;
 }
 
-/* Disabled State */
-.v-field--disabled {
+/* Disabled State - SCOPED to POS pages */
+body:has(.pos-page) .v-field--disabled,
+.pos-page .v-field--disabled {
   background: #ECEFF1 !important;
   border-color: transparent !important;
   opacity: 0.7 !important;
 }
 
-.v-field--disabled input,
-.v-field--disabled .v-field__input {
+body:has(.pos-page) .v-field--disabled input,
+body:has(.pos-page) .v-field--disabled .v-field__input,
+.pos-page .v-field--disabled input,
+.pos-page .v-field--disabled .v-field__input {
   color: #90A4AE !important;
 }
 
-.v-field--disabled .v-label {
+body:has(.pos-page) .v-field--disabled .v-label,
+.pos-page .v-field--disabled .v-label {
   color: #B0BEC5 !important;
 }
 
-/* Error State */
-.v-field--error.v-field--variant-outlined {
+/* Error State - SCOPED to POS pages */
+body:has(.pos-page) .v-field--error.v-field--variant-outlined,
+.pos-page .v-field--error.v-field--variant-outlined {
   border-color: var(--pospire-vivid-red) !important;
 }
 
-.v-field--error.v-field--focused.v-field--variant-outlined {
+body:has(.pos-page) .v-field--error.v-field--focused.v-field--variant-outlined,
+.pos-page .v-field--error.v-field--focused.v-field--variant-outlined {
   border-color: var(--pospire-vivid-red) !important;
   box-shadow: 0 0 0 3px rgba(244, 67, 67, 0.1) !important;
 }
 
-.v-field--error .v-label {
+body:has(.pos-page) .v-field--error .v-label,
+.pos-page .v-field--error .v-label {
   color: var(--pospire-vivid-red) !important;
 }
 
-/* Success State */
-.v-field--success.v-field--variant-outlined {
+/* Success State - SCOPED to POS pages */
+body:has(.pos-page) .v-field--success.v-field--variant-outlined,
+.pos-page .v-field--success.v-field--variant-outlined {
   border-color: var(--pospire-grass-green) !important;
 }
 
-.v-field--success.v-field--focused.v-field--variant-outlined {
+body:has(.pos-page) .v-field--success.v-field--focused.v-field--variant-outlined,
+.pos-page .v-field--success.v-field--focused.v-field--variant-outlined {
   border-color: var(--pospire-grass-green) !important;
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1) !important;
 }
 
-.v-field--success .v-label {
+body:has(.pos-page) .v-field--success .v-label,
+.pos-page .v-field--success .v-label {
   color: var(--pospire-grass-green) !important;
 }
 
-/* Input Icons */
-.v-field__prepend-inner .v-icon,
-.v-field__append-inner .v-icon {
+/* Input Icons - SCOPED to POS pages */
+body:has(.pos-page) .v-field__prepend-inner .v-icon,
+body:has(.pos-page) .v-field__append-inner .v-icon,
+.pos-page .v-field__prepend-inner .v-icon,
+.pos-page .v-field__append-inner .v-icon {
   color: var(--pospire-text-secondary) !important;
   opacity: 0.7;
 }
 
-.v-field--focused .v-field__prepend-inner .v-icon,
-.v-field--focused .v-field__append-inner .v-icon {
+/* Field focused icon color - SCOPED to POS pages */
+body:has(.pos-page) .v-field--focused .v-field__prepend-inner .v-icon,
+body:has(.pos-page) .v-field--focused .v-field__append-inner .v-icon,
+.pos-page .v-field--focused .v-field__prepend-inner .v-icon,
+.pos-page .v-field--focused .v-field__append-inner .v-icon {
   color: var(--pospire-vibrant-teal) !important;
   opacity: 1;
 }
 
-/* Switch/Toggle */
+/* Switch/Toggle - SCOPED to POS pages */
 
-/* Switch thumb - always white */
-.v-switch .v-switch__thumb {
+/* Switch thumb - always white - SCOPED */
+body:has(.pos-page) .v-switch .v-switch__thumb,
+.pos-page .v-switch .v-switch__thumb {
   background-color: var(--pospire-clean-white) !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Inset switch variant dimensions */
-.v-switch--inset .v-switch__track {
+/* Inset switch variant dimensions - SCOPED */
+body:has(.pos-page) .v-switch--inset .v-switch__track,
+.pos-page .v-switch--inset .v-switch__track {
   border-radius: 14px !important;
   height: 24px !important;
   width: 44px !important;
 }
 
-/* Switch label styling - Deep Slate for readability */
-.v-switch .v-label {
+/* Switch label styling - Deep Slate for readability - SCOPED */
+body:has(.pos-page) .v-switch .v-label,
+.pos-page .v-switch .v-label {
   font: var(--pospire-font-body-regular) !important;
   color: var(--pospire-deep-slate) !important;
 }
@@ -1844,8 +2141,9 @@ nav[role="navigation"] .v-list-item:hover {
   background-color: var(--pospire-vibrant-teal) !important;
 }
 
-/* Focused switch - subtle teal glow */
-.v-switch:focus-within .v-switch__track {
+/* Focused switch - subtle teal glow - SCOPED to POS pages */
+body:has(.pos-page) .v-switch:focus-within .v-switch__track,
+.pos-page .v-switch:focus-within .v-switch__track {
   box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.2) !important;
 }
 
@@ -1907,15 +2205,18 @@ nav[role="navigation"] .v-list-item:hover {
  * DO NOT use teal for: general chips, utility buttons, informational elements
  */
 
-/* Primary action buttons explicitly using teal */
-.btn-primary-action,
-.v-btn.bg-teal {
+/* Primary action buttons explicitly using teal - SCOPED to POS pages */
+body:has(.pos-page) .btn-primary-action,
+body:has(.pos-page) .v-btn.bg-teal,
+.pos-page .btn-primary-action,
+.pos-page .v-btn.bg-teal {
   background-color: var(--pospire-vibrant-teal) !important;
   color: #FFFFFF !important;
 }
 
-/* Active/selected toggle states */
-.btn-toggle.active {
+/* Active/selected toggle states - SCOPED to POS pages */
+body:has(.pos-page) .btn-toggle.active,
+.pos-page .btn-toggle.active {
   background: var(--pospire-clean-white) !important;
   color: var(--pospire-vibrant-teal) !important;
   box-shadow: var(--pospire-shadow-sm) !important;
@@ -1946,6 +2247,8 @@ nav[role="navigation"] .v-list-item:hover {
   --pospire-light-gray: #F5F5F5;
   --pospire-medium-gray: #9E9E9E;
   --pospire-border-gray: #B0BEC5;
+  --pospire-border-dark: #4A5568;    /* Dark charcoal grey - primary visible border */
+  --pospire-border-medium: #718096;  /* Medium grey - secondary border */
   --pospire-text-secondary: #757575;
   --pospire-text-light: #8C8C8C;
 
@@ -2029,12 +2332,12 @@ nav[role="navigation"] .v-list-item:hover {
   --card-bg: var(--pospire-gradient-card);
   --section-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   --subsection-bg: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%);
-  --difference-bg: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  --difference-bg: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
 
   /* Borders */
   --border-light: var(--pospire-border-gray);
   --border-subsection: #ddd6fe;
-  --border-difference: #bbf7d0;
+  --border-difference: #4DD0E1;
 
   /* Text Colors */
   --text-main: var(--pospire-deep-slate);
@@ -2495,65 +2798,83 @@ nav[role="navigation"] .v-list-item:hover {
   animation: shimmer 1.5s infinite;
 }
 
-/* Component Animations */
+/* Component Animations - SCOPED to POS pages */
 
-/* Buttons - Micro-interaction on hover/click */
-.v-btn {
+/* Buttons - Micro-interaction on hover/click - SCOPED to POS pages */
+body:has(.pos-page) .v-btn,
+.pos-page .v-btn {
   transition:
     transform var(--anim-fast) var(--ease-out),
     box-shadow var(--anim-fast) var(--ease-out),
     background-color var(--anim-fast) var(--ease-out) !important;
 }
 
-.v-btn:hover:not(:disabled) {
+body:has(.pos-page) .v-btn:hover:not(:disabled),
+.pos-page .v-btn:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 
-.v-btn:active:not(:disabled) {
+body:has(.pos-page) .v-btn:active:not(:disabled),
+.pos-page .v-btn:active:not(:disabled) {
   transform: translateY(0) scale(0.98);
   transition-duration: var(--anim-instant);
 }
 
-/* Primary action buttons - subtle glow on hover */
-.v-btn.bg-primary:hover:not(:disabled),
-.v-btn[style*="00BCD4"]:hover:not(:disabled),
-.pospire-btn-primary:hover:not(:disabled) {
+/* Primary action buttons - subtle glow on hover - SCOPED to POS pages */
+body:has(.pos-page) .v-btn.bg-primary:hover:not(:disabled),
+body:has(.pos-page) .v-btn[style*="00BCD4"]:hover:not(:disabled),
+body:has(.pos-page) .pospire-btn-primary:hover:not(:disabled),
+.pos-page .v-btn.bg-primary:hover:not(:disabled),
+.pos-page .v-btn[style*="00BCD4"]:hover:not(:disabled),
+.pos-page .pospire-btn-primary:hover:not(:disabled) {
   box-shadow: 0 4px 15px rgba(0, 188, 212, 0.35);
 }
 
-/* Cards - Lift effect */
-.v-card,
-.product-card,
-.item-card {
+/* Cards - Lift effect - SCOPED to POS pages */
+body:has(.pos-page) .v-card,
+body:has(.pos-page) .product-card,
+body:has(.pos-page) .item-card,
+.pos-page .v-card,
+.pos-page .product-card,
+.pos-page .item-card {
   transition:
     transform var(--anim-normal) var(--ease-out),
     box-shadow var(--anim-normal) var(--ease-out),
     border-color var(--anim-normal) var(--ease-out) !important;
 }
 
-.v-card:hover,
-.product-card:hover,
-.item-card:hover {
+body:has(.pos-page) .v-card:hover,
+body:has(.pos-page) .product-card:hover,
+body:has(.pos-page) .item-card:hover,
+.pos-page .v-card:hover,
+.pos-page .product-card:hover,
+.pos-page .item-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--pospire-shadow-lg);
 }
 
-/* Product card click feedback */
-.product-card:active {
+/* Product card click feedback - SCOPED to POS pages */
+body:has(.pos-page) .product-card:active,
+.pos-page .product-card:active {
   transform: translateY(0) scale(0.98);
   transition-duration: var(--anim-instant);
 }
 
-/* Product Card Animations */
+/* Product Card Styling with visible borders */
 .pospire-product-card {
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  /* More visible default border */
+  border: 2px solid var(--pospire-border-medium, #718096) !important;
+  border-radius: var(--pospire-radius-lg, 8px) !important;
 }
 
 .pospire-product-card:hover {
   transform: translateY(-6px) scale(1.02) !important;
+  /* Darker border on hover */
+  border-color: var(--pospire-border-dark, #4A5568) !important;
   box-shadow:
-    0 12px 28px rgba(0, 188, 212, 0.25),
-    0 0 0 2px rgba(0, 188, 212, 0.3) !important;
+    0 12px 28px rgba(0, 0, 0, 0.15),
+    0 0 0 2px rgba(74, 85, 104, 0.3) !important;
 }
 
 .pospire-product-card:active {
@@ -2687,13 +3008,15 @@ nav[role="navigation"] .v-list-item:hover {
   background: var(--pospire-vivid-red) !important;
 }
 
-/* Button primary action with vibrant gradient */
-.btn-primary-action {
+/* Button primary action with vibrant gradient - SCOPED to POS pages */
+body:has(.pos-page) .btn-primary-action,
+.pos-page .btn-primary-action {
   position: relative;
   overflow: hidden;
 }
 
-.btn-primary-action::before {
+body:has(.pos-page) .btn-primary-action::before,
+.pos-page .btn-primary-action::before {
   content: '';
   position: absolute;
   top: 0;
@@ -2709,7 +3032,8 @@ nav[role="navigation"] .v-list-item:hover {
   transition: left 0.5s ease;
 }
 
-.btn-primary-action:hover::before {
+body:has(.pos-page) .btn-primary-action:hover::before,
+.pos-page .btn-primary-action:hover::before {
   left: 100%;
 }
 
@@ -2724,109 +3048,133 @@ nav[role="navigation"] .v-list-item:hover {
   font-weight: 700;
 }
 
-/* Input fields - Focus animation */
-.v-text-field .v-field,
-.v-select .v-field,
-.v-autocomplete .v-field {
+/* Input fields - Focus animation - SCOPED to POS pages */
+body:has(.pos-page) .v-text-field .v-field,
+body:has(.pos-page) .v-select .v-field,
+body:has(.pos-page) .v-autocomplete .v-field,
+.pos-page .v-text-field .v-field,
+.pos-page .v-select .v-field,
+.pos-page .v-autocomplete .v-field {
   transition:
     border-color var(--anim-fast) var(--ease-out),
     box-shadow var(--anim-fast) var(--ease-out) !important;
 }
 
-.v-text-field:focus-within .v-field,
-.v-select:focus-within .v-field,
-.v-autocomplete:focus-within .v-field {
+body:has(.pos-page) .v-text-field:focus-within .v-field,
+body:has(.pos-page) .v-select:focus-within .v-field,
+body:has(.pos-page) .v-autocomplete:focus-within .v-field,
+.pos-page .v-text-field:focus-within .v-field,
+.pos-page .v-select:focus-within .v-field,
+.pos-page .v-autocomplete:focus-within .v-field {
   border-color: var(--pospire-vibrant-teal) !important;
 }
 
-/* Switch toggle animation */
-.v-switch .v-switch__track,
-.v-switch .v-switch__thumb {
+/* Switch toggle animation - SCOPED to POS pages */
+body:has(.pos-page) .v-switch .v-switch__track,
+body:has(.pos-page) .v-switch .v-switch__thumb,
+.pos-page .v-switch .v-switch__track,
+.pos-page .v-switch .v-switch__thumb {
   transition:
     background-color var(--anim-normal) var(--ease-out),
     transform var(--anim-normal) var(--ease-bounce) !important;
 }
-
-/* Checkbox animation */
-.v-checkbox .v-selection-control__input {
+/* Checkbox animations - SCOPED to POS pages */
+body:has(.pos-page) .v-checkbox .v-selection-control__input,
+.pos-page .v-checkbox .v-selection-control__input {
   transition: transform var(--anim-fast) var(--ease-bounce);
 }
 
-.v-checkbox .v-selection-control__input:active {
+body:has(.pos-page) .v-checkbox .v-selection-control__input:active,
+.pos-page .v-checkbox .v-selection-control__input:active {
   transform: scale(0.9);
 }
 
-/* Chips - Selection feedback */
-.v-chip {
+/* Chips - Selection feedback - SCOPED to POS pages */
+body:has(.pos-page) .v-chip,
+.pos-page .v-chip {
   transition:
     transform var(--anim-fast) var(--ease-out),
     background-color var(--anim-fast) var(--ease-out),
     box-shadow var(--anim-fast) var(--ease-out) !important;
 }
 
-.v-chip:hover {
+body:has(.pos-page) .v-chip:hover,
+.pos-page .v-chip:hover {
   transform: scale(1.02);
 }
 
-.v-chip:active {
+body:has(.pos-page) .v-chip:active,
+.pos-page .v-chip:active {
   transform: scale(0.98);
 }
 
-/* Data table row hover */
-.v-data-table tbody tr {
+/* Data table row hover - SCOPED to POS pages */
+body:has(.pos-page) .v-data-table tbody tr,
+.pos-page .v-data-table tbody tr {
   transition: background-color var(--anim-fast) var(--ease-out);
 }
 
-/* Data table expanded row */
-.v-data-table .v-data-table__expanded__content {
+/* Data table expanded row - SCOPED to POS pages */
+body:has(.pos-page) .v-data-table .v-data-table__expanded__content,
+.pos-page .v-data-table .v-data-table__expanded__content {
   animation: expandRow var(--anim-moderate) var(--ease-out);
   transform-origin: top center;
 }
 
-/* List items */
-.v-list-item {
+/* List items - SCOPED to POS pages */
+body:has(.pos-page) .v-list-item,
+.pos-page .v-list-item {
   transition:
     background-color var(--anim-fast) var(--ease-out),
     transform var(--anim-fast) var(--ease-out) !important;
 }
 
-.v-list-item:active {
+/* List item animations - SCOPED to POS pages */
+body:has(.pos-page) .v-list-item:active,
+.pos-page .v-list-item:active {
   transform: scale(0.99);
 }
 
-/* Navigation drawer slide */
-.v-navigation-drawer {
+/* Navigation drawer slide - SCOPED to POS pages */
+body:has(.pos-page) .v-navigation-drawer,
+.pos-page .v-navigation-drawer {
   transition: transform var(--anim-moderate) var(--ease-out) !important;
 }
 
-/* Dialog/Modal entrance */
-.v-dialog .v-card {
+/* Dialog/Modal entrance - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card,
+.pos-page .v-dialog .v-card {
   animation: fadeInScale var(--anim-moderate) var(--ease-out);
 }
 
-/* Snackbar/Toast entrance */
-.v-snackbar__wrapper {
+/* Snackbar/Toast entrance - SCOPED to POS pages */
+body:has(.pos-page) .v-snackbar__wrapper,
+.pos-page .v-snackbar__wrapper {
   animation: slideInRight var(--anim-moderate) var(--ease-out);
 }
 
-/* Menu dropdown */
-.v-menu > .v-overlay__content {
+/* Menu dropdown - SCOPED to POS pages */
+body:has(.pos-page) .v-menu > .v-overlay__content,
+.pos-page .v-menu > .v-overlay__content {
   animation: fadeInDown var(--anim-fast) var(--ease-out);
   transform-origin: top center;
 }
 
-/* Tooltip */
-.v-tooltip > .v-overlay__content {
+/* Tooltip - SCOPED to POS pages */
+body:has(.pos-page) .v-tooltip > .v-overlay__content,
+.pos-page .v-tooltip > .v-overlay__content {
   animation: fadeIn var(--anim-fast) var(--ease-out);
 }
 
-/* Autocomplete dropdown */
-.v-autocomplete__content {
+/* Autocomplete dropdown - SCOPED to POS pages */
+body:has(.pos-page) .v-autocomplete__content,
+.pos-page .v-autocomplete__content {
   animation: fadeInDown var(--anim-fast) var(--ease-out);
 }
 
-/* Select dropdown */
-.v-select__content {
+/* Select dropdown - SCOPED to POS pages */
+body:has(.pos-page) .v-select__content,
+.pos-page .v-select__content {
   animation: fadeInDown var(--anim-fast) var(--ease-out);
 }
 
@@ -3474,52 +3822,68 @@ nav[role="navigation"] .v-list-item:hover {
  * This prevents the dark overlay when opening autocompletes, selects, menus,
  * tooltips, and data-table expanded rows.
  * Dialogs will use their own scrim styling below.
+ * SCOPED to POS pages to prevent affecting other pages.
  */
-.v-overlay__scrim {
+body:has(.pos-page) .v-overlay__scrim,
+.pos-page .v-overlay__scrim {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
 }
 
-/* Ensure scrim is hidden for all overlay types */
-.v-overlay--active .v-overlay__scrim,
-.v-menu .v-overlay__scrim,
-.v-select .v-overlay__scrim,
-.v-autocomplete .v-overlay__scrim,
-.v-tooltip .v-overlay__scrim,
-.v-data-table .v-overlay__scrim {
+/* Ensure scrim is hidden for all overlay types - SCOPED to POS pages */
+body:has(.pos-page) .v-overlay--active .v-overlay__scrim,
+body:has(.pos-page) .v-menu .v-overlay__scrim,
+body:has(.pos-page) .v-select .v-overlay__scrim,
+body:has(.pos-page) .v-autocomplete .v-overlay__scrim,
+body:has(.pos-page) .v-tooltip .v-overlay__scrim,
+body:has(.pos-page) .v-data-table .v-overlay__scrim,
+.pos-page .v-overlay--active .v-overlay__scrim,
+.pos-page .v-menu .v-overlay__scrim,
+.pos-page .v-select .v-overlay__scrim,
+.pos-page .v-autocomplete .v-overlay__scrim,
+.pos-page .v-tooltip .v-overlay__scrim,
+.pos-page .v-data-table .v-overlay__scrim {
   display: none !important;
   opacity: 0 !important;
   background: transparent !important;
 }
 
-/* Hide any backdrop elements */
-.v-overlay[class*="v-menu"] .v-overlay__scrim,
-.v-overlay[class*="v-select"] .v-overlay__scrim,
-.v-overlay[class*="v-tooltip"] .v-overlay__scrim {
+/* Hide any backdrop elements - SCOPED to POS pages */
+body:has(.pos-page) .v-overlay[class*="v-menu"] .v-overlay__scrim,
+body:has(.pos-page) .v-overlay[class*="v-select"] .v-overlay__scrim,
+body:has(.pos-page) .v-overlay[class*="v-tooltip"] .v-overlay__scrim,
+.pos-page .v-overlay[class*="v-menu"] .v-overlay__scrim,
+.pos-page .v-overlay[class*="v-select"] .v-overlay__scrim,
+.pos-page .v-overlay[class*="v-tooltip"] .v-overlay__scrim {
   display: none !important;
 }
 
-/* Global overlay container scrim hiding - Vuetify 3 */
-.v-overlay-container .v-overlay__scrim,
-body > .v-overlay .v-overlay__scrim,
-#app .v-overlay__scrim:not(.v-dialog .v-overlay__scrim) {
+/* Global overlay container scrim hiding - Vuetify 3 - SCOPED to POS pages */
+body:has(.pos-page) .v-overlay-container .v-overlay__scrim,
+body:has(.pos-page) > .v-overlay .v-overlay__scrim,
+body:has(.pos-page) #app .v-overlay__scrim:not(.v-dialog .v-overlay__scrim),
+.pos-page .v-overlay-container .v-overlay__scrim,
+.pos-page > .v-overlay .v-overlay__scrim,
+.pos-page #app .v-overlay__scrim:not(.v-dialog .v-overlay__scrim) {
   display: none !important;
   opacity: 0 !important;
   background: transparent !important;
 }
 
-/* Ensure non-dialog overlays have no backdrop */
-.v-overlay:not(.v-dialog) .v-overlay__scrim {
+/* Ensure non-dialog overlays have no backdrop - SCOPED to POS pages */
+body:has(.pos-page) .v-overlay:not(.v-dialog) .v-overlay__scrim,
+.pos-page .v-overlay:not(.v-dialog) .v-overlay__scrim {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   background-color: transparent !important;
 }
 
-/* For dialogs specifically, show a scrim backdrop */
-.v-overlay.v-dialog .v-overlay__scrim {
+/* For dialogs specifically, show a scrim backdrop - SCOPED to POS pages */
+body:has(.pos-page) .v-overlay.v-dialog .v-overlay__scrim,
+.pos-page .v-overlay.v-dialog .v-overlay__scrim {
   display: block !important;
   opacity: 1 !important;
   visibility: visible !important;
@@ -3527,17 +3891,20 @@ body > .v-overlay .v-overlay__scrim,
   pointer-events: auto !important;
 }
 
-/* Alternative: If you want scrim for any overlay, add class="with-scrim" */
-.v-overlay.with-scrim .v-overlay__scrim {
+/* Alternative: If you want scrim for any overlay, add class="with-scrim" - SCOPED to POS pages */
+body:has(.pos-page) .v-overlay.with-scrim .v-overlay__scrim,
+.pos-page .v-overlay.with-scrim .v-overlay__scrim {
   display: block !important;
   opacity: 1 !important;
   visibility: visible !important;
   background: rgba(0, 0, 0, 0.32) !important;
 }
 
-/* Dialog Base - Intent-Driven Design */
-.v-dialog .v-card,
-.v-dialog .enhanced-modal-card {
+/* Dialog Base - Intent-Driven Design - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card,
+body:has(.pos-page) .v-dialog .enhanced-modal-card,
+.pos-page .v-dialog .v-card,
+.pos-page .v-dialog .enhanced-modal-card {
   border-radius: 16px !important;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2) !important;
   border: 1px solid var(--pospire-border-gray) !important;
@@ -3545,9 +3912,11 @@ body > .v-overlay .v-overlay__scrim,
   overflow: hidden !important;
 }
 
-/* Dialog Title/Header - Modern clean header */
-.v-dialog .v-card-title,
-.v-dialog .enhanced-modal-header {
+/* Dialog Title/Header - Modern clean header - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card-title,
+body:has(.pos-page) .v-dialog .enhanced-modal-header,
+.pos-page .v-dialog .v-card-title,
+.pos-page .v-dialog .enhanced-modal-header {
   background: var(--pospire-clean-white) !important;
   border-bottom: 2px solid var(--pospire-border-gray) !important;
   padding: 20px 24px !important;
@@ -3555,16 +3924,19 @@ body > .v-overlay .v-overlay__scrim,
   color: var(--pospire-deep-slate) !important;
 }
 
-/* Icon in Dialog Title - Moderate size, inline */
-.v-dialog .v-card-title .v-icon,
-.v-dialog .enhanced-modal-header .v-icon {
+/* Icon in Dialog Title - Moderate size, inline - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card-title .v-icon,
+body:has(.pos-page) .v-dialog .enhanced-modal-header .v-icon,
+.pos-page .v-dialog .v-card-title .v-icon,
+.pos-page .v-dialog .enhanced-modal-header .v-icon {
   font-size: 24px !important;
   color: var(--pospire-vibrant-teal) !important;
   margin-right: 8px !important;
 }
 
-/* Dialog Text/Body */
-.v-dialog .v-card-text {
+/* Dialog Text/Body - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card-text,
+.pos-page .v-dialog .v-card-text {
   padding: 24px !important;
   background: var(--pospire-clean-white) !important;
   font: var(--pospire-font-body-regular) !important;
@@ -3572,9 +3944,11 @@ body > .v-overlay .v-overlay__scrim,
   line-height: 1.6 !important;
 }
 
-/* Dialog Actions/Footer */
-.v-dialog .v-card-actions,
-.v-dialog .enhanced-modal-actions {
+/* Dialog Actions/Footer - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card-actions,
+body:has(.pos-page) .v-dialog .enhanced-modal-actions,
+.pos-page .v-dialog .v-card-actions,
+.pos-page .v-dialog .enhanced-modal-actions {
   background: #F8F9FA !important;
   border-top: 2px solid var(--pospire-border-gray) !important;
   padding: 16px 24px !important;
@@ -3583,9 +3957,11 @@ body > .v-overlay .v-overlay__scrim,
   justify-content: flex-end !important;
 }
 
-/* Dialog Action Buttons - Use design system heights */
-.v-dialog .v-card-actions .v-btn,
-.v-dialog .enhanced-modal-actions .v-btn {
+/* Dialog Action Buttons - Use design system heights - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn,
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn,
+.pos-page .v-dialog .v-card-actions .v-btn,
+.pos-page .v-dialog .enhanced-modal-actions .v-btn {
   min-height: 38px !important;
   height: 38px !important;
   border-radius: 6px !important;
@@ -3597,75 +3973,101 @@ body > .v-overlay .v-overlay__scrim,
   transition: all 0.2s ease !important;
 }
 
-/* Primary Dialog Button (APPLY, CONFIRM, OK, etc.) */
-.v-dialog .v-card-actions .v-btn.v-btn--elevated,
-.v-dialog .v-card-actions .v-btn[color="primary"],
-.v-dialog .v-card-actions .v-btn[color="success"],
-.v-dialog .enhanced-modal-actions .v-btn.v-btn--elevated,
-.v-dialog .enhanced-modal-actions .v-btn[color="primary"],
-.v-dialog .enhanced-modal-actions .v-btn[color="success"] {
+/* Primary Dialog Button (APPLY, CONFIRM, OK, etc.) - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn.v-btn--elevated,
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="primary"],
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="success"],
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn.v-btn--elevated,
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[color="primary"],
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[color="success"],
+.pos-page .v-dialog .v-card-actions .v-btn.v-btn--elevated,
+.pos-page .v-dialog .v-card-actions .v-btn[color="primary"],
+.pos-page .v-dialog .v-card-actions .v-btn[color="success"],
+.pos-page .v-dialog .enhanced-modal-actions .v-btn.v-btn--elevated,
+.pos-page .v-dialog .enhanced-modal-actions .v-btn[color="primary"],
+.pos-page .v-dialog .enhanced-modal-actions .v-btn[color="success"] {
   background: var(--pospire-gradient-teal) !important;
   color: var(--pospire-clean-white) !important;
   box-shadow: var(--pospire-shadow-sm) !important;
 }
 
-.v-dialog .v-card-actions .v-btn.v-btn--elevated:hover,
-.v-dialog .v-card-actions .v-btn[color="primary"]:hover,
-.v-dialog .v-card-actions .v-btn[color="success"]:hover,
-.v-dialog .enhanced-modal-actions .v-btn.v-btn--elevated:hover,
-.v-dialog .enhanced-modal-actions .v-btn[color="primary"]:hover,
-.v-dialog .enhanced-modal-actions .v-btn[color="success"]:hover {
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn.v-btn--elevated:hover,
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="primary"]:hover,
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="success"]:hover,
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn.v-btn--elevated:hover,
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[color="primary"]:hover,
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[color="success"]:hover,
+.pos-page .v-dialog .v-card-actions .v-btn.v-btn--elevated:hover,
+.pos-page .v-dialog .v-card-actions .v-btn[color="primary"]:hover,
+.pos-page .v-dialog .v-card-actions .v-btn[color="success"]:hover,
+.pos-page .v-dialog .enhanced-modal-actions .v-btn.v-btn--elevated:hover,
+.pos-page .v-dialog .enhanced-modal-actions .v-btn[color="primary"]:hover,
+.pos-page .v-dialog .enhanced-modal-actions .v-btn[color="success"]:hover {
   background: linear-gradient(135deg, #00ACC1 0%, #0097A7 100%) !important;
   box-shadow: var(--pospire-shadow-md) !important;
   transform: translateY(-1px);
 }
 
-/* Secondary Dialog Button (CANCEL, BACK, etc.) */
-.v-dialog .v-card-actions .v-btn[variant="text"],
-.v-dialog .enhanced-modal-actions .v-btn[variant="text"] {
+/* Secondary Dialog Button (CANCEL, BACK, etc.) - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[variant="text"],
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[variant="text"],
+.pos-page .v-dialog .v-card-actions .v-btn[variant="text"],
+.pos-page .v-dialog .enhanced-modal-actions .v-btn[variant="text"] {
   background: transparent !important;
   color: var(--pospire-text-secondary) !important;
   box-shadow: none !important;
 }
 
-.v-dialog .v-card-actions .v-btn[variant="text"]:hover,
-.v-dialog .enhanced-modal-actions .v-btn[variant="text"]:hover {
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[variant="text"]:hover,
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[variant="text"]:hover,
+.pos-page .v-dialog .v-card-actions .v-btn[variant="text"]:hover,
+.pos-page .v-dialog .enhanced-modal-actions .v-btn[variant="text"]:hover {
   background: rgba(0, 0, 0, 0.05) !important;
   color: var(--pospire-deep-slate) !important;
 }
 
-/* Danger Dialog Button (DELETE, REMOVE, etc.) */
-.v-dialog .v-card-actions .v-btn[color="error"],
-.v-dialog .enhanced-modal-actions .v-btn[color="error"] {
+/* Danger Dialog Button (DELETE, REMOVE, etc.) - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="error"],
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[color="error"],
+.pos-page .v-dialog .v-card-actions .v-btn[color="error"],
+.pos-page .v-dialog .enhanced-modal-actions .v-btn[color="error"] {
   background: linear-gradient(135deg, var(--pospire-vivid-red) 0%, #EF4343 100%) !important;
   color: var(--pospire-clean-white) !important;
   box-shadow: var(--pospire-shadow-sm) !important;
 }
 
-.v-dialog .v-card-actions .v-btn[color="error"]:hover,
-.v-dialog .enhanced-modal-actions .v-btn[color="error"]:hover {
+body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="error"]:hover,
+body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[color="error"]:hover,
+.pos-page .v-dialog .v-card-actions .v-btn[color="error"]:hover,
+.pos-page .v-dialog .enhanced-modal-actions .v-btn[color="error"]:hover {
   background: linear-gradient(135deg, #E03E3E 0%, #D63838 100%) !important;
   box-shadow: var(--pospire-shadow-md) !important;
   transform: translateY(-1px);
 }
 
-/* Custom Modal Header (with class) */
-.pospire-modal-header,
-.v-dialog .v-card-title.pospire-modal-header {
+/* Custom Modal Header (with class) - SCOPED to POS pages */
+body:has(.pos-page) .pospire-modal-header,
+body:has(.pos-page) .v-dialog .v-card-title.pospire-modal-header,
+.pos-page .pospire-modal-header,
+.pos-page .v-dialog .v-card-title.pospire-modal-header {
   background: var(--pospire-gradient-card) !important;
   border-bottom: 1px solid var(--pospire-border-gray) !important;
 }
 
-/* Custom Modal Body (with class) */
-.pospire-modal-body,
-.v-dialog .v-card-text.pospire-modal-body {
+/* Custom Modal Body (with class) - SCOPED to POS pages */
+body:has(.pos-page) .pospire-modal-body,
+body:has(.pos-page) .v-dialog .v-card-text.pospire-modal-body,
+.pos-page .pospire-modal-body,
+.pos-page .v-dialog .v-card-text.pospire-modal-body {
   padding: 24px !important;
   background: var(--pospire-clean-white) !important;
 }
 
-/* Custom Modal Actions (with class) */
-.pospire-modal-actions,
-.v-dialog .v-card-actions.pospire-modal-actions {
+/* Custom Modal Actions (with class) - SCOPED to POS pages */
+body:has(.pos-page) .pospire-modal-actions,
+body:has(.pos-page) .v-dialog .v-card-actions.pospire-modal-actions,
+.pos-page .pospire-modal-actions,
+.pos-page .v-dialog .v-card-actions.pospire-modal-actions {
   background: var(--pospire-light-gray) !important;
   border-top: 1px solid var(--pospire-border-gray) !important;
   padding: 16px 24px !important;
@@ -3690,54 +4092,76 @@ body > .v-overlay .v-overlay__scrim,
   color: var(--pospire-deep-slate) !important;
 }
 
-/* Intent-Based Dialog Types */
+/* Intent-Based Dialog Types - SCOPED to POS pages */
 
-/* Intent-Based Dialog Types - Color-coded top borders and icons */
+/* Intent-Based Dialog Types - Color-coded top borders and icons - SCOPED to POS pages */
 
-/* Warning/Confirmation Dialogs - Amber accent */
-.v-dialog.warning .v-card,
-.v-dialog.warning .enhanced-modal-card,
-.v-dialog--confirm .v-card {
+/* Warning/Confirmation Dialogs - Amber accent - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog.warning .v-card,
+body:has(.pos-page) .v-dialog.warning .enhanced-modal-card,
+body:has(.pos-page) .v-dialog--confirm .v-card,
+.pos-page .v-dialog.warning .v-card,
+.pos-page .v-dialog.warning .enhanced-modal-card,
+.pos-page .v-dialog--confirm .v-card {
   border-top-color: var(--pospire-safety-amber) !important;
 }
 
-.v-dialog.warning .v-card-title .v-icon,
-.v-dialog.warning .enhanced-modal-header .v-icon,
-.v-dialog--confirm .v-card-title .v-icon {
+body:has(.pos-page) .v-dialog.warning .v-card-title .v-icon,
+body:has(.pos-page) .v-dialog.warning .enhanced-modal-header .v-icon,
+body:has(.pos-page) .v-dialog--confirm .v-card-title .v-icon,
+.pos-page .v-dialog.warning .v-card-title .v-icon,
+.pos-page .v-dialog.warning .enhanced-modal-header .v-icon,
+.pos-page .v-dialog--confirm .v-card-title .v-icon {
   color: var(--pospire-safety-amber) !important;
 }
 
-/* Danger/Error Dialogs - Red accent */
-.v-dialog.danger .v-card,
-.v-dialog.danger .enhanced-modal-card,
-.v-dialog.error .v-card,
-.v-dialog.error .enhanced-modal-card,
-.v-dialog--error .v-card {
+/* Danger/Error Dialogs - Red accent - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog.danger .v-card,
+body:has(.pos-page) .v-dialog.danger .enhanced-modal-card,
+body:has(.pos-page) .v-dialog.error .v-card,
+body:has(.pos-page) .v-dialog.error .enhanced-modal-card,
+body:has(.pos-page) .v-dialog--error .v-card,
+.pos-page .v-dialog.danger .v-card,
+.pos-page .v-dialog.danger .enhanced-modal-card,
+.pos-page .v-dialog.error .v-card,
+.pos-page .v-dialog.error .enhanced-modal-card,
+.pos-page .v-dialog--error .v-card {
   border-top-color: var(--pospire-vivid-red) !important;
 }
 
-.v-dialog.danger .v-card-title .v-icon,
-.v-dialog.danger .enhanced-modal-header .v-icon,
-.v-dialog.error .v-card-title .v-icon,
-.v-dialog.error .enhanced-modal-header .v-icon,
-.v-dialog--error .v-card-title .v-icon {
+body:has(.pos-page) .v-dialog.danger .v-card-title .v-icon,
+body:has(.pos-page) .v-dialog.danger .enhanced-modal-header .v-icon,
+body:has(.pos-page) .v-dialog.error .v-card-title .v-icon,
+body:has(.pos-page) .v-dialog.error .enhanced-modal-header .v-icon,
+body:has(.pos-page) .v-dialog--error .v-card-title .v-icon,
+.pos-page .v-dialog.danger .v-card-title .v-icon,
+.pos-page .v-dialog.danger .enhanced-modal-header .v-icon,
+.pos-page .v-dialog.error .v-card-title .v-icon,
+.pos-page .v-dialog.error .enhanced-modal-header .v-icon,
+.pos-page .v-dialog--error .v-card-title .v-icon {
   color: var(--pospire-vivid-red) !important;
 }
 
-/* Success Dialogs - Green accent */
-.v-dialog.success .v-card,
-.v-dialog.success .enhanced-modal-card {
+/* Success Dialogs - Green accent - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog.success .v-card,
+body:has(.pos-page) .v-dialog.success .enhanced-modal-card,
+.pos-page .v-dialog.success .v-card,
+.pos-page .v-dialog.success .enhanced-modal-card {
   border-top-color: var(--pospire-grass-green) !important;
 }
 
-.v-dialog.success .v-card-title .v-icon,
-.v-dialog.success .enhanced-modal-header .v-icon {
+body:has(.pos-page) .v-dialog.success .v-card-title .v-icon,
+body:has(.pos-page) .v-dialog.success .enhanced-modal-header .v-icon,
+.pos-page .v-dialog.success .v-card-title .v-icon,
+.pos-page .v-dialog.success .enhanced-modal-header .v-icon {
   color: var(--pospire-grass-green) !important;
 }
 
-/* Info Dialogs - Teal accent (default) */
-.v-dialog.info .v-card,
-.v-dialog.info .enhanced-modal-card {
+/* Info Dialogs - Teal accent (default) - SCOPED to POS pages */
+body:has(.pos-page) .v-dialog.info .v-card,
+body:has(.pos-page) .v-dialog.info .enhanced-modal-card,
+.pos-page .v-dialog.info .v-card,
+.pos-page .v-dialog.info .enhanced-modal-card {
   border-top-color: var(--pospire-vibrant-teal) !important;
 }
 
@@ -3844,11 +4268,13 @@ body > .v-overlay .v-overlay__scrim,
   border: none !important;
 }
 
-/* Data Tables */
+/* Data Tables - SCOPED to POS pages */
 
-/* Table Headers - Per Design: Background #F7F7F7 */
-.v-data-table :deep(thead th),
-.v-table :deep(thead th),
+/* Table Headers - Per Design: Background #F7F7F7 - SCOPED */
+body:has(.pos-page) .v-data-table :deep(thead th),
+body:has(.pos-page) .v-table :deep(thead th),
+.pos-page .v-data-table :deep(thead th),
+.pos-page .v-table :deep(thead th),
 .pospire-table thead th {
   font: var(--pospire-font-body-medium) !important;
   color: var(--pospire-deep-slate) !important;
@@ -3863,38 +4289,48 @@ body > .v-overlay .v-overlay__scrim,
   font-weight: 600 !important;
 }
 
-/* Table Rows */
-.v-data-table :deep(tbody tr),
-.v-table :deep(tbody tr),
+/* Table Rows - SCOPED */
+body:has(.pos-page) .v-data-table :deep(tbody tr),
+body:has(.pos-page) .v-table :deep(tbody tr),
+.pos-page .v-data-table :deep(tbody tr),
+.pos-page .v-table :deep(tbody tr),
 .pospire-table tbody tr {
   height: 40px !important;
   transition: background-color 0.15s ease !important;
 }
 
-/* Alternating Row Backgrounds - Per Design: Default #FFFFFF, Alternate #FAFAFF */
-.v-data-table :deep(tbody tr:nth-child(even)),
-.v-table :deep(tbody tr:nth-child(even)),
+/* Alternating Row Backgrounds - Per Design: Default #FFFFFF, Alternate #FAFAFF - SCOPED */
+body:has(.pos-page) .v-data-table :deep(tbody tr:nth-child(even)),
+body:has(.pos-page) .v-table :deep(tbody tr:nth-child(even)),
+.pos-page .v-data-table :deep(tbody tr:nth-child(even)),
+.pos-page .v-table :deep(tbody tr:nth-child(even)),
 .pospire-table tbody tr:nth-child(even) {
   background: #FAFAFF !important;
 }
 
-.v-data-table :deep(tbody tr:nth-child(odd)),
-.v-table :deep(tbody tr:nth-child(odd)),
+body:has(.pos-page) .v-data-table :deep(tbody tr:nth-child(odd)),
+body:has(.pos-page) .v-table :deep(tbody tr:nth-child(odd)),
+.pos-page .v-data-table :deep(tbody tr:nth-child(odd)),
+.pos-page .v-table :deep(tbody tr:nth-child(odd)),
 .pospire-table tbody tr:nth-child(odd) {
   background: var(--pospire-clean-white) !important;
 }
 
-/* Row Hover Effect - Per Design: Hover #E6F7FA */
-.v-data-table :deep(tbody tr:hover),
-.v-table :deep(tbody tr:hover),
+/* Row Hover Effect - Per Design: Hover #E6F7FA - SCOPED */
+body:has(.pos-page) .v-data-table :deep(tbody tr:hover),
+body:has(.pos-page) .v-table :deep(tbody tr:hover),
+.pos-page .v-data-table :deep(tbody tr:hover),
+.pos-page .v-table :deep(tbody tr:hover),
 .pospire-table tbody tr:hover {
   background: #E6F7FA !important;
   cursor: pointer !important;
 }
 
-/* Table Cells - Per Design: 12px horizontal padding */
-.v-data-table :deep(tbody td),
-.v-table :deep(tbody td),
+/* Table Cells - Per Design: 12px horizontal padding - SCOPED */
+body:has(.pos-page) .v-data-table :deep(tbody td),
+body:has(.pos-page) .v-table :deep(tbody td),
+.pos-page .v-data-table :deep(tbody td),
+.pos-page .v-table :deep(tbody td),
 .pospire-table tbody td {
   font: var(--pospire-font-body-regular) !important;
   color: var(--pospire-deep-slate) !important;
@@ -3902,20 +4338,26 @@ body > .v-overlay .v-overlay__scrim,
   border-bottom: 1px solid var(--pospire-border-gray) !important;
 }
 
-/* Table Borders */
-.v-data-table,
-.v-table,
+/* Table Borders - SCOPED */
+body:has(.pos-page) .v-data-table,
+body:has(.pos-page) .v-table,
+.pos-page .v-data-table,
+.pos-page .v-table,
 .pospire-table {
   border: 1px solid var(--pospire-border-gray) !important;
   border-radius: 8px !important;
   overflow: hidden !important;
 }
 
-/* Table Footer */
-.v-data-table :deep(tfoot th),
-.v-data-table :deep(tfoot td),
-.v-table :deep(tfoot th),
-.v-table :deep(tfoot td),
+/* Table Footer - SCOPED */
+body:has(.pos-page) .v-data-table :deep(tfoot th),
+body:has(.pos-page) .v-data-table :deep(tfoot td),
+body:has(.pos-page) .v-table :deep(tfoot th),
+body:has(.pos-page) .v-table :deep(tfoot td),
+.pos-page .v-data-table :deep(tfoot th),
+.pos-page .v-data-table :deep(tfoot td),
+.pos-page .v-table :deep(tfoot th),
+.pos-page .v-table :deep(tfoot td),
 .pospire-table tfoot th,
 .pospire-table tfoot td {
   font: var(--pospire-font-body-medium) !important;
@@ -3926,14 +4368,17 @@ body > .v-overlay .v-overlay__scrim,
   padding: 0 16px !important;
 }
 
-/* Empty State */
-.v-data-table :deep(.v-data-table__empty),
+/* Empty State - SCOPED */
+body:has(.pos-page) .v-data-table :deep(.v-data-table__empty),
+.pos-page .v-data-table :deep(.v-data-table__empty),
 .pospire-table-empty {
   padding: 48px 24px !important;
   text-align: center !important;
 }
 
-.v-data-table :deep(.v-data-table__empty) .v-icon {
+/* Data table empty state icon - SCOPED to POS pages */
+body:has(.pos-page) .v-data-table :deep(.v-data-table__empty) .v-icon,
+.pos-page .v-data-table :deep(.v-data-table__empty) .v-icon {
   font-size: 48px !important;
   color: var(--pospire-text-secondary) !important;
   opacity: 0.5 !important;
@@ -3945,19 +4390,22 @@ body > .v-overlay .v-overlay__scrim,
   margin-top: 12px !important;
 }
 
-/* Pagination */
-.v-data-table :deep(.v-data-table-footer) {
+/* Pagination - SCOPED to POS pages */
+body:has(.pos-page) .v-data-table :deep(.v-data-table-footer),
+.pos-page .v-data-table :deep(.v-data-table-footer) {
   background: var(--pospire-light-gray) !important;
   border-top: 2px solid var(--pospire-border-gray) !important;
   padding: 8px 16px !important;
   font: var(--pospire-font-body-regular) !important;
 }
 
-.v-data-table :deep(.v-data-table-footer__items-per-page) {
+body:has(.pos-page) .v-data-table :deep(.v-data-table-footer__items-per-page),
+.pos-page .v-data-table :deep(.v-data-table-footer__items-per-page) {
   font: var(--pospire-font-body-regular) !important;
 }
 
-.v-data-table :deep(.v-data-table-footer__pagination) {
+body:has(.pos-page) .v-data-table :deep(.v-data-table-footer__pagination),
+.pos-page .v-data-table :deep(.v-data-table-footer__pagination) {
   font: var(--pospire-font-body-medium) !important;
   color: var(--pospire-deep-slate) !important;
 }
@@ -3993,21 +4441,25 @@ body > .v-overlay .v-overlay__scrim,
   box-shadow: var(--pospire-shadow-sm);
 }
 
-/* Dense/Compact Variant */
-.v-data-table--density-compact :deep(thead th) {
+/* Dense/Compact Variant - SCOPED to POS pages */
+body:has(.pos-page) .v-data-table--density-compact :deep(thead th),
+.pos-page .v-data-table--density-compact :deep(thead th) {
   height: 36px !important;
 }
 
-.v-data-table--density-compact :deep(tbody tr) {
+body:has(.pos-page) .v-data-table--density-compact :deep(tbody tr),
+.pos-page .v-data-table--density-compact :deep(tbody tr) {
   height: 36px !important;
 }
 
-/* Loading State */
-.v-data-table :deep(.v-data-table-progress) {
+/* Loading State - SCOPED to POS pages */
+body:has(.pos-page) .v-data-table :deep(.v-data-table-progress),
+.pos-page .v-data-table :deep(.v-data-table-progress) {
   height: 2px !important;
 }
 
-.v-data-table :deep(.v-data-table-progress .v-progress-linear) {
+body:has(.pos-page) .v-data-table :deep(.v-data-table-progress .v-progress-linear),
+.pos-page .v-data-table :deep(.v-data-table-progress .v-progress-linear) {
   background: var(--pospire-vibrant-teal) !important;
 }
 
@@ -4104,10 +4556,19 @@ body:has(.pos-page) .page-body {
 }
 
 /* Ensure v-card acts as proper flex container */
+/* This is the OUTER container that spans from header to items/cart - gets elevated shadow */
 .v-card.pos-scrollable-content {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
+  /* Modern shadow-based styling - subtle border + elevation shadow */
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: var(--pospire-radius-lg, 8px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12),
+              0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  background: var(--pospire-clean-white, #FFFFFF) !important;
+  /* Margin for gap between this container and the footer below */
+  margin-bottom: 12px !important;
 }
 
 /* Footer Section - fixed at bottom, never shrinks (ItemsSelector, Payments, Invoice) */
@@ -4140,14 +4601,15 @@ body:has(.pos-page) .page-body {
 }
 
 /* Invoice Header Section - Fixed at Top (flexbox, no sticky needed) */
+/* NOTE: Border removed - outer container has shadow border */
 .invoice-header-section {
   flex: 0 0 auto; /* Don't grow or shrink vertically */
   width: 100%; /* Take full width */
   z-index: 15;
-  background: var(--pospire-clean-white);
-  padding: 8px 0;
-  border-bottom: 1px solid var(--pospire-border-gray);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: transparent;
+  padding: 8px;
+  /* No border - part of shadow container */
+  border: none !important;
   /* Prevent dropdown clipping */
   overflow: visible;
 }
@@ -4217,13 +4679,17 @@ body:has(.pos-page) .page-body {
 }
 
 /* Invoice Cart Section - Fills remaining space, table wrapper handles scrolling */
+/* NOTE: Border removed - outer container (v-card.pos-scrollable-content) has shadow border */
 .invoice-cart-section {
   flex: 1 1 auto;
-  min-height: 150px; /* Ensure minimum visible height for empty state */
+  min-height: 100px; /* Minimum height for viewport fit */
   overflow: hidden; /* Let table wrapper handle scrolling for sticky headers */
   padding: 8px;
   display: flex;
   flex-direction: column;
+  /* No border on internal section - outer container has shadow border */
+  border: none !important;
+  background: transparent !important;
 }
 
 /* Data table fills the cart section */
@@ -4335,39 +4801,56 @@ body:has(.pos-page) .page-body {
   box-sizing: border-box !important;
 }
 
-/* ItemsSelector scrollable areas */
-.items-grid-scroll,
-.items-list-scroll {
+/* ItemsSelector scrollable areas - SCOPED to POS pages */
+/* NOTE: Border removed from items-list-scroll - outer container has the border instead */
+body:has(.pos-page) .items-grid-scroll,
+body:has(.pos-page) .items-list-scroll,
+.pos-page .items-grid-scroll,
+.pos-page .items-list-scroll {
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 100px; /* Minimum height for viewport fit */
   max-height: none !important; /* Override scoped max-height calc that breaks at certain resolutions */
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
+  /* NO border on internal list - border is on outer container */
+  border: none !important;
+  background: transparent !important;
+  /* No margin - outer container handles spacing */
+  margin-bottom: 0 !important;
 }
 
-/* Ensure list/grid fills available space in the flex container */
-.enhanced-items-container .items-list-scroll,
-.enhanced-items-container .items-grid-scroll {
+/* Ensure list/grid fills available space in the flex container - SCOPED to POS pages */
+body:has(.pos-page) .enhanced-items-container .items-list-scroll,
+body:has(.pos-page) .enhanced-items-container .items-grid-scroll,
+.pos-page .enhanced-items-container .items-list-scroll,
+.pos-page .enhanced-items-container .items-grid-scroll {
   flex: 1 1 auto;
   min-height: 0;
   max-height: none !important;
 }
 
-.items-grid-scroll::-webkit-scrollbar,
-.items-list-scroll::-webkit-scrollbar {
+/* Scrollbar styling - SCOPED to POS pages */
+body:has(.pos-page) .items-grid-scroll::-webkit-scrollbar,
+body:has(.pos-page) .items-list-scroll::-webkit-scrollbar,
+.pos-page .items-grid-scroll::-webkit-scrollbar,
+.pos-page .items-list-scroll::-webkit-scrollbar {
   width: 8px;
 }
 
-.items-grid-scroll::-webkit-scrollbar-track,
-.items-list-scroll::-webkit-scrollbar-track {
+body:has(.pos-page) .items-grid-scroll::-webkit-scrollbar-track,
+body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-track,
+.pos-page .items-grid-scroll::-webkit-scrollbar-track,
+.pos-page .items-list-scroll::-webkit-scrollbar-track {
   background: var(--pospire-light-gray);
   border-radius: 4px;
 }
 
-.items-grid-scroll::-webkit-scrollbar-thumb,
-.items-list-scroll::-webkit-scrollbar-thumb {
+body:has(.pos-page) .items-grid-scroll::-webkit-scrollbar-thumb,
+body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-thumb,
+.pos-page .items-grid-scroll::-webkit-scrollbar-thumb,
+.pos-page .items-list-scroll::-webkit-scrollbar-thumb {
   background: var(--pospire-border-gray);
   border-radius: 4px;
 }
@@ -4400,12 +4883,15 @@ body:has(.pos-page) .page-body {
 }
 
 /* ItemsSelector search bar v-cols - stay fixed, don't shrink */
+/* NOTE: Border removed - outer container has shadow border */
 .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:not(:has(> div.items)) {
   flex: 0 0 auto !important;
   flex-shrink: 0 !important;
   position: relative;
   z-index: 10;
-  background: white;
+  background: transparent;
+  /* No border - part of shadow container */
+  border: none !important;
 }
 
 /* First v-col (main search bar) specific styling */
@@ -4464,9 +4950,11 @@ body:has(.pos-page) .page-body {
   overflow: hidden !important;
 }
 
-/* ItemsSelector list view container */
-.items-list-scroll.enhanced-data-table,
-div.items-list-scroll {
+/* ItemsSelector list view container - SCOPED to POS pages */
+body:has(.pos-page) .items-list-scroll.enhanced-data-table,
+body:has(.pos-page) div.items-list-scroll,
+.pos-page .items-list-scroll.enhanced-data-table,
+.pos-page div.items-list-scroll {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
@@ -4474,20 +4962,26 @@ div.items-list-scroll {
   overflow: hidden !important; /* Let v-data-table handle scroll */
 }
 
-/* Override Vuetify overflow-y-auto if present */
-.items-list-scroll.overflow-y-auto {
+/* Override Vuetify overflow-y-auto if present - SCOPED to POS pages */
+body:has(.pos-page) .items-list-scroll.overflow-y-auto,
+.pos-page .items-list-scroll.overflow-y-auto {
   overflow: hidden !important;
 }
 
-.items-list-scroll .v-data-table,
-.items-list-scroll > .v-data-table {
+/* SCOPED to POS pages */
+body:has(.pos-page) .items-list-scroll .v-data-table,
+body:has(.pos-page) .items-list-scroll > .v-data-table,
+.pos-page .items-list-scroll .v-data-table,
+.pos-page .items-list-scroll > .v-data-table {
   flex: 1 1 auto !important;
   display: flex !important;
   flex-direction: column !important;
   min-height: 0 !important;
 }
 
-.items-list-scroll .v-data-table .v-table__wrapper {
+/* SCOPED to POS pages */
+body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
+.pos-page .items-list-scroll .v-data-table .v-table__wrapper {
   flex: 1 1 auto !important;
   overflow-y: auto !important;
   min-height: 0 !important;

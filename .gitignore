@@ -8,3 +8,7 @@ __pycache__
 
 # Local issue tracking (not committed)
 ISSUES.md
+
+# Build artifacts
+pospire/public/dist/
+yarn.lock
