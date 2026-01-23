@@ -203,13 +203,23 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 - see [license.txt](license.txt) for details.
+This project is licensed under the GNU General Public License v3.0 - see [LICENSE](LICENSE) for details.
 
 POSpire is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
 ## Support
 
-For issues and feature requests, please use the [GitHub Issues](https://github.com/promantia-ltd/POSpire/issues) page.
+Need help? We have structured issue templates to get you the right assistance:
+
+| Template | Use For |
+|----------|---------|
+| [Bug Report](https://github.com/promantia-ltd/POSpire/issues/new?template=bug_report.yml) | Something isn't working as expected |
+| [Feature Request](https://github.com/promantia-ltd/POSpire/issues/new?template=feature_request.yml) | Suggest a new feature or enhancement |
+| [Question](https://github.com/promantia-ltd/POSpire/issues/new?template=question.yml) | Ask for help or clarification |
+
+**Before opening an issue:**
+- Check [existing issues](https://github.com/promantia-ltd/POSpire/issues) to avoid duplicates
+- For general Frappe/ERPNext questions, use the [ERPNext Forum](https://discuss.frappe.io/)
 
 ---
 

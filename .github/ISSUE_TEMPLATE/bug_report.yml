@@ -1,0 +1,126 @@
+name: "\U0001F41B Bug Report"
+description: Report a bug or unexpected behavior in Pospire
+title: "[BUG] "
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Thanks for reporting a bug!
+        Please fill out the sections below to help us diagnose and fix the issue.
+
+        **Before submitting**, please check:
+        - [ ] I have searched [existing issues](https://github.com/promantia-ltd/POSpire/issues) to ensure this is not a duplicate
+        - [ ] I am running the latest version of Pospire
+
+  - type: dropdown
+    id: installation-method
+    attributes:
+      label: Installation Method
+      description: How did you install Frappe/ERPNext?
+      options:
+        - Manual Bench Setup
+        - Docker
+        - Frappe Cloud
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: frappe-version
+    attributes:
+      label: Frappe Version
+      description: "Run: bench version"
+      placeholder: "e.g., 15.28.0"
+    validations:
+      required: true
+
+  - type: input
+    id: erpnext-version
+    attributes:
+      label: ERPNext Version
+      description: "Run: bench version"
+      placeholder: "e.g., 15.20.0"
+    validations:
+      required: true
+
+  - type: input
+    id: pospire-version
+    attributes:
+      label: Pospire Branch/Version
+      description: Which branch or version are you using?
+      placeholder: "e.g., main, develop, v1.0.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Provide clear steps to reproduce the bug
+      placeholder: |
+        1. Go to POS...
+        2. Click on...
+        3. Select...
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: python-traceback
+    attributes:
+      label: Python Error Log
+      description: |
+        Paste the full Python traceback from `bench console` or `~/frappe-bench/logs/web.error.log`
+        **Do NOT just say "Server Error" - we need the stack trace**
+      render: python
+      placeholder: |
+        Traceback (most recent call last):
+          File "...", line X, in ...
+            ...
+        SomeError: Error message here
+    validations:
+      required: false
+
+  - type: textarea
+    id: browser-console
+    attributes:
+      label: Browser Console Errors
+      description: Open browser DevTools (F12) → Console tab → paste any red errors
+      render: javascript
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Screen Recording
+      description: Drag and drop images or videos here if applicable
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information (workarounds tried, related issues, etc.)
+    validations:
+      required: false
