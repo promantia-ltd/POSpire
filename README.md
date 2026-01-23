@@ -28,7 +28,6 @@ A modern, feature-rich Point of Sale (POS) application built on the Frappe Frame
 ### User Experience
 - Responsive design with teal color scheme
 - Real-time stock availability display
-- Keyboard shortcuts for quick actions
 - Multi-language support via Frappe translations
 
 ## Tech Stack
