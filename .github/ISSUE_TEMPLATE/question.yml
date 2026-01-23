@@ -1,0 +1,72 @@
+name: "\u2753 Question / Support"
+description: Ask a question or get help with Pospire
+title: "[QUESTION] "
+labels: ["question"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Need Help?
+        Before asking, please check:
+        - 📖 [Frappe Documentation](https://frappeframework.com/docs)
+        - 📖 [ERPNext Documentation](https://docs.erpnext.com)
+        - 🔍 [Existing Issues](https://github.com/promantia-ltd/POSpire/issues?q=is%3Aissue)
+
+        For general Frappe/ERPNext questions, consider asking on the [ERPNext Forum](https://discuss.frappe.io/).
+
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to achieve?
+      description: Describe what you're trying to do
+      placeholder: "I want to customize the POS receipt to include..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Describe any solutions you've attempted
+      placeholder: |
+        1. I tried editing...
+        2. I looked at the documentation for...
+        3. I searched for...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic Area
+      description: What area does your question relate to?
+      options:
+        - Installation / Setup
+        - Configuration
+        - Customization
+        - POS Usage
+        - Printing
+        - Payments
+        - Integration with ERPNext
+        - Performance
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: frappe-version
+    attributes:
+      label: Frappe Version (if relevant)
+      placeholder: "e.g., 15.28.0"
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other information that might help us answer your question
+    validations:
+      required: false

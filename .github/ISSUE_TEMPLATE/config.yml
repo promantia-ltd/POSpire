@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: "\U0001F4AC ERPNext Forum"
+    url: https://discuss.frappe.io/
+    about: For general Frappe/ERPNext questions, ask on the official forum
+
+  - name: "\U0001F4D6 Frappe Documentation"
+    url: https://frappeframework.com/docs
+    about: Check the Frappe Framework documentation
+
+  - name: "\U0001F4D6 ERPNext Documentation"
+    url: https://docs.erpnext.com
+    about: Check the ERPNext documentation

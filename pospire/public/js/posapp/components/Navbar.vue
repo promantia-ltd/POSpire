@@ -193,7 +193,7 @@ export default {
     },
     go_about() {
       const win = window.open(
-        'https://github.com/promantia-ltd/POS-Awesome',
+        'https://github.com/promantia-ltd/POSpire',
         '_blank'
       );
       win.focus();

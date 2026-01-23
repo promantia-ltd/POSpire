@@ -1,0 +1,90 @@
+name: "\U0001F4A1 Feature Request"
+description: Suggest a new feature or enhancement for Pospire
+title: "[FEAT] "
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Request
+        Thanks for taking the time to suggest an improvement!
+
+        Please provide as much detail as possible to help us understand and evaluate your request.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear description of the problem or pain point
+      placeholder: "I'm frustrated when I have to click 5 times to close a POS shift..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear description of what you want to happen
+      placeholder: "I would like a single button on the main POS screen that..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: Any alternative solutions or workarounds you've used
+    validations:
+      required: false
+
+  - type: dropdown
+    id: feature-area
+    attributes:
+      label: Feature Area
+      description: Which part of Pospire does this relate to?
+      options:
+        - POS Interface
+        - Payments
+        - Invoicing
+        - Inventory
+        - Reporting
+        - Settings/Configuration
+        - Printing
+        - Integration
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: business-case
+    attributes:
+      label: Business Use Case
+      description: |
+        Why is this feature important for a POS system?
+        (e.g., speeds up checkout, compliant with tax laws in X region, common retail workflow)
+      placeholder: "This would help retail stores in [region] comply with [regulation]..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: How important is this feature to you?
+      options:
+        - Nice to have
+        - Important for my workflow
+        - Critical / Blocking my adoption
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be willing to help implement this feature?
+      options:
+        - label: I'm willing to submit a PR for this feature
+        - label: I can help test this feature
+        - label: I can provide more detailed specifications
