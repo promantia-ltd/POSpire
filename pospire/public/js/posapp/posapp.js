@@ -9,11 +9,27 @@ import 'vue3-toastify/dist/index.css'
 
 frappe.provide('frappe.PosApp');
 
+const POSPIRE_FONT_STYLESHEET_ID = 'pospire-google-fonts';
+const POSPIRE_FONT_STYLESHEET_URL =
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Raleway:wght@700;800&family=Dancing+Script:wght@500;600;700&display=swap';
+
+function ensurePospireFontsLoaded() {
+    if (document.getElementById(POSPIRE_FONT_STYLESHEET_ID)) {
+        return;
+    }
+
+    const link = document.createElement('link');
+    link.id = POSPIRE_FONT_STYLESHEET_ID;
+    link.rel = 'stylesheet';
+    link.href = POSPIRE_FONT_STYLESHEET_URL;
+    document.head.appendChild(link);
+}
 
 frappe.PosApp.posapp = class {
     constructor({ parent }) {
         this.$parent = $(document);
         this.page = parent.page;
+        ensurePospireFontsLoaded();
         this.make_body();
 
     }

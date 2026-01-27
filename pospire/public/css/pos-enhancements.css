@@ -3,9 +3,8 @@
  * Colors: White (#FFFFFF), Deep Slate (#34495E), Vibrant Teal (#00BCD4)
  */
 
-/* Prevent zoom - ensure initial-scale=1.0 is respected (scoped to POS pages only) */
+/* Prevent mobile text inflation (scoped to POS pages only) */
 html:has(.pos-page), body:has(.pos-page) {
-  zoom: 1 !important;
   -webkit-text-size-adjust: 100% !important;
   text-size-adjust: 100% !important;
 }
@@ -17,13 +16,13 @@ html:has(.pos-page), body:has(.pos-page) {
   src: url("/assets/pospire/fonts/SAMAN___.TTF") format("truetype");
 }
 
-.indian-style {
+/* Indian style - scoped to POS pages only */
+body:has(.pos-page) .indian-style,
+.pos-page .indian-style {
   font-family: "Samarkan", sans-serif !important;
   font-size: 32px;
   color: #000;
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Raleway:wght@700;800&family=Dancing+Script:wght@500;600;700&display=swap');
 
 /* Font family - scoped to POS pages only */
 body:has(.pos-page) .v-application,
@@ -192,29 +191,34 @@ body:has(.pos-page) .pospire-section-header,
   border-radius: var(--pospire-radius-md, 6px) !important;
 }
 
-/* Payment Section z-index fix - ensure inputs are not overlapped */
-.pos-panel-container .v-text-field,
-.pos-panel-container .v-input {
+/* Payment Section z-index fix - ensure inputs are not overlapped - SCOPED to POS pages */
+body:has(.pos-page) .pos-panel-container .v-text-field,
+body:has(.pos-page) .pos-panel-container .v-input,
+.pos-page .pos-panel-container .v-text-field,
+.pos-page .pos-panel-container .v-input {
   position: relative;
   z-index: auto;
 }
 
-/* Payment section cards establish proper stacking context */
-.pos-panel-container .section-header {
+/* Payment section cards establish proper stacking context - SCOPED to POS pages */
+body:has(.pos-page) .pos-panel-container .section-header,
+.pos-page .pos-panel-container .section-header {
   position: relative;
   z-index: 1;
 }
 
-/* Ensure payment input overlays appear above section headers */
-.pos-panel-container .v-input .v-overlay__content,
-.pos-panel-container .v-select .v-overlay__content {
+/* Ensure payment input overlays appear above section headers - SCOPED to POS pages */
+body:has(.pos-page) .pos-panel-container .v-input .v-overlay__content,
+body:has(.pos-page) .pos-panel-container .v-select .v-overlay__content,
+.pos-page .pos-panel-container .v-input .v-overlay__content,
+.pos-page .pos-panel-container .v-select .v-overlay__content {
   z-index: 100 !important;
 }
 
 /* Dropdown overlay z-index */
 body:has(.pos-page) .v-overlay--active .v-overlay__content,
 .pos-page .v-overlay--active .v-overlay__content {
-  z-index: 2400 !important;
+  z-index: 1000 !important;
 }
 
 /* Payments page - fix v-autocomplete fieldset extending beyond bounds */
@@ -252,10 +256,9 @@ body:has(.pos-page) .modern-payments-card .v-field__outline,
   contain: strict !important;
 }
 
-/* Payments page section-header - transparent background */
+/* Payments page section-header - transparent background - SCOPED to POS pages */
 body:has(.pos-page) .modern-payments-card .section-header,
-.pos-page .modern-payments-card .section-header,
-.modern-payments-card .section-header {
+.pos-page .modern-payments-card .section-header {
   background-color: transparent !important;
   padding: 0 !important;
   margin: 0 0 1rem 0 !important;
@@ -264,10 +267,9 @@ body:has(.pos-page) .modern-payments-card .section-header,
   position: relative !important;
 }
 
-/* Customer section - z-index: 10 (above Invoices) */
+/* Customer section - z-index: 10 (above Invoices) - SCOPED to POS pages */
 body:has(.pos-page) .modern-payments-card .customer-section-wrapper,
-.pos-page .modern-payments-card .customer-section-wrapper,
-.modern-payments-card .customer-section-wrapper {
+.pos-page .modern-payments-card .customer-section-wrapper {
   position: relative !important;
   z-index: 10 !important;
   margin-bottom: 3rem !important;
@@ -904,236 +906,292 @@ body:has(.pos-page) .enhanced-notification.warning,
   }
 
   /* Reduce padding */
-  .enhanced-cart-panel,
-  .enhanced-controls {
+  body:has(.pos-page) .enhanced-cart-panel,
+  body:has(.pos-page) .enhanced-controls,
+  .pos-page .enhanced-cart-panel,
+  .pos-page .enhanced-controls {
     padding: 8px !important;
   }
 
   /* Smaller buttons */
-  .btn-primary-action {
+  body:has(.pos-page) .btn-primary-action,
+  .pos-page .btn-primary-action {
     height: 40px !important;
     min-height: 40px !important;
     font-size: 13px !important;
   }
 
-  .btn-secondary,
-  .btn-toggle {
+  body:has(.pos-page) .btn-secondary,
+  body:has(.pos-page) .btn-toggle,
+  .pos-page .btn-secondary,
+  .pos-page .btn-toggle {
     height: 34px !important;
     min-height: 34px !important;
     font-size: 12px !important;
   }
 
   /* Compact input fields */
-  .v-text-field .v-field,
-  .v-select .v-field,
-  .v-autocomplete .v-field {
+  body:has(.pos-page) .v-text-field .v-field,
+  body:has(.pos-page) .v-select .v-field,
+  body:has(.pos-page) .v-autocomplete .v-field,
+  .pos-page .v-text-field .v-field,
+  .pos-page .v-select .v-field,
+  .pos-page .v-autocomplete .v-field {
     min-height: 36px !important;
   }
 
   /* Smaller product cards */
-  .enhanced-item-card {
+  body:has(.pos-page) .enhanced-item-card,
+  .pos-page .enhanced-item-card {
     margin-bottom: 8px;
   }
 
-  .enhanced-item-image {
+  body:has(.pos-page) .enhanced-item-image,
+  .pos-page .enhanced-item-image {
     height: 100px;
   }
 
-  .enhanced-item-name {
+  body:has(.pos-page) .enhanced-item-name,
+  .pos-page .enhanced-item-name {
     font-size: 0.8rem;
   }
 
-  .enhanced-item-price {
+  body:has(.pos-page) .enhanced-item-price,
+  .pos-page .enhanced-item-price {
     font-size: 0.95rem;
   }
 
   /* Compact table rows */
-  .v-data-table :deep(tbody tr),
-  .pospire-table tbody tr {
+  body:has(.pos-page) .v-data-table :deep(tbody tr),
+  body:has(.pos-page) .pospire-table tbody tr,
+  .pos-page .v-data-table :deep(tbody tr),
+  .pos-page .pospire-table tbody tr {
     height: 36px !important;
   }
 
-  .v-data-table :deep(tbody td),
-  .pospire-table tbody td {
+  body:has(.pos-page) .v-data-table :deep(tbody td),
+  body:has(.pos-page) .pospire-table tbody td,
+  .pos-page .v-data-table :deep(tbody td),
+  .pos-page .pospire-table tbody td {
     padding: 0 8px !important;
     font-size: 12px !important;
   }
 
   /* Hide secondary info on small screens */
-  .enhanced-item-stock {
+  body:has(.pos-page) .enhanced-item-stock,
+  .pos-page .enhanced-item-stock {
     display: none;
   }
 }
 
 /* Small: 10" Tablets (600px - 959px) */
 @media (min-width: 600px) and (max-width: 959px) {
-  .enhanced-item-card {
+  body:has(.pos-page) .enhanced-item-card,
+  .pos-page .enhanced-item-card {
     margin-bottom: 12px;
   }
 
-  .enhanced-controls {
+  body:has(.pos-page) .enhanced-controls,
+  .pos-page .enhanced-controls {
     flex-direction: column;
     gap: 12px;
   }
 
-  .enhanced-action-buttons {
+  body:has(.pos-page) .enhanced-action-buttons,
+  .pos-page .enhanced-action-buttons {
     flex-direction: row;
     flex-wrap: wrap;
   }
 
-  .enhanced-cart-panel {
+  body:has(.pos-page) .enhanced-cart-panel,
+  .pos-page .enhanced-cart-panel {
     padding: 12px;
   }
 
   /* Adjust product card grid */
-  .enhanced-item-image {
+  body:has(.pos-page) .enhanced-item-image,
+  .pos-page .enhanced-item-image {
     height: 120px;
   }
 
   /* Compact button heights */
-  .btn-primary-action {
+  body:has(.pos-page) .btn-primary-action,
+  .pos-page .btn-primary-action {
     height: 42px !important;
     min-height: 42px !important;
   }
 
   /* Table adjustments */
-  .v-data-table :deep(tbody td),
-  .pospire-table tbody td {
+  body:has(.pos-page) .v-data-table :deep(tbody td),
+  body:has(.pos-page) .pospire-table tbody td,
+  .pos-page .v-data-table :deep(tbody td),
+  .pos-page .pospire-table tbody td {
     padding: 0 10px !important;
   }
 }
 
 /* Medium: 14-15" Laptops (960px - 1279px) */
 @media (min-width: 960px) and (max-width: 1279px) {
-  .enhanced-cart-panel {
+  body:has(.pos-page) .enhanced-cart-panel,
+  .pos-page .enhanced-cart-panel {
     padding: 16px;
   }
 
-  .enhanced-item-image {
+  body:has(.pos-page) .enhanced-item-image,
+  .pos-page .enhanced-item-image {
     height: 130px;
   }
 
   /* Standard button sizes */
-  .btn-primary-action {
+  body:has(.pos-page) .btn-primary-action,
+  .pos-page .btn-primary-action {
     height: var(--pospire-btn-primary-height) !important;
   }
 
-  .btn-secondary {
+  body:has(.pos-page) .btn-secondary,
+  .pos-page .btn-secondary {
     height: var(--pospire-btn-secondary-height) !important;
   }
 }
 
 /* Large: 17-19" Monitors (1280px - 1919px) */
 @media (min-width: 1280px) and (max-width: 1919px) {
-  .enhanced-cart-panel {
+  body:has(.pos-page) .enhanced-cart-panel,
+  .pos-page .enhanced-cart-panel {
     padding: 20px;
   }
 
-  .enhanced-item-image {
+  body:has(.pos-page) .enhanced-item-image,
+  .pos-page .enhanced-item-image {
     height: 140px;
   }
 
   /* Slightly larger fonts for readability */
-  .enhanced-item-name {
+  body:has(.pos-page) .enhanced-item-name,
+  .pos-page .enhanced-item-name {
     font-size: 0.95rem;
   }
 }
 
 /* Extra Large: 21-24" Monitors (1920px - 2559px) */
 @media (min-width: 1920px) and (max-width: 2559px) {
-  .enhanced-cart-panel {
+  body:has(.pos-page) .enhanced-cart-panel,
+  .pos-page .enhanced-cart-panel {
     padding: 24px;
   }
 
-  .enhanced-item-image {
+  body:has(.pos-page) .enhanced-item-image,
+  .pos-page .enhanced-item-image {
     height: 160px;
   }
 
-  .enhanced-item-name {
+  body:has(.pos-page) .enhanced-item-name,
+  .pos-page .enhanced-item-name {
     font-size: 1rem;
   }
 
-  .enhanced-item-price {
+  body:has(.pos-page) .enhanced-item-price,
+  .pos-page .enhanced-item-price {
     font-size: 1.15rem;
   }
 
   /* Larger touch targets for fixed counters */
-  .btn-primary-action {
+  body:has(.pos-page) .btn-primary-action,
+  .pos-page .btn-primary-action {
     height: 48px !important;
     min-height: 48px !important;
     font-size: 15px !important;
   }
 
-  .btn-secondary {
+  body:has(.pos-page) .btn-secondary,
+  .pos-page .btn-secondary {
     height: 42px !important;
     min-height: 42px !important;
   }
 
   /* Larger table rows */
-  .v-data-table :deep(tbody tr),
-  .pospire-table tbody tr {
+  body:has(.pos-page) .v-data-table :deep(tbody tr),
+  body:has(.pos-page) .pospire-table tbody tr,
+  .pos-page .v-data-table :deep(tbody tr),
+  .pos-page .pospire-table tbody tr {
     height: 44px !important;
   }
 }
 
 /* Ultra-wide: 32"+ Monitors (>= 2560px) */
 @media (min-width: 2560px) {
-  .enhanced-cart-panel {
+  body:has(.pos-page) .enhanced-cart-panel,
+  .pos-page .enhanced-cart-panel {
     padding: 30px;
   }
 
-  .enhanced-item-image {
+  body:has(.pos-page) .enhanced-item-image,
+  .pos-page .enhanced-item-image {
     height: 180px;
   }
 
-  .enhanced-item-name {
+  body:has(.pos-page) .enhanced-item-name,
+  .pos-page .enhanced-item-name {
     font-size: 1.1rem;
   }
 
-  .enhanced-item-price {
+  body:has(.pos-page) .enhanced-item-price,
+  .pos-page .enhanced-item-price {
     font-size: 1.25rem;
   }
 
   /* Even larger touch targets */
-  .btn-primary-action {
+  body:has(.pos-page) .btn-primary-action,
+  .pos-page .btn-primary-action {
     height: 52px !important;
     min-height: 52px !important;
     font-size: 16px !important;
     padding: 0 32px !important;
   }
 
-  .btn-secondary {
+  body:has(.pos-page) .btn-secondary,
+  .pos-page .btn-secondary {
     height: 44px !important;
     min-height: 44px !important;
     font-size: 15px !important;
   }
 
-  .btn-toggle {
+  body:has(.pos-page) .btn-toggle,
+  .pos-page .btn-toggle {
     height: 40px !important;
     min-height: 40px !important;
   }
 
   /* Larger input fields */
-  .v-text-field .v-field,
-  .v-select .v-field,
-  .v-autocomplete .v-field {
+  body:has(.pos-page) .v-text-field .v-field,
+  body:has(.pos-page) .v-select .v-field,
+  body:has(.pos-page) .v-autocomplete .v-field,
+  .pos-page .v-text-field .v-field,
+  .pos-page .v-select .v-field,
+  .pos-page .v-autocomplete .v-field {
     min-height: 44px !important;
   }
 
   /* Larger table rows */
-  .v-data-table :deep(tbody tr),
-  .pospire-table tbody tr {
+  body:has(.pos-page) .v-data-table :deep(tbody tr),
+  body:has(.pos-page) .pospire-table tbody tr,
+  .pos-page .v-data-table :deep(tbody tr),
+  .pos-page .pospire-table tbody tr {
     height: 48px !important;
   }
 
-  .v-data-table :deep(tbody td),
-  .pospire-table tbody td {
+  body:has(.pos-page) .v-data-table :deep(tbody td),
+  body:has(.pos-page) .pospire-table tbody td,
+  .pos-page .v-data-table :deep(tbody td),
+  .pos-page .pospire-table tbody td {
     font-size: 15px !important;
     padding: 0 16px !important;
   }
 
-  .v-data-table :deep(thead th),
-  .pospire-table thead th {
+  body:has(.pos-page) .v-data-table :deep(thead th),
+  body:has(.pos-page) .pospire-table thead th,
+  .pos-page .v-data-table :deep(thead th),
+  .pos-page .pospire-table thead th {
     font-size: 13px !important;
     height: 48px !important;
   }
@@ -1144,7 +1202,8 @@ body:has(.pos-page) .enhanced-notification.warning,
 /* 4:3 Aspect Ratio (Traditional POS monitors) */
 @media (min-aspect-ratio: 1.2/1) and (max-aspect-ratio: 1.4/1) {
   /* Optimize for squarer screens - more vertical space usage */
-  .enhanced-item-image {
+  body:has(.pos-page) .enhanced-item-image,
+  .pos-page .enhanced-item-image {
     height: 150px;
   }
 }
@@ -1152,7 +1211,8 @@ body:has(.pos-page) .enhanced-notification.warning,
 /* 16:10 Aspect Ratio (Some POS displays) */
 @media (min-aspect-ratio: 1.5/1) and (max-aspect-ratio: 1.65/1) {
   /* Balanced layout */
-  .enhanced-cart-panel {
+  body:has(.pos-page) .enhanced-cart-panel,
+  .pos-page .enhanced-cart-panel {
     max-height: calc(100vh - 100px);
   }
 }
@@ -1173,7 +1233,8 @@ body:has(.pos-page) .enhanced-notification.warning,
   }
 
   /* Use more horizontal space */
-  .enhanced-controls {
+  body:has(.pos-page) .enhanced-controls,
+  .pos-page .enhanced-controls {
     flex-direction: row !important;
     justify-content: space-between;
   }
@@ -1182,31 +1243,41 @@ body:has(.pos-page) .enhanced-notification.warning,
 /* Touch Devices */
 @media (pointer: coarse) {
   /* Larger touch targets for touch screens */
-  .btn-primary-action,
-  .btn-secondary,
-  .btn-toggle {
+  body:has(.pos-page) .btn-primary-action,
+  body:has(.pos-page) .btn-secondary,
+  body:has(.pos-page) .btn-toggle,
+  .pos-page .btn-primary-action,
+  .pos-page .btn-secondary,
+  .pos-page .btn-toggle {
     min-height: 44px !important; /* Apple's recommended minimum */
   }
 
-  .v-text-field .v-field,
-  .v-select .v-field,
-  .v-autocomplete .v-field {
+  body:has(.pos-page) .v-text-field .v-field,
+  body:has(.pos-page) .v-select .v-field,
+  body:has(.pos-page) .v-autocomplete .v-field,
+  .pos-page .v-text-field .v-field,
+  .pos-page .v-select .v-field,
+  .pos-page .v-autocomplete .v-field {
     min-height: 44px !important;
   }
 
   /* Larger table rows for touch */
-  .v-data-table :deep(tbody tr),
-  .pospire-table tbody tr {
+  body:has(.pos-page) .v-data-table :deep(tbody tr),
+  body:has(.pos-page) .pospire-table tbody tr,
+  .pos-page .v-data-table :deep(tbody tr),
+  .pos-page .pospire-table tbody tr {
     height: 48px !important;
   }
 
   /* More spacing between clickable items */
-  .enhanced-item-card {
+  body:has(.pos-page) .enhanced-item-card,
+  .pos-page .enhanced-item-card {
     margin-bottom: 12px;
   }
 
   /* Larger chips for touch */
-  .v-chip {
+  body:has(.pos-page) .v-chip,
+  .pos-page .v-chip {
     min-height: 36px !important;
   }
 }
@@ -1224,7 +1295,8 @@ body:has(.pos-page) .enhanced-notification.warning,
   }
 
   /* Adjust heights for portrait */
-  .enhanced-cart-panel {
+  body:has(.pos-page) .enhanced-cart-panel,
+  .pos-page .enhanced-cart-panel {
     max-height: 50vh;
     overflow-y: auto;
   }
@@ -1233,21 +1305,26 @@ body:has(.pos-page) .enhanced-notification.warning,
 /* Landscape Orientation */
 @media (orientation: landscape) and (max-height: 600px) {
   /* Compact vertical space for short landscape screens */
-  .v-app-bar {
+  body:has(.pos-page) .v-app-bar,
+  .pos-page .v-app-bar {
     height: 56px !important;
   }
 
-  .enhanced-cart-panel {
+  body:has(.pos-page) .enhanced-cart-panel,
+  .pos-page .enhanced-cart-panel {
     padding: 8px 12px !important;
   }
 
-  .btn-primary-action {
+  body:has(.pos-page) .btn-primary-action,
+  .pos-page .btn-primary-action {
     height: 38px !important;
     min-height: 38px !important;
   }
 
-  .v-data-table :deep(tbody tr),
-  .pospire-table tbody tr {
+  body:has(.pos-page) .v-data-table :deep(tbody tr),
+  body:has(.pos-page) .pospire-table tbody tr,
+  .pos-page .v-data-table :deep(tbody tr),
+  .pos-page .pospire-table tbody tr {
     height: 36px !important;
   }
 }
@@ -1255,36 +1332,44 @@ body:has(.pos-page) .enhanced-notification.warning,
 /* High DPI Displays */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
   /* Sharper borders on high DPI */
-  .enhanced-item-card,
-  .v-data-table,
-  .pospire-table {
+  body:has(.pos-page) .enhanced-item-card,
+  body:has(.pos-page) .v-data-table,
+  body:has(.pos-page) .pospire-table,
+  .pos-page .enhanced-item-card,
+  .pos-page .v-data-table,
+  .pos-page .pospire-table {
     border-width: 0.5px;
   }
   
   /* Adjust layout for high DPI - system scaling typically 150-200% */
-  :root {
+  body:has(.pos-page),
+  .pos-page {
     --pospire-scale-factor: 1.25;
   }
 }
 
 /* System Scaling 150% (Windows/Linux) */
 @media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 144dpi) {
-  :root {
+  body:has(.pos-page),
+  .pos-page {
     --pospire-scale-factor: 1.15;
   }
   
   /* Ensure footer sections scale appropriately */
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     min-height: calc(60px * var(--pospire-scale-factor));
   }
   
   /* Scale button heights */
-  .btn-primary-action {
+  body:has(.pos-page) .btn-primary-action,
+  .pos-page .btn-primary-action {
     height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
     min-height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
   }
   
-  .btn-secondary {
+  body:has(.pos-page) .btn-secondary,
+  .pos-page .btn-secondary {
     height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
     min-height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
   }
@@ -1292,22 +1377,26 @@ body:has(.pos-page) .enhanced-notification.warning,
 
 /* System Scaling 200% (Windows/Linux) */
 @media (-webkit-min-device-pixel-ratio: 2.5), (min-resolution: 240dpi) {
-  :root {
+  body:has(.pos-page),
+  .pos-page {
     --pospire-scale-factor: 1.5;
   }
   
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     min-height: calc(70px * var(--pospire-scale-factor));
     padding: calc(16px * var(--pospire-scale-factor)) calc(24px * var(--pospire-scale-factor)) !important;
   }
   
-  .btn-primary-action {
+  body:has(.pos-page) .btn-primary-action,
+  .pos-page .btn-primary-action {
     height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
     min-height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
     font-size: calc(14px * var(--pospire-scale-factor)) !important;
   }
   
-  .btn-secondary {
+  body:has(.pos-page) .btn-secondary,
+  .pos-page .btn-secondary {
     height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
     min-height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
   }
@@ -1390,7 +1479,8 @@ body:has(.pos-page) .enhanced-scrollbar::-webkit-scrollbar-thumb:hover,
 }
 
 /* Pagination */
-.compact-pagination {
+body:has(.pos-page) .compact-pagination,
+.pos-page .compact-pagination {
   margin: 0 !important;
   padding: 0 1rem !important;
   display: flex !important;
@@ -1400,26 +1490,31 @@ body:has(.pos-page) .enhanced-scrollbar::-webkit-scrollbar-thumb:hover,
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
 }
 
-.compact-pagination .v-pagination__list {
+body:has(.pos-page) .compact-pagination .v-pagination__list,
+.pos-page .compact-pagination .v-pagination__list {
   margin-bottom: 0 !important;
 }
 
-.compact-pagination .page-info {
+body:has(.pos-page) .compact-pagination .page-info,
+.pos-page .compact-pagination .page-info {
   flex: 0 0 20%;
 }
 
-.compact-pagination .v-pagination {
+body:has(.pos-page) .compact-pagination .v-pagination,
+.pos-page .compact-pagination .v-pagination {
   flex: 0 0 30%;
   display: flex;
   justify-content: flex-end;
 }
 
-.compact-pagination nav[role="navigation"] {
+body:has(.pos-page) .compact-pagination nav[role="navigation"],
+.pos-page .compact-pagination nav[role="navigation"] {
   border-bottom: 0 !important;
   background: transparent !important;
 }
 
-.pos-navbar {
+body:has(.pos-page) .pos-navbar,
+.pos-page .pos-navbar {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
 }
 /* .pos-page-root {  }
@@ -1524,7 +1619,8 @@ body:has(.pos-page) .v-overlay--active .v-overlay__scrim,
 }
 
 /* Main modal card styling - SCOPED to POS pages */
-.pospire-modal,
+body:has(.pos-page) .pospire-modal,
+.pos-page .pospire-modal,
 body:has(.pos-page) .v-dialog > .v-overlay__content > .v-card,
 .pos-page .v-dialog > .v-overlay__content > .v-card {
   border-radius: 16px !important;
@@ -1537,7 +1633,8 @@ body:has(.pos-page) .v-dialog > .v-overlay__content > .v-card,
 }
 
 /* Modal header styling - SCOPED to POS pages */
-.pospire-modal-header,
+body:has(.pos-page) .pospire-modal-header,
+.pos-page .pospire-modal-header,
 body:has(.pos-page) .v-dialog .v-card > .v-card-title,
 .pos-page .v-dialog .v-card > .v-card-title {
   background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%) !important;
@@ -1549,7 +1646,8 @@ body:has(.pos-page) .v-dialog .v-card > .v-card-title,
 }
 
 /* Modal title text - SCOPED to POS pages */
-.pospire-modal-title,
+body:has(.pos-page) .pospire-modal-title,
+.pos-page .pospire-modal-title,
 body:has(.pos-page) .v-dialog .v-card > .v-card-title .text-h5,
 body:has(.pos-page) .v-dialog .v-card > .v-card-title > span,
 .pos-page .v-dialog .v-card > .v-card-title .text-h5,
@@ -1571,7 +1669,8 @@ body:has(.pos-page) .v-dialog .v-card .text-primary,
 }
 
 /* Modal body styling - SCOPED to POS pages */
-.pospire-modal-body,
+body:has(.pos-page) .pospire-modal-body,
+.pos-page .pospire-modal-body,
 body:has(.pos-page) .v-dialog .v-card > .v-card-text,
 .pos-page .v-dialog .v-card > .v-card-text {
   padding: 24px !important;
@@ -1582,7 +1681,8 @@ body:has(.pos-page) .v-dialog .v-card > .v-card-text,
 }
 
 /* Modal actions/footer styling - SCOPED to POS pages */
-.pospire-modal-actions,
+body:has(.pos-page) .pospire-modal-actions,
+.pos-page .pospire-modal-actions,
 body:has(.pos-page) .v-dialog .v-card > .v-card-actions,
 .pos-page .v-dialog .v-card > .v-card-actions {
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
@@ -1592,7 +1692,8 @@ body:has(.pos-page) .v-dialog .v-card > .v-card-actions,
 }
 
 /* Modal action buttons - Secondary/Cancel - SCOPED to POS pages */
-.pospire-modal-btn-secondary,
+body:has(.pos-page) .pospire-modal-btn-secondary,
+.pos-page .pospire-modal-btn-secondary,
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="grey-darken-1"],
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action),
 .pos-page .v-dialog .v-card-actions .v-btn[color="grey-darken-1"],
@@ -1609,7 +1710,8 @@ body:has(.pos-page) .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):n
   transition: all 0.2s ease !important;
 }
 
-.pospire-modal-btn-secondary:hover,
+body:has(.pos-page) .pospire-modal-btn-secondary:hover,
+.pos-page .pospire-modal-btn-secondary:hover,
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="grey-darken-1"]:hover,
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action):hover,
 .pos-page .v-dialog .v-card-actions .v-btn[color="grey-darken-1"]:hover,
@@ -1620,7 +1722,8 @@ body:has(.pos-page) .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):n
 }
 
 /* Modal action buttons - Primary/Confirm - SCOPED to POS pages */
-.pospire-modal-btn-primary,
+body:has(.pos-page) .pospire-modal-btn-primary,
+.pos-page .pospire-modal-btn-primary,
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn[variant="elevated"],
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="primary"],
 .pos-page .v-dialog .v-card-actions .v-btn[variant="elevated"],
@@ -1637,7 +1740,8 @@ body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="primary"],
   transition: all 0.2s ease !important;
 }
 
-.pospire-modal-btn-primary:hover,
+body:has(.pos-page) .pospire-modal-btn-primary:hover,
+.pos-page .pospire-modal-btn-primary:hover,
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn[variant="elevated"]:hover,
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="primary"]:hover,
 .pos-page .v-dialog .v-card-actions .v-btn[variant="elevated"]:hover,
@@ -1648,14 +1752,16 @@ body:has(.pos-page) .v-dialog .v-card-actions .v-btn[color="primary"]:hover,
 }
 
 /* Danger/Warning modal variant - SCOPED to POS pages */
-.pospire-modal-danger .pospire-modal-btn-primary,
+body:has(.pos-page) .pospire-modal-danger .pospire-modal-btn-primary,
+.pos-page .pospire-modal-danger .pospire-modal-btn-primary,
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn.btn-danger,
 .pos-page .v-dialog .v-card-actions .v-btn.btn-danger {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35) !important;
 }
 
-.pospire-modal-danger .pospire-modal-btn-primary:hover,
+body:has(.pos-page) .pospire-modal-danger .pospire-modal-btn-primary:hover,
+.pos-page .pospire-modal-danger .pospire-modal-btn-primary:hover,
 body:has(.pos-page) .v-dialog .v-card-actions .v-btn.btn-danger:hover,
 .pos-page .v-dialog .v-card-actions .v-btn.btn-danger:hover {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
@@ -1663,7 +1769,8 @@ body:has(.pos-page) .v-dialog .v-card-actions .v-btn.btn-danger:hover,
 }
 
 /* Modal icon styling */
-.pospire-modal-icon {
+body:has(.pos-page) .pospire-modal-icon,
+.pos-page .pospire-modal-icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -1673,33 +1780,39 @@ body:has(.pos-page) .v-dialog .v-card-actions .v-btn.btn-danger:hover,
   flex-shrink: 0;
 }
 
-.pospire-modal-icon.icon-warning {
+body:has(.pos-page) .pospire-modal-icon.icon-warning,
+.pos-page .pospire-modal-icon.icon-warning {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   color: #d97706;
 }
 
-.pospire-modal-icon.icon-danger {
+body:has(.pos-page) .pospire-modal-icon.icon-danger,
+.pos-page .pospire-modal-icon.icon-danger {
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #dc2626;
 }
 
-.pospire-modal-icon.icon-success {
+body:has(.pos-page) .pospire-modal-icon.icon-success,
+.pos-page .pospire-modal-icon.icon-success {
   background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
   color: #059669;
 }
 
-.pospire-modal-icon.icon-info {
+body:has(.pos-page) .pospire-modal-icon.icon-info,
+.pos-page .pospire-modal-icon.icon-info {
   background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
   color: #0284c7;
 }
 
-.pospire-modal-icon.icon-teal {
+body:has(.pos-page) .pospire-modal-icon.icon-teal,
+.pos-page .pospire-modal-icon.icon-teal {
   background: linear-gradient(135deg, rgba(0, 188, 212, 0.15) 0%, rgba(0, 188, 212, 0.25) 100%);
   color: #00BCD4;
 }
 
 /* Modal close button */
-.pospire-modal-close {
+body:has(.pos-page) .pospire-modal-close,
+.pos-page .pospire-modal-close {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -1716,7 +1829,8 @@ body:has(.pos-page) .v-dialog .v-card-actions .v-btn.btn-danger:hover,
   border: none;
 }
 
-.pospire-modal-close:hover {
+body:has(.pos-page) .pospire-modal-close:hover,
+.pos-page .pospire-modal-close:hover {
   background: #f1f5f9;
   color: #475569;
 }
@@ -2117,27 +2231,35 @@ body:has(.pos-page) .v-switch .v-label,
 /* On/Off States */
 
 /* Switch OFF state - Gray track */
-.switch-off .v-switch__track,
-.switch-off .v-selection-control .v-switch__track,
-.switch-off.v-switch .v-switch__track {
+body:has(.pos-page) .switch-off .v-switch__track,
+body:has(.pos-page) .switch-off .v-selection-control .v-switch__track,
+body:has(.pos-page) .switch-off.v-switch .v-switch__track,
+.pos-page .switch-off .v-switch__track,
+.pos-page .switch-off .v-selection-control .v-switch__track,
+.pos-page .switch-off.v-switch .v-switch__track {
   background-color: #BDBDBD !important;
   opacity: 1 !important;
 }
 
 /* Switch ON state - Teal track */
-.switch-on .v-switch__track,
-.switch-on .v-selection-control .v-switch__track,
-.switch-on.v-switch .v-switch__track {
+body:has(.pos-page) .switch-on .v-switch__track,
+body:has(.pos-page) .switch-on .v-selection-control .v-switch__track,
+body:has(.pos-page) .switch-on.v-switch .v-switch__track,
+.pos-page .switch-on .v-switch__track,
+.pos-page .switch-on .v-selection-control .v-switch__track,
+.pos-page .switch-on.v-switch .v-switch__track {
   background-color: var(--pospire-vibrant-teal) !important;
   opacity: 1 !important;
 }
 
 /* Override any Vuetify color prop */
-.pospire-switch.switch-off .v-switch__track {
+body:has(.pos-page) .pospire-switch.switch-off .v-switch__track,
+.pos-page .pospire-switch.switch-off .v-switch__track {
   background-color: #BDBDBD !important;
 }
 
-.pospire-switch.switch-on .v-switch__track {
+body:has(.pos-page) .pospire-switch.switch-on .v-switch__track,
+.pos-page .pospire-switch.switch-on .v-switch__track {
   background-color: var(--pospire-vibrant-teal) !important;
 }
 
@@ -2157,37 +2279,44 @@ body:has(.pos-page) .v-switch:focus-within .v-switch__track,
  */
 
 /* Neutral chip - for informational tags (Items Group, Profile, etc.) */
-.pospire-chip-neutral {
+body:has(.pos-page) .pospire-chip-neutral,
+.pos-page .pospire-chip-neutral {
   background-color: rgba(52, 73, 94, 0.08) !important;
   color: var(--pospire-deep-slate) !important;
 }
 
-.pospire-chip-neutral .v-icon {
+body:has(.pos-page) .pospire-chip-neutral .v-icon,
+.pos-page .pospire-chip-neutral .v-icon {
   color: var(--pospire-deep-slate) !important;
 }
 
 /* Teal chip - ONLY for selected/active states */
-.pospire-chip-active {
+body:has(.pos-page) .pospire-chip-active,
+.pos-page .pospire-chip-active {
   background-color: rgba(0, 188, 212, 0.12) !important;
   color: var(--pospire-vibrant-teal) !important;
 }
 
-.pospire-chip-active .v-icon {
+body:has(.pos-page) .pospire-chip-active .v-icon,
+.pos-page .pospire-chip-active .v-icon {
   color: var(--pospire-vibrant-teal) !important;
 }
 
 /* Status chips */
-.pospire-chip-success {
+body:has(.pos-page) .pospire-chip-success,
+.pos-page .pospire-chip-success {
   background-color: rgba(76, 175, 80, 0.12) !important;
   color: var(--pospire-grass-green) !important;
 }
 
-.pospire-chip-warning {
+body:has(.pos-page) .pospire-chip-warning,
+.pos-page .pospire-chip-warning {
   background-color: rgba(255, 152, 0, 0.12) !important;
   color: var(--pospire-safety-amber) !important;
 }
 
-.pospire-chip-error {
+body:has(.pos-page) .pospire-chip-error,
+.pos-page .pospire-chip-error {
   background-color: rgba(244, 67, 67, 0.12) !important;
   color: var(--pospire-vivid-red) !important;
 }
@@ -2223,14 +2352,14 @@ body:has(.pos-page) .btn-toggle.active,
 }
 
 /* Totals highlight text */
-.pospire-total-highlight {
+body:has(.pos-page) .pospire-total-highlight,
+.pos-page .pospire-total-highlight {
   color: var(--pospire-vibrant-teal) !important;
   font-weight: 600 !important;
 }
 
-
-
-:root {
+body:has(.pos-page),
+.pos-page {
   /* Design System Variables */
 
   /* Core Colors */
@@ -2710,89 +2839,109 @@ body:has(.pos-page) .btn-toggle.active,
 /* Animation Utilities */
 
 /* Fade utilities */
-.animate-fadeIn {
+body:has(.pos-page) .animate-fadeIn,
+.pos-page .animate-fadeIn {
   animation: fadeIn var(--anim-normal) var(--ease-out) forwards;
 }
 
-.animate-fadeOut {
+body:has(.pos-page) .animate-fadeOut,
+.pos-page .animate-fadeOut {
   animation: fadeOut var(--anim-fast) var(--ease-in) forwards;
 }
 
-.animate-fadeInUp {
+body:has(.pos-page) .animate-fadeInUp,
+.pos-page .animate-fadeInUp {
   animation: fadeInUp var(--anim-moderate) var(--ease-out) forwards;
 }
 
-.animate-fadeInDown {
+body:has(.pos-page) .animate-fadeInDown,
+.pos-page .animate-fadeInDown {
   animation: fadeInDown var(--anim-moderate) var(--ease-out) forwards;
 }
 
-.animate-fadeInScale {
+body:has(.pos-page) .animate-fadeInScale,
+.pos-page .animate-fadeInScale {
   animation: fadeInScale var(--anim-normal) var(--ease-out) forwards;
 }
 
 /* Slide utilities */
-.animate-slideInRight {
+body:has(.pos-page) .animate-slideInRight,
+.pos-page .animate-slideInRight {
   animation: slideInRight var(--anim-moderate) var(--ease-out) forwards;
 }
 
-.animate-slideInLeft {
+body:has(.pos-page) .animate-slideInLeft,
+.pos-page .animate-slideInLeft {
   animation: slideInLeft var(--anim-moderate) var(--ease-out) forwards;
 }
 
 /* Scale utilities */
-.animate-scaleIn {
+body:has(.pos-page) .animate-scaleIn,
+.pos-page .animate-scaleIn {
   animation: scaleIn var(--anim-normal) var(--ease-out) forwards;
 }
 
-.animate-popIn {
+body:has(.pos-page) .animate-popIn,
+.pos-page .animate-popIn {
   animation: popIn var(--anim-moderate) var(--ease-bounce) forwards;
 }
 
-.animate-bounceIn {
+body:has(.pos-page) .animate-bounceIn,
+.pos-page .animate-bounceIn {
   animation: bounceIn var(--anim-slow) var(--ease-out) forwards;
 }
 
 /* Interactive utilities */
-.animate-pulse {
+body:has(.pos-page) .animate-pulse,
+.pos-page .animate-pulse {
   animation: pulse 2s var(--ease-in-out) infinite;
 }
 
-.animate-pulseGlow {
+body:has(.pos-page) .animate-pulseGlow,
+.pos-page .animate-pulseGlow {
   animation: pulseGlow 2s var(--ease-in-out) infinite;
 }
 
-.animate-shake {
+body:has(.pos-page) .animate-shake,
+.pos-page .animate-shake {
   animation: shake 0.5s var(--ease-in-out);
 }
 
-.animate-spin {
+body:has(.pos-page) .animate-spin,
+.pos-page .animate-spin {
   animation: spin 1s linear infinite;
 }
 
 /* Cart animations */
-.animate-cartAdd {
+body:has(.pos-page) .animate-cartAdd,
+.pos-page .animate-cartAdd {
   animation: cartAdd var(--anim-moderate) var(--ease-out) forwards;
 }
 
-.animate-cartRemove {
+body:has(.pos-page) .animate-cartRemove,
+.pos-page .animate-cartRemove {
   animation: cartRemove var(--anim-normal) var(--ease-in) forwards;
 }
 
 /* Feedback animations */
-.animate-successFlash {
+body:has(.pos-page) .animate-successFlash,
+.pos-page .animate-successFlash {
   animation: successFlash 0.6s var(--ease-out);
 }
 
-.animate-errorFlash {
+body:has(.pos-page) .animate-errorFlash,
+.pos-page .animate-errorFlash {
   animation: errorFlash 0.6s var(--ease-out);
 }
 
-.animate-numberPop {
+body:has(.pos-page) .animate-numberPop,
+.pos-page .animate-numberPop {
   animation: numberPop var(--anim-fast) var(--ease-bounce);
 }
 
 /* Skeleton loading */
-.skeleton-loading {
+body:has(.pos-page) .skeleton-loading,
+.pos-page .skeleton-loading {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -2861,14 +3010,16 @@ body:has(.pos-page) .product-card:active,
 }
 
 /* Product Card Styling with visible borders */
-.pospire-product-card {
+body:has(.pos-page) .pospire-product-card,
+.pos-page .pospire-product-card {
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   /* More visible default border */
   border: 2px solid var(--pospire-border-medium, #718096) !important;
   border-radius: var(--pospire-radius-lg, 8px) !important;
 }
 
-.pospire-product-card:hover {
+body:has(.pos-page) .pospire-product-card:hover,
+.pos-page .pospire-product-card:hover {
   transform: translateY(-6px) scale(1.02) !important;
   /* Darker border on hover */
   border-color: var(--pospire-border-dark, #4A5568) !important;
@@ -2877,7 +3028,8 @@ body:has(.pos-page) .product-card:active,
     0 0 0 2px rgba(74, 85, 104, 0.3) !important;
 }
 
-.pospire-product-card:active {
+body:has(.pos-page) .pospire-product-card:active,
+.pos-page .pospire-product-card:active {
   transform: translateY(-2px) scale(0.98) !important;
   transition-duration: 0.1s !important;
 }
@@ -2907,14 +3059,16 @@ body:has(.pos-page) .product-card:active,
   }
 }
 
-.item-selected {
+body:has(.pos-page) .item-selected,
+.pos-page .item-selected {
   animation: itemSelected 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   border-color: #00BCD4 !important;
   z-index: 10;
 }
 
 /* Selection flash overlay */
-.item-selected::after {
+body:has(.pos-page) .item-selected::after,
+.pos-page .item-selected::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -2955,56 +3109,69 @@ body:has(.pos-page) .product-card:active,
   }
 }
 
-.pospire-items-table .list-item-selected {
+body:has(.pos-page) .pospire-items-table .list-item-selected,
+.pos-page .pospire-items-table .list-item-selected {
   animation: listRowSelected 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   position: relative;
 }
 
-.pospire-items-table .list-item-selected td {
+body:has(.pos-page) .pospire-items-table .list-item-selected td,
+.pos-page .pospire-items-table .list-item-selected td {
   background-color: rgba(0, 188, 212, 0.1) !important;
 }
 
 /* Enhanced hover for list rows */
-.pospire-items-table tbody tr {
+body:has(.pos-page) .pospire-items-table tbody tr,
+.pos-page .pospire-items-table tbody tr {
   transition: all 0.2s ease !important;
   cursor: pointer;
 }
 
-.pospire-items-table tbody tr:hover {
+body:has(.pos-page) .pospire-items-table tbody tr:hover,
+.pos-page .pospire-items-table tbody tr:hover {
   background-color: rgba(0, 188, 212, 0.08) !important;
   transform: translateX(2px);
 }
 
-.pospire-items-table tbody tr:hover td {
+body:has(.pos-page) .pospire-items-table tbody tr:hover td,
+.pos-page .pospire-items-table tbody tr:hover td {
   background-color: transparent !important;
 }
 
-.pospire-items-table tbody tr:active {
+body:has(.pos-page) .pospire-items-table tbody tr:active,
+.pos-page .pospire-items-table tbody tr:active {
   transform: scale(0.995);
   transition-duration: 0.1s !important;
 }
 
 /* Stock badges animations */
-.pospire-stock-badge.badge-warning,
-.pospire-stock-badge.badge-warning.animate-pulse {
+body:has(.pos-page) .pospire-stock-badge.badge-warning,
+body:has(.pos-page) .pospire-stock-badge.badge-warning.animate-pulse,
+.pos-page .pospire-stock-badge.badge-warning,
+.pos-page .pospire-stock-badge.badge-warning.animate-pulse {
   animation: pulse 2s ease-in-out infinite;
 }
 
-.pospire-stock-badge.badge-error,
-.pospire-stock-badge.badge-error.animate-heartbeat {
+body:has(.pos-page) .pospire-stock-badge.badge-error,
+body:has(.pos-page) .pospire-stock-badge.badge-error.animate-heartbeat,
+.pos-page .pospire-stock-badge.badge-error,
+.pos-page .pospire-stock-badge.badge-error.animate-heartbeat {
   animation: heartbeat 1.5s ease-in-out infinite;
 }
 
 /* Ensure badge colors are visible */
-.pospire-stock-badge.badge-success {
+body:has(.pos-page) .pospire-stock-badge.badge-success,
+.pos-page .pospire-stock-badge.badge-success {
   background: var(--pospire-grass-green) !important;
 }
 
-.pospire-stock-badge.badge-warning {
+body:has(.pos-page) .pospire-stock-badge.badge-warning,
+.pos-page .pospire-stock-badge.badge-warning {
   background: var(--pospire-safety-amber) !important;
 }
 
-.pospire-stock-badge.badge-error {
+body:has(.pos-page) .pospire-stock-badge.badge-error,
+.pos-page .pospire-stock-badge.badge-error {
   background: var(--pospire-vivid-red) !important;
 }
 
@@ -3038,11 +3205,13 @@ body:has(.pos-page) .btn-primary-action:hover::before,
 }
 
 /* Quantity display pop animation */
-.qty-display {
+body:has(.pos-page) .qty-display,
+.pos-page .qty-display {
   transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.qty-display.animate-numberPop {
+body:has(.pos-page) .qty-display.animate-numberPop,
+.pos-page .qty-display.animate-numberPop {
   transform: scale(1.3);
   color: var(--pospire-vibrant-teal);
   font-weight: 700;
@@ -3181,51 +3350,60 @@ body:has(.pos-page) .v-select__content,
 /* Cart Animations */
 
 /* New item added to cart */
-.cart-item-new {
+body:has(.pos-page) .cart-item-new,
+.pos-page .cart-item-new {
   animation: cartAdd var(--anim-moderate) var(--ease-out);
 }
 
 /* Item being removed from cart */
-.cart-item-removing {
+body:has(.pos-page) .cart-item-removing,
+.pos-page .cart-item-removing {
   animation: cartRemove var(--anim-normal) var(--ease-in) forwards;
 }
 
 /* Quantity change highlight */
-.qty-changed {
+body:has(.pos-page) .qty-changed,
+.pos-page .qty-changed {
   animation: numberPop var(--anim-fast) var(--ease-bounce);
 }
 
 /* Total amount update */
-.total-updated {
+body:has(.pos-page) .total-updated,
+.pos-page .total-updated {
   animation: pulse var(--anim-moderate) var(--ease-out);
 }
 
 /* Cart badge count animation */
-.cart-badge-update {
+body:has(.pos-page) .cart-badge-update,
+.pos-page .cart-badge-update {
   animation: bounceIn var(--anim-moderate) var(--ease-bounce);
 }
 
 /* Payment Animations */
 
 /* Payment method selection */
-.payment-method-selected {
+body:has(.pos-page) .payment-method-selected,
+.pos-page .payment-method-selected {
   animation: popIn var(--anim-normal) var(--ease-bounce);
 }
 
 /* Payment success */
-.payment-success {
+body:has(.pos-page) .payment-success,
+.pos-page .payment-success {
   animation: successFlash 0.8s var(--ease-out), pulse 0.4s var(--ease-out);
 }
 
 /* Payment error */
-.payment-error {
+body:has(.pos-page) .payment-error,
+.pos-page .payment-error {
   animation: errorFlash 0.8s var(--ease-out), shake 0.5s var(--ease-out);
 }
 
 /* Loading States */
 
 /* Spinner */
-.loading-spinner {
+body:has(.pos-page) .loading-spinner,
+.pos-page .loading-spinner {
   animation: spin 1s linear infinite;
   border: 2px solid var(--pospire-border-gray);
   border-top-color: var(--pospire-vibrant-teal);
@@ -3235,7 +3413,8 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Skeleton text */
-.skeleton-text {
+body:has(.pos-page) .skeleton-text,
+.pos-page .skeleton-text {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -3244,7 +3423,8 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Skeleton card */
-.skeleton-card {
+body:has(.pos-page) .skeleton-card,
+.pos-page .skeleton-card {
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -3510,79 +3690,94 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Animation Classes */
-.animate-celebrationBounce {
+body:has(.pos-page) .animate-celebrationBounce,
+.pos-page .animate-celebrationBounce {
   animation: celebrationBounce 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 /* Neon glow - continuous */
-.animate-neonGlow {
+body:has(.pos-page) .animate-neonGlow,
+.pos-page .animate-neonGlow {
   animation: neonGlow 1.5s ease-in-out infinite;
 }
 
 /* Rainbow border - continuous */
-.animate-rainbowBorder {
+body:has(.pos-page) .animate-rainbowBorder,
+.pos-page .animate-rainbowBorder {
   border: 3px solid var(--pospire-vibrant-teal);
   animation: rainbowBorder 3s linear infinite;
 }
 
 /* Heartbeat - attention */
-.animate-heartbeat {
+body:has(.pos-page) .animate-heartbeat,
+.pos-page .animate-heartbeat {
   animation: heartbeat 1.5s ease-in-out infinite;
 }
 
 /* Jelly wobble */
-.animate-jelly {
+body:has(.pos-page) .animate-jelly,
+.pos-page .animate-jelly {
   animation: jelly 0.8s ease-in-out;
 }
 
 /* Flip in */
-.animate-flipIn {
+body:has(.pos-page) .animate-flipIn,
+.pos-page .animate-flipIn {
   animation: flipIn 0.6s ease-out;
 }
 
 /* Zoom rotate */
-.animate-zoomInRotate {
+body:has(.pos-page) .animate-zoomInRotate,
+.pos-page .animate-zoomInRotate {
   animation: zoomInRotate 0.5s ease-out;
 }
 
 /* Swing */
-.animate-swing {
+body:has(.pos-page) .animate-swing,
+.pos-page .animate-swing {
   animation: swing 0.8s ease-in-out;
   transform-origin: top center;
 }
 
 /* Tada celebration */
-.animate-tada {
+body:has(.pos-page) .animate-tada,
+.pos-page .animate-tada {
   animation: tada 1s ease-in-out;
 }
 
 /* Rubber band */
-.animate-rubberBand {
+body:has(.pos-page) .animate-rubberBand,
+.pos-page .animate-rubberBand {
   animation: rubberBand 0.8s ease-in-out;
 }
 
 /* Float - continuous hover effect */
-.animate-float {
+body:has(.pos-page) .animate-float,
+.pos-page .animate-float {
   animation: float 2s ease-in-out infinite;
 }
 
 /* Glow ring - one time attention */
-.animate-glowRing {
+body:has(.pos-page) .animate-glowRing,
+.pos-page .animate-glowRing {
   animation: glowRing 1s ease-out;
 }
 
 /* Success celebrate */
-.animate-successCelebrate {
+body:has(.pos-page) .animate-successCelebrate,
+.pos-page .animate-successCelebrate {
   animation: successCelebrate 0.8s ease-out;
 }
 
 /* Electric zap */
-.animate-electricZap {
+body:has(.pos-page) .animate-electricZap,
+.pos-page .animate-electricZap {
   animation: electricZap 0.5s ease-in-out;
 }
 
 /* Gradient Backgrounds */
-.gradient-animate {
+body:has(.pos-page) .gradient-animate,
+.pos-page .gradient-animate {
   background: linear-gradient(
     45deg,
     #00BCD4,
@@ -3595,7 +3790,8 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Success gradient */
-.gradient-success-animate {
+body:has(.pos-page) .gradient-success-animate,
+.pos-page .gradient-success-animate {
   background: linear-gradient(
     45deg,
     #4CAF50,
@@ -3608,7 +3804,8 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Teal gradient */
-.gradient-teal-animate {
+body:has(.pos-page) .gradient-teal-animate,
+.pos-page .gradient-teal-animate {
   background: linear-gradient(
     45deg,
     #00BCD4,
@@ -3621,41 +3818,47 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Special Effects */
-.payment-success-vibrant {
+body:has(.pos-page) .payment-success-vibrant,
+.pos-page .payment-success-vibrant {
   animation:
     successCelebrate 0.8s ease-out,
     glowRing 1s ease-out 0.3s;
 }
 
 /* Big win / jackpot effect */
-.animate-jackpot {
+body:has(.pos-page) .animate-jackpot,
+.pos-page .animate-jackpot {
   animation:
     tada 1s ease-in-out,
     neonGlow 1.5s ease-in-out infinite 1s;
 }
 
 /* Call to action - grab attention */
-.animate-cta {
+body:has(.pos-page) .animate-cta,
+.pos-page .animate-cta {
   animation:
     heartbeat 1.5s ease-in-out infinite,
     glowRing 2s ease-out infinite;
 }
 
 /* New item highlight */
-.animate-newItem {
+body:has(.pos-page) .animate-newItem,
+.pos-page .animate-newItem {
   animation:
     celebrationBounce 0.6s ease-out,
     glowRing 0.8s ease-out 0.3s;
 }
 
 /* Discount badge */
-.animate-discountBadge {
+body:has(.pos-page) .animate-discountBadge,
+.pos-page .animate-discountBadge {
   animation: swing 0.5s ease-in-out;
   transform-origin: top center;
 }
 
 /* Hover Effects */
-.hover-vibrant:hover {
+body:has(.pos-page) .hover-vibrant:hover,
+.pos-page .hover-vibrant:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow:
     0 10px 30px rgba(0, 188, 212, 0.3),
@@ -3664,7 +3867,8 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Glow on hover */
-.hover-glow:hover {
+body:has(.pos-page) .hover-glow:hover,
+.pos-page .hover-glow:hover {
   box-shadow:
     0 0 10px var(--pospire-vibrant-teal),
     0 0 20px rgba(0, 188, 212, 0.5),
@@ -3673,7 +3877,8 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Border glow on hover */
-.hover-border-glow:hover {
+body:has(.pos-page) .hover-border-glow:hover,
+.pos-page .hover-border-glow:hover {
   border-color: var(--pospire-vibrant-teal);
   box-shadow:
     inset 0 0 10px rgba(0, 188, 212, 0.1),
@@ -3682,24 +3887,28 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Scale pop on hover */
-.hover-pop:hover {
+body:has(.pos-page) .hover-pop:hover,
+.pos-page .hover-pop:hover {
   transform: scale(1.08);
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Rotate on hover */
-.hover-rotate:hover {
+body:has(.pos-page) .hover-rotate:hover,
+.pos-page .hover-rotate:hover {
   transform: rotate(5deg) scale(1.05);
   transition: transform 0.3s ease;
 }
 
 /* Active States */
-.ripple-effect {
+body:has(.pos-page) .ripple-effect,
+.pos-page .ripple-effect {
   position: relative;
   overflow: hidden;
 }
 
-.ripple-effect::after {
+body:has(.pos-page) .ripple-effect::after,
+.pos-page .ripple-effect::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -3712,24 +3921,28 @@ body:has(.pos-page) .v-select__content,
   transition: width 0.3s, height 0.3s;
 }
 
-.ripple-effect:active::after {
+body:has(.pos-page) .ripple-effect:active::after,
+.pos-page .ripple-effect:active::after {
   width: 200px;
   height: 200px;
 }
 
 /* Squish on click */
-.click-squish:active {
+body:has(.pos-page) .click-squish:active,
+.pos-page .click-squish:active {
   transform: scale(0.92);
   transition: transform 0.1s ease;
 }
 
 /* Loading States */
-.loading-dots {
+body:has(.pos-page) .loading-dots,
+.pos-page .loading-dots {
   display: flex;
   gap: 6px;
 }
 
-.loading-dots span {
+body:has(.pos-page) .loading-dots span,
+.pos-page .loading-dots span {
   width: 10px;
   height: 10px;
   background: var(--pospire-vibrant-teal);
@@ -3737,12 +3950,16 @@ body:has(.pos-page) .v-select__content,
   animation: float 0.6s ease-in-out infinite;
 }
 
-.loading-dots span:nth-child(1) { animation-delay: 0s; }
-.loading-dots span:nth-child(2) { animation-delay: 0.1s; }
-.loading-dots span:nth-child(3) { animation-delay: 0.2s; }
+body:has(.pos-page) .loading-dots span:nth-child(1),
+.pos-page .loading-dots span:nth-child(1) { animation-delay: 0s; }
+body:has(.pos-page) .loading-dots span:nth-child(2),
+.pos-page .loading-dots span:nth-child(2) { animation-delay: 0.1s; }
+body:has(.pos-page) .loading-dots span:nth-child(3),
+.pos-page .loading-dots span:nth-child(3) { animation-delay: 0.2s; }
 
 /* Pulsing ring loader */
-.loading-ring {
+body:has(.pos-page) .loading-ring,
+.pos-page .loading-ring {
   width: 40px;
   height: 40px;
   border: 3px solid var(--pospire-border-gray);
@@ -3750,7 +3967,8 @@ body:has(.pos-page) .v-select__content,
   position: relative;
 }
 
-.loading-ring::after {
+body:has(.pos-page) .loading-ring::after,
+.pos-page .loading-ring::after {
   content: '';
   position: absolute;
   top: -3px;
@@ -3764,7 +3982,8 @@ body:has(.pos-page) .v-select__content,
 }
 
 /* Gradient spinner */
-.loading-gradient-spinner {
+body:has(.pos-page) .loading-gradient-spinner,
+.pos-page .loading-gradient-spinner {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -3782,9 +4001,12 @@ body:has(.pos-page) .v-select__content,
 
 /* Respect user preference for reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  body:has(.pos-page) *,
+  body:has(.pos-page) *::before,
+  body:has(.pos-page) *::after,
+  .pos-page *,
+  .pos-page *::before,
+  .pos-page *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -3792,25 +4014,44 @@ body:has(.pos-page) .v-select__content,
   }
 
   /* Disable all continuous/looping animations */
-  .animate-pulse,
-  .animate-pulseGlow,
-  .animate-spin,
-  .animate-neonGlow,
-  .animate-rainbowBorder,
-  .animate-heartbeat,
-  .animate-float,
-  .animate-cta,
-  .animate-jackpot,
-  .gradient-animate,
-  .gradient-success-animate,
-  .gradient-teal-animate,
-  .skeleton-loading,
-  .skeleton-text,
-  .skeleton-card,
-  .loading-spinner,
-  .loading-dots span,
-  .loading-ring::after,
-  .loading-gradient-spinner {
+  body:has(.pos-page) .animate-pulse,
+  body:has(.pos-page) .animate-pulseGlow,
+  body:has(.pos-page) .animate-spin,
+  body:has(.pos-page) .animate-neonGlow,
+  body:has(.pos-page) .animate-rainbowBorder,
+  body:has(.pos-page) .animate-heartbeat,
+  body:has(.pos-page) .animate-float,
+  body:has(.pos-page) .animate-cta,
+  body:has(.pos-page) .animate-jackpot,
+  body:has(.pos-page) .gradient-animate,
+  body:has(.pos-page) .gradient-success-animate,
+  body:has(.pos-page) .gradient-teal-animate,
+  body:has(.pos-page) .skeleton-loading,
+  body:has(.pos-page) .skeleton-text,
+  body:has(.pos-page) .skeleton-card,
+  body:has(.pos-page) .loading-spinner,
+  body:has(.pos-page) .loading-dots span,
+  body:has(.pos-page) .loading-ring::after,
+  body:has(.pos-page) .loading-gradient-spinner,
+  .pos-page .animate-pulse,
+  .pos-page .animate-pulseGlow,
+  .pos-page .animate-spin,
+  .pos-page .animate-neonGlow,
+  .pos-page .animate-rainbowBorder,
+  .pos-page .animate-heartbeat,
+  .pos-page .animate-float,
+  .pos-page .animate-cta,
+  .pos-page .animate-jackpot,
+  .pos-page .gradient-animate,
+  .pos-page .gradient-success-animate,
+  .pos-page .gradient-teal-animate,
+  .pos-page .skeleton-loading,
+  .pos-page .skeleton-text,
+  .pos-page .skeleton-card,
+  .pos-page .loading-spinner,
+  .pos-page .loading-dots span,
+  .pos-page .loading-ring::after,
+  .pos-page .loading-gradient-spinner {
     animation: none !important;
   }
 }
@@ -4074,7 +4315,8 @@ body:has(.pos-page) .v-dialog .v-card-actions.pospire-modal-actions,
 }
 
 /* Modal Close Button */
-.pospire-modal-close {
+body:has(.pos-page) .pospire-modal-close,
+.pos-page .pospire-modal-close {
   position: absolute !important;
   top: 16px !important;
   right: 16px !important;
@@ -4087,7 +4329,8 @@ body:has(.pos-page) .v-dialog .v-card-actions.pospire-modal-actions,
   border-radius: 50% !important;
 }
 
-.pospire-modal-close:hover {
+body:has(.pos-page) .pospire-modal-close:hover,
+.pos-page .pospire-modal-close:hover {
   background: rgba(0, 0, 0, 0.05) !important;
   color: var(--pospire-deep-slate) !important;
 }
@@ -4168,7 +4411,8 @@ body:has(.pos-page) .v-dialog.info .enhanced-modal-card,
 /* Status Pills & Tags */
 
 /* Base Pill - Per Design: Pills 32px height, Tags 20px height, 999px radius */
-.pospire-pill {
+body:has(.pos-page) .pospire-pill,
+.pos-page .pospire-pill {
   display: inline-flex !important;
   align-items: center !important;
   height: 32px !important;
@@ -4182,7 +4426,8 @@ body:has(.pos-page) .v-dialog.info .enhanced-modal-card,
   gap: 4px !important;
 }
 
-.pospire-tag {
+body:has(.pos-page) .pospire-tag,
+.pos-page .pospire-tag {
   display: inline-flex !important;
   align-items: center !important;
   height: 20px !important;
@@ -4195,74 +4440,92 @@ body:has(.pos-page) .v-dialog.info .enhanced-modal-card,
 }
 
 /* Success Pill (Green) */
-.pospire-pill--success,
-.pospire-pill.success {
+body:has(.pos-page) .pospire-pill--success,
+body:has(.pos-page) .pospire-pill.success,
+.pos-page .pospire-pill--success,
+.pos-page .pospire-pill.success {
   background: rgba(76, 175, 80, 0.15) !important;
   color: var(--pospire-grass-green) !important;
   border: 1px solid var(--pospire-grass-green) !important;
 }
 
 /* Warning Pill (Amber) */
-.pospire-pill--warning,
-.pospire-pill.warning {
+body:has(.pos-page) .pospire-pill--warning,
+body:has(.pos-page) .pospire-pill.warning,
+.pos-page .pospire-pill--warning,
+.pos-page .pospire-pill.warning {
   background: rgba(255, 152, 0, 0.15) !important;
   color: var(--pospire-safety-amber) !important;
   border: 1px solid var(--pospire-safety-amber) !important;
 }
 
 /* Error/Danger Pill (Red) */
-.pospire-pill--error,
-.pospire-pill--danger,
-.pospire-pill.error,
-.pospire-pill.danger {
+body:has(.pos-page) .pospire-pill--error,
+body:has(.pos-page) .pospire-pill--danger,
+body:has(.pos-page) .pospire-pill.error,
+body:has(.pos-page) .pospire-pill.danger,
+.pos-page .pospire-pill--error,
+.pos-page .pospire-pill--danger,
+.pos-page .pospire-pill.error,
+.pos-page .pospire-pill.danger {
   background: rgba(244, 67, 67, 0.15) !important;
   color: var(--pospire-vivid-red) !important;
   border: 1px solid var(--pospire-vivid-red) !important;
 }
 
 /* Info Pill (Teal) */
-.pospire-pill--info,
-.pospire-pill.info {
+body:has(.pos-page) .pospire-pill--info,
+body:has(.pos-page) .pospire-pill.info,
+.pos-page .pospire-pill--info,
+.pos-page .pospire-pill.info {
   background: rgba(0, 188, 212, 0.15) !important;
   color: var(--pospire-vibrant-teal) !important;
   border: 1px solid var(--pospire-vibrant-teal) !important;
 }
 
 /* Neutral Pill (Gray) */
-.pospire-pill--neutral,
-.pospire-pill.neutral {
+body:has(.pos-page) .pospire-pill--neutral,
+body:has(.pos-page) .pospire-pill.neutral,
+.pos-page .pospire-pill--neutral,
+.pos-page .pospire-pill.neutral {
   background: rgba(117, 117, 117, 0.15) !important;
   color: var(--pospire-text-secondary) !important;
   border: 1px solid var(--pospire-border-gray) !important;
 }
 
 /* Pills with Icons */
-.pospire-pill .v-icon {
+body:has(.pos-page) .pospire-pill .v-icon,
+.pos-page .pospire-pill .v-icon {
   font-size: 14px !important;
   margin-right: 2px !important;
 }
 
 /* Solid Pill Variants */
-.pospire-pill--solid.pospire-pill--success {
+body:has(.pos-page) .pospire-pill--solid.pospire-pill--success,
+.pos-page .pospire-pill--solid.pospire-pill--success {
   background: var(--pospire-grass-green) !important;
   color: var(--pospire-clean-white) !important;
   border: none !important;
 }
 
-.pospire-pill--solid.pospire-pill--warning {
+body:has(.pos-page) .pospire-pill--solid.pospire-pill--warning,
+.pos-page .pospire-pill--solid.pospire-pill--warning {
   background: var(--pospire-safety-amber) !important;
   color: var(--pospire-clean-white) !important;
   border: none !important;
 }
 
-.pospire-pill--solid.pospire-pill--error,
-.pospire-pill--solid.pospire-pill--danger {
+body:has(.pos-page) .pospire-pill--solid.pospire-pill--error,
+body:has(.pos-page) .pospire-pill--solid.pospire-pill--danger,
+.pos-page .pospire-pill--solid.pospire-pill--error,
+.pos-page .pospire-pill--solid.pospire-pill--danger {
   background: var(--pospire-vivid-red) !important;
   color: var(--pospire-clean-white) !important;
   border: none !important;
 }
 
-.pospire-pill--solid.pospire-pill--info {
+body:has(.pos-page) .pospire-pill--solid.pospire-pill--info,
+.pos-page .pospire-pill--solid.pospire-pill--info {
   background: var(--pospire-vibrant-teal) !important;
   color: var(--pospire-clean-white) !important;
   border: none !important;
@@ -4275,7 +4538,8 @@ body:has(.pos-page) .v-data-table :deep(thead th),
 body:has(.pos-page) .v-table :deep(thead th),
 .pos-page .v-data-table :deep(thead th),
 .pos-page .v-table :deep(thead th),
-.pospire-table thead th {
+body:has(.pos-page) .pospire-table thead th,
+.pos-page .pospire-table thead th {
   font: var(--pospire-font-body-medium) !important;
   color: var(--pospire-deep-slate) !important;
   background: #F7F7F7 !important;
@@ -4294,7 +4558,8 @@ body:has(.pos-page) .v-data-table :deep(tbody tr),
 body:has(.pos-page) .v-table :deep(tbody tr),
 .pos-page .v-data-table :deep(tbody tr),
 .pos-page .v-table :deep(tbody tr),
-.pospire-table tbody tr {
+body:has(.pos-page) .pospire-table tbody tr,
+.pos-page .pospire-table tbody tr {
   height: 40px !important;
   transition: background-color 0.15s ease !important;
 }
@@ -4304,7 +4569,8 @@ body:has(.pos-page) .v-data-table :deep(tbody tr:nth-child(even)),
 body:has(.pos-page) .v-table :deep(tbody tr:nth-child(even)),
 .pos-page .v-data-table :deep(tbody tr:nth-child(even)),
 .pos-page .v-table :deep(tbody tr:nth-child(even)),
-.pospire-table tbody tr:nth-child(even) {
+body:has(.pos-page) .pospire-table tbody tr:nth-child(even),
+.pos-page .pospire-table tbody tr:nth-child(even) {
   background: #FAFAFF !important;
 }
 
@@ -4312,7 +4578,8 @@ body:has(.pos-page) .v-data-table :deep(tbody tr:nth-child(odd)),
 body:has(.pos-page) .v-table :deep(tbody tr:nth-child(odd)),
 .pos-page .v-data-table :deep(tbody tr:nth-child(odd)),
 .pos-page .v-table :deep(tbody tr:nth-child(odd)),
-.pospire-table tbody tr:nth-child(odd) {
+body:has(.pos-page) .pospire-table tbody tr:nth-child(odd),
+.pos-page .pospire-table tbody tr:nth-child(odd) {
   background: var(--pospire-clean-white) !important;
 }
 
@@ -4321,7 +4588,8 @@ body:has(.pos-page) .v-data-table :deep(tbody tr:hover),
 body:has(.pos-page) .v-table :deep(tbody tr:hover),
 .pos-page .v-data-table :deep(tbody tr:hover),
 .pos-page .v-table :deep(tbody tr:hover),
-.pospire-table tbody tr:hover {
+body:has(.pos-page) .pospire-table tbody tr:hover,
+.pos-page .pospire-table tbody tr:hover {
   background: #E6F7FA !important;
   cursor: pointer !important;
 }
@@ -4331,7 +4599,8 @@ body:has(.pos-page) .v-data-table :deep(tbody td),
 body:has(.pos-page) .v-table :deep(tbody td),
 .pos-page .v-data-table :deep(tbody td),
 .pos-page .v-table :deep(tbody td),
-.pospire-table tbody td {
+body:has(.pos-page) .pospire-table tbody td,
+.pos-page .pospire-table tbody td {
   font: var(--pospire-font-body-regular) !important;
   color: var(--pospire-deep-slate) !important;
   padding: 0 12px !important;
@@ -4343,7 +4612,8 @@ body:has(.pos-page) .v-data-table,
 body:has(.pos-page) .v-table,
 .pos-page .v-data-table,
 .pos-page .v-table,
-.pospire-table {
+body:has(.pos-page) .pospire-table,
+.pos-page .pospire-table {
   border: 1px solid var(--pospire-border-gray) !important;
   border-radius: 8px !important;
   overflow: hidden !important;
@@ -4358,8 +4628,10 @@ body:has(.pos-page) .v-table :deep(tfoot td),
 .pos-page .v-data-table :deep(tfoot td),
 .pos-page .v-table :deep(tfoot th),
 .pos-page .v-table :deep(tfoot td),
-.pospire-table tfoot th,
-.pospire-table tfoot td {
+body:has(.pos-page) .pospire-table tfoot th,
+body:has(.pos-page) .pospire-table tfoot td,
+.pos-page .pospire-table tfoot th,
+.pos-page .pospire-table tfoot td {
   font: var(--pospire-font-body-medium) !important;
   color: var(--pospire-deep-slate) !important;
   background: var(--pospire-light-gray) !important;
@@ -4371,7 +4643,8 @@ body:has(.pos-page) .v-table :deep(tfoot td),
 /* Empty State - SCOPED */
 body:has(.pos-page) .v-data-table :deep(.v-data-table__empty),
 .pos-page .v-data-table :deep(.v-data-table__empty),
-.pospire-table-empty {
+body:has(.pos-page) .pospire-table-empty,
+.pos-page .pospire-table-empty {
   padding: 48px 24px !important;
   text-align: center !important;
 }
@@ -4384,7 +4657,8 @@ body:has(.pos-page) .v-data-table :deep(.v-data-table__empty) .v-icon,
   opacity: 0.5 !important;
 }
 
-.pospire-table-empty-text {
+body:has(.pos-page) .pospire-table-empty-text,
+.pos-page .pospire-table-empty-text {
   font: var(--pospire-font-body-regular) !important;
   color: var(--pospire-text-secondary) !important;
   margin-top: 12px !important;
@@ -4411,7 +4685,8 @@ body:has(.pos-page) .v-data-table :deep(.v-data-table-footer__pagination),
 }
 
 /* Table Action Buttons */
-.pospire-table-action-btn {
+body:has(.pos-page) .pospire-table-action-btn,
+.pos-page .pospire-table-action-btn {
   min-width: 32px !important;
   width: 32px !important;
   height: 32px !important;
@@ -4421,20 +4696,24 @@ body:has(.pos-page) .v-data-table :deep(.v-data-table-footer__pagination),
   border-radius: 4px !important;
 }
 
-.pospire-table-action-btn:hover {
+body:has(.pos-page) .pospire-table-action-btn:hover,
+.pos-page .pospire-table-action-btn:hover {
   background: rgba(0, 188, 212, 0.1) !important;
 }
 
-.pospire-table-action-btn--danger {
+body:has(.pos-page) .pospire-table-action-btn--danger,
+.pos-page .pospire-table-action-btn--danger {
   color: var(--pospire-vivid-red) !important;
 }
 
-.pospire-table-action-btn--danger:hover {
+body:has(.pos-page) .pospire-table-action-btn--danger:hover,
+.pos-page .pospire-table-action-btn--danger:hover {
   background: rgba(244, 67, 67, 0.1) !important;
 }
 
 /* Responsive Wrapper */
-.pospire-table-wrapper {
+body:has(.pos-page) .pospire-table-wrapper,
+.pos-page .pospire-table-wrapper {
   width: 100%;
   overflow-x: auto;
   border-radius: 8px;
@@ -4515,8 +4794,10 @@ body:has(.pos-page) .page-body {
 
 /* Level 3: Panel Columns - Fill row height */
 /* Applies to both ItemsSelector/Payments column and Invoice column */
-.v-col.test-pos,
-.v-col.invoice-section {
+body:has(.pos-page) .v-col.test-pos,
+body:has(.pos-page) .v-col.invoice-section,
+.pos-page .v-col.test-pos,
+.pos-page .v-col.invoice-section {
   height: 100%;
   max-height: 100%;
   overflow: hidden;
@@ -4526,17 +4807,20 @@ body:has(.pos-page) .page-body {
 }
 
 /* ItemsSelector column z-index (above invoice for dropdowns) */
-.v-col.test-pos {
+body:has(.pos-page) .v-col.test-pos,
+.pos-page .v-col.test-pos {
   z-index: 2;
 }
 
 /* Invoice column z-index */
-.v-col.invoice-section {
+body:has(.pos-page) .v-col.invoice-section,
+.pos-page .v-col.invoice-section {
   z-index: 1;
 }
 
-/* Panel Container - shared by ItemsSelector, Payments, and Invoice */
-.pos-panel-container {
+/* Panel Container - shared by ItemsSelector, Payments, and Invoice - SCOPED to POS pages */
+body:has(.pos-page) .pos-panel-container,
+.pos-page .pos-panel-container {
   height: 100%;
   max-height: 100%;
   display: flex;
@@ -4547,7 +4831,8 @@ body:has(.pos-page) .page-body {
   padding-bottom: calc(var(--pospire-footer-border-width, 2px) * 4);
 }
 
-.pos-scrollable-content {
+body:has(.pos-page) .pos-scrollable-content,
+.pos-page .pos-scrollable-content {
   flex: 1 1 auto; /* Grow to fill, start from content size */
   min-height: 0; /* Allow shrinking below content size */
   overflow: hidden; /* Let child sections handle scrolling */
@@ -4557,7 +4842,8 @@ body:has(.pos-page) .page-body {
 
 /* Ensure v-card acts as proper flex container */
 /* This is the OUTER container that spans from header to items/cart - gets elevated shadow */
-.v-card.pos-scrollable-content {
+body:has(.pos-page) .v-card.pos-scrollable-content,
+.pos-page .v-card.pos-scrollable-content {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
@@ -4572,7 +4858,8 @@ body:has(.pos-page) .page-body {
 }
 
 /* Footer Section - fixed at bottom, never shrinks (ItemsSelector, Payments, Invoice) */
-.pos-footer-section {
+body:has(.pos-page) .pos-footer-section,
+.pos-page .pos-footer-section {
   flex: 0 0 auto !important; /* Don't grow or shrink - stay at natural size */
   flex-shrink: 0 !important; /* NEVER shrink - prevent footer cutoff */
   flex-grow: 0 !important; /* Don't grow either */
@@ -4593,16 +4880,19 @@ body:has(.pos-page) .page-body {
   overflow: visible !important; /* Allow labels to show above border */
 }
 
-/* Explicit footer protection for all panel types */
-.pos-panel-container > .pos-footer-section,
-.pos-panel-container > .v-card.pos-footer-section {
+/* Explicit footer protection for all panel types - SCOPED to POS pages */
+body:has(.pos-page) .pos-panel-container > .pos-footer-section,
+body:has(.pos-page) .pos-panel-container > .v-card.pos-footer-section,
+.pos-page .pos-panel-container > .pos-footer-section,
+.pos-page .pos-panel-container > .v-card.pos-footer-section {
   flex: 0 0 auto !important;
   flex-shrink: 0 !important;
 }
 
 /* Invoice Header Section - Fixed at Top (flexbox, no sticky needed) */
 /* NOTE: Border removed - outer container has shadow border */
-.invoice-header-section {
+body:has(.pos-page) .invoice-header-section,
+.pos-page .invoice-header-section {
   flex: 0 0 auto; /* Don't grow or shrink vertically */
   width: 100%; /* Take full width */
   z-index: 15;
@@ -4615,19 +4905,22 @@ body:has(.pos-page) .page-body {
 }
 
 /* Ensure all elements in header row are vertically centered */
-.invoice-header-section .v-row {
+body:has(.pos-page) .invoice-header-section .v-row,
+.pos-page .invoice-header-section .v-row {
   align-items: center !important;
   width: 100%;
 }
 
 /* Columns should stretch their content */
-.invoice-header-section .v-row > .v-col {
+body:has(.pos-page) .invoice-header-section .v-row > .v-col,
+.pos-page .invoice-header-section .v-row > .v-col {
   display: flex;
   align-items: center;
 }
 
 /* Wrapper divs (like Customer component) must stretch to fill column */
-.invoice-header-section .v-col > div {
+body:has(.pos-page) .invoice-header-section .v-col > div,
+.pos-page .invoice-header-section .v-col > div {
   width: 100% !important;
   flex: 1 1 100%;
   /* Use block display so v-autocomplete takes full width */
@@ -4636,7 +4929,8 @@ body:has(.pos-page) .page-body {
 }
 
 /* UpdateCustomer dialog wrapper should not affect layout */
-.invoice-header-section .v-col > div > .v-row {
+body:has(.pos-page) .invoice-header-section .v-col > div > .v-row,
+.pos-page .invoice-header-section .v-col > div > .v-row {
   position: absolute;
   width: 0;
   height: 0;
@@ -4644,10 +4938,14 @@ body:has(.pos-page) .page-body {
 }
 
 /* All v-input fields must stretch to fill their container */
-.invoice-header-section .v-input,
-.invoice-header-section .v-input.v-input--horizontal,
-.invoice-header-section .v-autocomplete,
-.invoice-header-section .v-select {
+body:has(.pos-page) .invoice-header-section .v-input,
+body:has(.pos-page) .invoice-header-section .v-input.v-input--horizontal,
+body:has(.pos-page) .invoice-header-section .v-autocomplete,
+body:has(.pos-page) .invoice-header-section .v-select,
+.pos-page .invoice-header-section .v-input,
+.pos-page .invoice-header-section .v-input.v-input--horizontal,
+.pos-page .invoice-header-section .v-autocomplete,
+.pos-page .invoice-header-section .v-select {
   width: 100% !important;
   max-width: 100% !important;
   /* Vuetify uses grid internally - keep it but ensure full width */
@@ -4655,32 +4953,41 @@ body:has(.pos-page) .page-body {
 }
 
 /* Ensure the input inner container stretches */
-.invoice-header-section .v-input__control {
+body:has(.pos-page) .invoice-header-section .v-input__control,
+.pos-page .invoice-header-section .v-input__control {
   width: 100% !important;
 }
 
 /* Ensure the input field element itself stretches */
-.invoice-header-section .v-input .v-field,
-.invoice-header-section .v-field {
+body:has(.pos-page) .invoice-header-section .v-input .v-field,
+body:has(.pos-page) .invoice-header-section .v-field,
+.pos-page .invoice-header-section .v-input .v-field,
+.pos-page .invoice-header-section .v-field {
   width: 100% !important;
 }
 
 /* Override any inline flex-grow restrictions */
-.invoice-header-section .v-input--horizontal > .v-input__control {
+body:has(.pos-page) .invoice-header-section .v-input--horizontal > .v-input__control,
+.pos-page .invoice-header-section .v-input--horizontal > .v-input__control {
   flex-grow: 1 !important;
 }
 
 /* Ensure autocomplete dropdown in header appears above footer */
-.invoice-header-section .v-overlay-container,
-.invoice-header-section .v-autocomplete .v-overlay__content,
-.invoice-header-section .v-select .v-overlay__content,
-.invoice-header-section .v-menu > .v-overlay__content {
+body:has(.pos-page) .invoice-header-section .v-overlay-container,
+body:has(.pos-page) .invoice-header-section .v-autocomplete .v-overlay__content,
+body:has(.pos-page) .invoice-header-section .v-select .v-overlay__content,
+body:has(.pos-page) .invoice-header-section .v-menu > .v-overlay__content,
+.pos-page .invoice-header-section .v-overlay-container,
+.pos-page .invoice-header-section .v-autocomplete .v-overlay__content,
+.pos-page .invoice-header-section .v-select .v-overlay__content,
+.pos-page .invoice-header-section .v-menu > .v-overlay__content {
   z-index: 1000 !important;
 }
 
 /* Invoice Cart Section - Fills remaining space, table wrapper handles scrolling */
 /* NOTE: Border removed - outer container (v-card.pos-scrollable-content) has shadow border */
-.invoice-cart-section {
+body:has(.pos-page) .invoice-cart-section,
+.pos-page .invoice-cart-section {
   flex: 1 1 auto;
   min-height: 100px; /* Minimum height for viewport fit */
   overflow: hidden; /* Let table wrapper handle scrolling for sticky headers */
@@ -4693,7 +5000,8 @@ body:has(.pos-page) .page-body {
 }
 
 /* Data table fills the cart section */
-.invoice-cart-section .v-data-table {
+body:has(.pos-page) .invoice-cart-section .v-data-table,
+.pos-page .invoice-cart-section .v-data-table {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -4701,7 +5009,8 @@ body:has(.pos-page) .page-body {
 }
 
 /* Table wrapper - the actual scroll container */
-.invoice-cart-section .v-data-table .v-table__wrapper {
+body:has(.pos-page) .invoice-cart-section .v-data-table .v-table__wrapper,
+.pos-page .invoice-cart-section .v-data-table .v-table__wrapper {
   flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
@@ -4709,60 +5018,74 @@ body:has(.pos-page) .page-body {
 }
 
 /* Normal cart items - align to top (default behavior) */
-.invoice-cart-section .v-data-table .v-table__wrapper tbody {
+body:has(.pos-page) .invoice-cart-section .v-data-table .v-table__wrapper tbody,
+.pos-page .invoice-cart-section .v-data-table .v-table__wrapper tbody {
   vertical-align: top;
 }
 
 /* Empty cart state - ONLY center when empty state is present */
 /* Use :has() to apply height only when empty-cart-state exists */
-.invoice-cart-section .v-data-table .v-table__wrapper:has(.empty-cart-state) table {
+body:has(.pos-page) .invoice-cart-section .v-data-table .v-table__wrapper:has(.empty-cart-state) table,
+.pos-page .invoice-cart-section .v-data-table .v-table__wrapper:has(.empty-cart-state) table {
   height: 100%;
 }
 
-.invoice-cart-section .v-data-table .v-table__wrapper:has(.empty-cart-state) tbody {
+body:has(.pos-page) .invoice-cart-section .v-data-table .v-table__wrapper:has(.empty-cart-state) tbody,
+.pos-page .invoice-cart-section .v-data-table .v-table__wrapper:has(.empty-cart-state) tbody {
   height: 100%;
 }
 
-.invoice-cart-section .v-data-table .v-table__wrapper tbody tr:has(.empty-cart-state) {
+body:has(.pos-page) .invoice-cart-section .v-data-table .v-table__wrapper tbody tr:has(.empty-cart-state),
+.pos-page .invoice-cart-section .v-data-table .v-table__wrapper tbody tr:has(.empty-cart-state) {
   height: 100%;
 }
 
-.invoice-cart-section .v-data-table .v-table__wrapper tbody tr:has(.empty-cart-state) td {
+body:has(.pos-page) .invoice-cart-section .v-data-table .v-table__wrapper tbody tr:has(.empty-cart-state) td,
+.pos-page .invoice-cart-section .v-data-table .v-table__wrapper tbody tr:has(.empty-cart-state) td {
   height: 100%;
   vertical-align: middle;
 }
 
 /* STICKY TABLE HEADERS - Stay fixed when scrolling cart items */
-.invoice-cart-section .v-data-table thead,
-.invoice-cart-section .v-data-table thead th {
+body:has(.pos-page) .invoice-cart-section .v-data-table thead,
+body:has(.pos-page) .invoice-cart-section .v-data-table thead th,
+.pos-page .invoice-cart-section .v-data-table thead,
+.pos-page .invoice-cart-section .v-data-table thead th {
   position: sticky;
   top: 0;
   z-index: 5;
   background: var(--pospire-light-gray, #F5F5F5) !important;
 }
 
-.invoice-cart-section::-webkit-scrollbar {
+body:has(.pos-page) .invoice-cart-section::-webkit-scrollbar,
+.pos-page .invoice-cart-section::-webkit-scrollbar {
   width: 8px;
 }
 
-.invoice-cart-section::-webkit-scrollbar-track {
+body:has(.pos-page) .invoice-cart-section::-webkit-scrollbar-track,
+.pos-page .invoice-cart-section::-webkit-scrollbar-track {
   background: var(--pospire-light-gray);
   border-radius: 4px;
 }
 
-.invoice-cart-section::-webkit-scrollbar-thumb {
+body:has(.pos-page) .invoice-cart-section::-webkit-scrollbar-thumb,
+.pos-page .invoice-cart-section::-webkit-scrollbar-thumb {
   background: var(--pospire-border-gray);
   border-radius: 4px;
 }
 
-.invoice-cart-section::-webkit-scrollbar-thumb:hover {
+body:has(.pos-page) .invoice-cart-section::-webkit-scrollbar-thumb:hover,
+.pos-page .invoice-cart-section::-webkit-scrollbar-thumb:hover {
   background: var(--pospire-medium-gray);
 }
 
 /* Invoice footer specific styling - ensure teal border is visible */
-.pos-footer-section.pospire-invoice-footer,
-.v-card.pospire-invoice-footer,
-.v-card.pos-footer-section.pospire-invoice-footer {
+body:has(.pos-page) .pos-footer-section.pospire-invoice-footer,
+body:has(.pos-page) .v-card.pospire-invoice-footer,
+body:has(.pos-page) .v-card.pos-footer-section.pospire-invoice-footer,
+.pos-page .pos-footer-section.pospire-invoice-footer,
+.pos-page .v-card.pospire-invoice-footer,
+.pos-page .v-card.pos-footer-section.pospire-invoice-footer {
   background: var(--pospire-gradient-card) !important;
   border: var(--pospire-footer-border-width, 2px) solid var(--pospire-vibrant-teal) !important;
   border-style: solid !important;
@@ -4779,7 +5102,8 @@ body:has(.pos-page) .page-body {
 }
 
 /* Invoice footer row - ensure proper width */
-.pos-footer-section.pospire-invoice-footer .v-row {
+body:has(.pos-page) .pos-footer-section.pospire-invoice-footer .v-row,
+.pos-page .pos-footer-section.pospire-invoice-footer .v-row {
   margin: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
@@ -4789,13 +5113,15 @@ body:has(.pos-page) .page-body {
 /* Invoice footer columns - box sizing only, no overflow hidden */
 /* Note: overflow-x: hidden was clipping floating labels - removed */
 /* max-width: 100% provides horizontal constraint without clipping labels */
-.pos-footer-section.pospire-invoice-footer .v-col {
+body:has(.pos-page) .pos-footer-section.pospire-invoice-footer .v-col,
+.pos-page .pos-footer-section.pospire-invoice-footer .v-col {
   box-sizing: border-box !important;
   max-width: 100% !important;
 }
 
 /* PAY button wrapper - ensure it fits */
-.pos-footer-section.pospire-invoice-footer .d-flex.justify-center {
+body:has(.pos-page) .pos-footer-section.pospire-invoice-footer .d-flex.justify-center,
+.pos-page .pos-footer-section.pospire-invoice-footer .d-flex.justify-center {
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
@@ -4856,7 +5182,8 @@ body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-thumb,
 }
 
 /* ItemsSelector v-card - ensure it's a proper flex container */
-.enhanced-items-container .v-card.selection.pos-scrollable-content {
+body:has(.pos-page) .enhanced-items-container .v-card.selection.pos-scrollable-content,
+.pos-page .enhanced-items-container .v-card.selection.pos-scrollable-content {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important; /* Grow to fill available space */
@@ -4865,14 +5192,17 @@ body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-thumb,
 }
 
 /* ItemsSelector footer - ensure it never shrinks */
-.enhanced-items-container .pos-footer-section,
-.enhanced-items-container .enhanced-controls.pos-footer-section {
+body:has(.pos-page) .enhanced-items-container .pos-footer-section,
+body:has(.pos-page) .enhanced-items-container .enhanced-controls.pos-footer-section,
+.pos-page .enhanced-items-container .pos-footer-section,
+.pos-page .enhanced-items-container .enhanced-controls.pos-footer-section {
   flex: 0 0 auto !important;
   flex-shrink: 0 !important;
 }
 
 /* ItemsSelector outer row - contains search bar and items column */
-.enhanced-items-container .pos-scrollable-content > .v-row.items {
+body:has(.pos-page) .enhanced-items-container .pos-scrollable-content > .v-row.items,
+.pos-page .enhanced-items-container .pos-scrollable-content > .v-row.items {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto; /* auto basis ensures content is visible */
@@ -4884,7 +5214,8 @@ body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-thumb,
 
 /* ItemsSelector search bar v-cols - stay fixed, don't shrink */
 /* NOTE: Border removed - outer container has shadow border */
-.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:not(:has(> div.items)) {
+body:has(.pos-page) .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:not(:has(> div.items)),
+.pos-page .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:not(:has(> div.items)) {
   flex: 0 0 auto !important;
   flex-shrink: 0 !important;
   position: relative;
@@ -4895,26 +5226,30 @@ body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-thumb,
 }
 
 /* First v-col (main search bar) specific styling */
-.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:first-child {
+body:has(.pos-page) .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:first-child,
+.pos-page .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:first-child {
   flex: 0 0 auto !important;
   min-height: 48px; /* Ensure minimum height for search field */
 }
 
 /* Search wrapper needs solid background */
-.enhanced-items-container .enhanced-search-wrapper {
+body:has(.pos-page) .enhanced-items-container .enhanced-search-wrapper,
+.pos-page .enhanced-items-container .enhanced-search-wrapper {
   background: white;
   position: relative;
   z-index: 10;
 }
 
 /* Ensure search field has proper height */
-.enhanced-items-container .enhanced-search-field {
+body:has(.pos-page) .enhanced-items-container .enhanced-search-field,
+.pos-page .enhanced-items-container .enhanced-search-field {
   min-height: 40px;
 }
 
 /* ItemsSelector items column - needs to fill remaining space */
 /* Target any v-col that contains the items div */
-.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:has(> div.items) {
+body:has(.pos-page) .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:has(> div.items),
+.pos-page .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:has(> div.items) {
   flex: 1 1 auto !important; /* Grow to fill remaining space */
   min-height: 0 !important;
   display: flex !important;
@@ -4923,7 +5258,8 @@ body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-thumb,
 }
 
 /* Fallback: also target last v-col (which usually contains items) */
-.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:last-of-type:has(> div.items) {
+body:has(.pos-page) .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:last-of-type:has(> div.items),
+.pos-page .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col:last-of-type:has(> div.items) {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -4932,7 +5268,8 @@ body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-thumb,
 }
 
 /* ItemsSelector inner items container - needs to scroll */
-.enhanced-items-container .pos-scrollable-content .v-row.items > .v-col > div.items {
+body:has(.pos-page) .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col > div.items,
+.pos-page .enhanced-items-container .pos-scrollable-content .v-row.items > .v-col > div.items {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -4942,7 +5279,8 @@ body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-thumb,
 }
 
 /* Ensure the items div fills height regardless of which view mode */
-.enhanced-items-container div.items.enhanced-scrollbar {
+body:has(.pos-page) .enhanced-items-container div.items.enhanced-scrollbar,
+.pos-page .enhanced-items-container div.items.enhanced-scrollbar {
   flex: 1 1 auto !important;
   min-height: 0 !important;
   display: flex !important;
@@ -4987,8 +5325,9 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
   min-height: 0 !important;
 }
 
-/* Payments scrollable content */
-.pos-panel-container > .pos-scrollable-content > .overflow-y-auto {
+/* Payments scrollable content - SCOPED to POS pages */
+body:has(.pos-page) .pos-panel-container > .pos-scrollable-content > .overflow-y-auto,
+.pos-page .pos-panel-container > .pos-scrollable-content > .overflow-y-auto {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -4997,25 +5336,29 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
 /* Responsive adjustments for layout utilities */
 /* Small screens - reduce footer padding */
 @media (max-width: 959px) {
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     padding: 8px 12px !important;
   }
   
-  .pos-scrollable-content {
+  body:has(.pos-page) .pos-scrollable-content,
+  .pos-page .pos-scrollable-content {
     padding: 8px !important;
   }
 }
 
 /* Medium screens - standard padding */
 @media (min-width: 960px) and (max-width: 1919px) {
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     padding: 12px 16px !important;
   }
 }
 
 /* Large screens - more padding for better spacing */
 @media (min-width: 1920px) {
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     padding: 16px 24px !important;
   }
 }
@@ -5026,14 +5369,16 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
 
 /* 4:3 Aspect Ratio - optimize vertical space */
 @media (min-aspect-ratio: 1.2/1) and (max-aspect-ratio: 1.4/1) {
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     min-height: calc(60px * var(--pospire-scale-factor, 1));
   }
 }
 
 /* 16:9 Aspect Ratio - wider screens */
 @media (min-aspect-ratio: 1.7/1) {
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     padding-left: calc(24px * var(--pospire-scale-factor, 1)) !important;
     padding-right: calc(24px * var(--pospire-scale-factor, 1)) !important;
   }
@@ -5041,7 +5386,8 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
 
 /* Ultra-wide 21:9 - maximize horizontal space */
 @media (min-aspect-ratio: 2.2/1) {
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     padding-left: calc(32px * var(--pospire-scale-factor, 1)) !important;
     padding-right: calc(32px * var(--pospire-scale-factor, 1)) !important;
   }
@@ -5054,13 +5400,16 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
     flex-direction: column;
   }
 
-  .v-col.test-pos,
-  .v-col.invoice-section {
+  body:has(.pos-page) .v-col.test-pos,
+  body:has(.pos-page) .v-col.invoice-section,
+  .pos-page .v-col.test-pos,
+  .pos-page .v-col.invoice-section {
     height: 50%;
     max-height: 50%;
   }
   
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     /* position: relative not needed - flexbox handles layout */
     margin-top: calc(16px * var(--pospire-scale-factor, 1));
   }
@@ -5068,19 +5417,22 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
 
 /* Touch devices - ensure adequate spacing */
 @media (pointer: coarse) {
-  .pos-footer-section {
+  body:has(.pos-page) .pos-footer-section,
+  .pos-page .pos-footer-section {
     min-height: 60px;
     padding: 12px 16px !important;
   }
 
-  .pos-scrollable-content {
+  body:has(.pos-page) .pos-scrollable-content,
+  .pos-page .pos-scrollable-content {
     padding-bottom: 8px;
   }
 }
 
 /* Empty Cart State Styles */
 
-.empty-cart-state {
+body:has(.pos-page) .empty-cart-state,
+.pos-page .empty-cart-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5090,7 +5442,8 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
   min-height: 200px;
 }
 
-.empty-cart-icon-wrapper {
+body:has(.pos-page) .empty-cart-icon-wrapper,
+.pos-page .empty-cart-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5101,27 +5454,31 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
   border-radius: 50%;
 }
 
-.empty-cart-title {
+body:has(.pos-page) .empty-cart-title,
+.pos-page .empty-cart-title {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--pospire-dark-text, #333);
   margin: 0 0 8px 0;
 }
 
-.empty-cart-description {
+body:has(.pos-page) .empty-cart-description,
+.pos-page .empty-cart-description {
   font-size: 0.9rem;
   color: var(--pospire-muted-text, #666);
   margin: 0 0 16px 0;
 }
 
-.empty-cart-hints {
+body:has(.pos-page) .empty-cart-hints,
+.pos-page .empty-cart-hints {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
   justify-content: center;
 }
 
-.empty-cart-hints span {
+body:has(.pos-page) .empty-cart-hints span,
+.pos-page .empty-cart-hints span {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -5132,37 +5489,43 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
   border-radius: 12px;
 }
 
-.empty-cart-hints .v-icon {
+body:has(.pos-page) .empty-cart-hints .v-icon,
+.pos-page .empty-cart-hints .v-icon {
   opacity: 0.8;
 }
 
 /* Responsive adjustments for empty cart */
 @media (max-width: 600px) {
-  .empty-cart-state {
+  body:has(.pos-page) .empty-cart-state,
+  .pos-page .empty-cart-state {
     padding: 24px 12px;
     min-height: 150px;
   }
 
-  .empty-cart-icon-wrapper {
+  body:has(.pos-page) .empty-cart-icon-wrapper,
+  .pos-page .empty-cart-icon-wrapper {
     width: 80px;
     height: 80px;
   }
 
-  .empty-cart-icon-wrapper .v-icon {
+  body:has(.pos-page) .empty-cart-icon-wrapper .v-icon,
+  .pos-page .empty-cart-icon-wrapper .v-icon {
     font-size: 48px !important;
   }
 
-  .empty-cart-title {
+  body:has(.pos-page) .empty-cart-title,
+  .pos-page .empty-cart-title {
     font-size: 1rem;
   }
 
-  .empty-cart-hints {
+  body:has(.pos-page) .empty-cart-hints,
+  .pos-page .empty-cart-hints {
     gap: 8px;
   }
 
-  .empty-cart-hints span {
+  body:has(.pos-page) .empty-cart-hints span,
+  .pos-page .empty-cart-hints span {
     font-size: 0.75rem;
     padding: 3px 8px;
   }
 }
-
