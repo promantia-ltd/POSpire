@@ -498,8 +498,12 @@ def update_invoice_from_order(data):
 @frappe.whitelist()
 def update_invoice(data):
     data = json.loads(data)
+    incoming_customer = data.get("customer")
     if data.get("name"):
         invoice_doc = frappe.get_doc("Sales Invoice", data.get("name"))
+        data.pop("customer",None)
+        data.pop("customer_name",None)
+        data.pop("title",None)
         invoice_doc.update(data)
     else:
         invoice_doc = frappe.get_doc(data)
@@ -680,6 +684,15 @@ def update_invoice(data):
     ):
         invoice_doc.set_posting_time = 1
 
+    if invoice_doc.docstatus == 0 and incoming_customer:
+        if not frappe.db.exists("Customer", incoming_customer):
+            frappe.throw(f"Invalid customer: {incoming_customer}")
+
+        invoice_doc.customer = incoming_customer
+        invoice_doc.customer_name = frappe.get_cached_value(
+            "Customer", incoming_customer, "customer_name"
+        )
+        invoice_doc.title = invoice_doc.customer_name
     invoice_doc.save()
     return invoice_doc
 

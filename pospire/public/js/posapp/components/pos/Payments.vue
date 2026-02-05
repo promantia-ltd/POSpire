@@ -484,21 +484,37 @@
               !invoice_doc.is_return
             ">
             <v-switch
-              class="my-0 py-0"
               v-model="is_write_off_change"
               :color="is_write_off_change ? '#00BCD4' : '#BDBDBD'"
               :base-color="is_write_off_change ? '#00BCD4' : '#BDBDBD'"
-              flat
-              :label="frappe._('Write Off Difference Amount')"></v-switch>
+              inset
+              dense
+              hide-details
+              class="small-switch mt-n2 items-start">
+              <template #label>
+                <span class="text-body-2 font-weight-regular">
+                  {{ frappe._("Write Off Difference Amount") }}
+                </span>
+              </template>
+            </v-switch>
           </v-col>
           <v-col
             cols="6"
             v-if="pos_profile.posa_allow_credit_sale && !invoice_doc.is_return">
             <v-switch
-              v-model="is_credit_sale"
-              :color="is_credit_sale ? '#00BCD4' : '#BDBDBD'"
-              :base-color="is_credit_sale ? '#00BCD4' : '#BDBDBD'"
-              :label="frappe._('Credit Sale?')"></v-switch>
+                v-model="is_credit_sale"
+                :color="is_credit_sale ? '#00BCD4' : '#BDBDBD'"
+                :base-color="is_credit_sale ? '#00BCD4' : '#BDBDBD'"
+                inset
+                dense
+                hide-details
+                class="small-switch mt-n2 items-start">
+                <template #label>
+                  <span class="text-body-2 font-weight-regular">
+                    {{ frappe._("Credit Sale") }}
+                  </span>
+                </template>
+            </v-switch>
           </v-col>
           <v-col
             cols="6"
@@ -507,9 +523,16 @@
               v-model="is_cashback"
               :color="is_cashback ? '#00BCD4' : '#BDBDBD'"
               :base-color="is_cashback ? '#00BCD4' : '#BDBDBD'"
-              flat
-              :label="frappe._('Cashback?')"
-              class="my-0 py-0"></v-switch>
+              inset
+              dense
+              hide-details
+              class="small-switch mt-n2 items-start">
+              <template #label>
+                <span class="text-body-2 font-weight-regular">
+                  {{ frappe._("Cashback?") }}
+                </span>
+              </template>
+              </v-switch>
           </v-col>
           <v-col cols="6" v-if="is_credit_sale">
             <v-menu
@@ -545,10 +568,18 @@
               v-model="redeem_customer_credit"
               :color="redeem_customer_credit ? '#00BCD4' : '#BDBDBD'"
               :base-color="redeem_customer_credit ? '#00BCD4' : '#BDBDBD'"
-              flat
-              :label="frappe._('Use Customer Credit')"
-              class="my-0 py-0"
-              @update:model-value="get_available_credit($event)"></v-switch>
+              inset
+              dense
+              hide-details
+              class="small-switch mt-n2 items-start"
+              @update:model-value="get_available_credit($event)"
+            >
+              <template #label>
+                <span class="text-body-2 font-weight-regular">
+                  {{ frappe._("Use Customer Credit") }}
+                </span>
+              </template>
+            </v-switch>
           </v-col>
         </v-row>
         <div

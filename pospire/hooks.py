@@ -270,3 +270,12 @@ fixtures = [
                                     "POS Profile-posa_tax_inclusive-hidden")]],
     },
 ]
+add_to_apps_screen=[
+    {
+        "name": "POSpire",
+        "title":"POSpire",
+        "route":"/app/pospire",
+        "color":"#2563EB",
+        "logo": "/assets/pospire/images/pospire_logo.png"
+    }
+]
