@@ -686,7 +686,7 @@ def update_invoice(data):
 
     if invoice_doc.docstatus == 0 and incoming_customer:
         if not frappe.db.exists("Customer", incoming_customer):
-            frappe.throw(f"Invalid customer: {incoming_customer}")
+            frappe.throw(_("Invalid customer: {0}").format(incoming_customer))
 
         invoice_doc.customer = incoming_customer
         invoice_doc.customer_name = frappe.get_cached_value(
