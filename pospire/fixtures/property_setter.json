@@ -30,5 +30,21 @@
   "property_type": "Check",
   "row_name": null,
   "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "POS Profile",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocType",
+  "field_name": null,
+  "is_system_generated": 0,
+  "modified": "2026-02-09 17:14:32.546371",
+  "module": "POSpire",
+  "name": "POS Profile-main-field_order",
+  "property": "field_order",
+  "property_type": "Data",
+  "row_name": null,
+  "value": "[\"custom_main\", \"company\", \"customer\", \"country\", \"disabled\", \"column_break_9\", \"warehouse\", \"campaign\", \"company_address\", \"section_break_15\", \"applicable_for_users\", \"section_break_11\", \"payments\", \"section_break_23\", \"item_groups\", \"column_break_25\", \"customer_groups\", \"custom_pos_settings\", \"posa_pos_awesome_settings\", \"posa_cash_mode_of_payment\", \"posa_allow_delete\", \"posa_allow_user_to_edit_rate\", \"posa_allow_user_to_edit_additional_discount\", \"posa_use_percentage_discount\", \"posa_max_discount_allowed\", \"posa_scale_barcode_start\", \"posa_allow_change_posting_date\", \"posa_default_card_view\", \"posa_default_sales_order\", \"posa_col_1\", \"posa_allow_user_to_edit_item_discount\", \"posa_display_items_in_stock\", \"posa_allow_partial_payment\", \"posa_allow_credit_sale\", \"posa_allow_return\", \"posa_apply_customer_discount\", \"use_cashback\", \"use_customer_credit\", \"posa_hide_closing_shift\", \"posa_auto_set_batch\", \"posa_display_item_code\", \"posa_allow_zero_rated_items\", \"hide_expected_amount\", \"posa_column_break_112\", \"posa_allow_sales_order\", \"posa_show_template_items\", \"posa_hide_variants_items\", \"posa_fetch_coupon\", \"posa_allow_customer_purchase_order\", \"posa_allow_print_last_invoice\", \"posa_display_additional_notes\", \"posa_allow_write_off_change\", \"posa_new_line\", \"posa_input_qty\", \"posa_allow_print_draft_invoices\", \"posa_use_delivery_charges\", \"posa_auto_set_delivery_charges\", \"posa_allow_duplicate_customer_names\", \"section_break_14\", \"hide_images\", \"hide_unavailable_items\", \"auto_add_item_to_cart\", \"validate_stock_on_save\", \"print_receipt_on_order_complete\", \"column_break_16\", \"update_stock\", \"ignore_pricing_rule\", \"allow_rate_change\", \"allow_discount_change\", \"disable_grand_total_to_default_mop\", \"allow_partial_payment\", \"custom_payment_settings\", \"pos_awesome_payments\", \"posa_use_pos_awesome_payments\", \"column_break_uolvm\", \"posa_allow_make_new_payments\", \"posa_allow_reconcile_payments\", \"posa_allow_mpesa_reconcile_payments\", \"posa_hardware_manager_setting\", \"posa_hardware_manager\", \"custom_advance_settings\", \"posa_pos_awesome_advance_settings\", \"posa_allow_submissions_in_background_job\", \"posa_search_serial_no\", \"posa_search_batch_no\", \"posa_tax_inclusive\", \"column_break_dqsba\", \"posa_local_storage\", \"posa_use_server_cache\", \"posa_server_cache_duration\", \"column_break_anyol\", \"pose_use_limit_search\", \"posa_search_limit\", \"custom_allow_select_sales_order\", \"custom_allow_user_to_edit_item_total\", \"custom_print_settings\", \"section_break_16\", \"print_format\", \"letter_head\", \"column_break0\", \"tc_name\", \"select_print_heading\", \"custom_accounting\", \"section_break_19\", \"selling_price_list\", \"currency\", \"write_off_account\", \"write_off_cost_center\", \"write_off_limit\", \"account_for_change_amount\", \"disable_rounded_total\", \"column_break_23\", \"income_account\", \"expense_account\", \"taxes_and_charges\", \"tax_category\", \"apply_discount_on\", \"accounting_dimensions_section\", \"cost_center\", \"dimension_col_break\", \"profit_center\", \"project\"]"
  }
 ]
