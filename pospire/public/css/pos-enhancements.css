@@ -1260,7 +1260,7 @@ body:has(.pos-page) .enhanced-notification.warning,
   .pospire-table {
     border-width: 0.5px;
   }
-  
+
   /* Adjust layout for high DPI - system scaling typically 150-200% */
   :root {
     --pospire-scale-factor: 1.25;
@@ -1272,18 +1272,18 @@ body:has(.pos-page) .enhanced-notification.warning,
   :root {
     --pospire-scale-factor: 1.15;
   }
-  
+
   /* Ensure footer sections scale appropriately */
   .pos-footer-section {
     min-height: calc(60px * var(--pospire-scale-factor));
   }
-  
+
   /* Scale button heights */
   .btn-primary-action {
     height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
     min-height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
   }
-  
+
   .btn-secondary {
     height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
     min-height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
@@ -1295,18 +1295,18 @@ body:has(.pos-page) .enhanced-notification.warning,
   :root {
     --pospire-scale-factor: 1.5;
   }
-  
+
   .pos-footer-section {
     min-height: calc(70px * var(--pospire-scale-factor));
     padding: calc(16px * var(--pospire-scale-factor)) calc(24px * var(--pospire-scale-factor)) !important;
   }
-  
+
   .btn-primary-action {
     height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
     min-height: calc(var(--pospire-btn-primary-height) * var(--pospire-scale-factor)) !important;
     font-size: calc(14px * var(--pospire-scale-factor)) !important;
   }
-  
+
   .btn-secondary {
     height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
     min-height: calc(var(--pospire-btn-secondary-height) * var(--pospire-scale-factor)) !important;
@@ -5000,7 +5000,7 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
   .pos-footer-section {
     padding: 8px 12px !important;
   }
-  
+
   .pos-scrollable-content {
     padding: 8px !important;
   }
@@ -5059,7 +5059,7 @@ body:has(.pos-page) .items-list-scroll .v-data-table .v-table__wrapper,
     height: 50%;
     max-height: 50%;
   }
-  
+
   .pos-footer-section {
     /* position: relative not needed - flexbox handles layout */
     margin-top: calc(16px * var(--pospire-scale-factor, 1));
