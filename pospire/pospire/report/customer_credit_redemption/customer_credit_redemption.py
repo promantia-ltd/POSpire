@@ -6,97 +6,67 @@ from frappe import _
 
 
 def execute(filters=None):
-    columns = get_columns()
-    data = get_data(filters)
-    return columns, data
+	columns = get_columns()
+	data = get_data(filters)
+	return columns, data
 
 
 def get_columns():
-    return [
-        {
-            "fieldname": "new_invoice",
-            "label": _("New Invoice"),
-            "fieldtype": "Link",
-            "options": "Sales Invoice",
-            "width": 140
-        },
-        {
-            "fieldname": "invoice_date",
-            "label": _("Invoice Date"),
-            "fieldtype": "Date",
-            "width": 100
-        },
-        {
-            "fieldname": "customer",
-            "label": _("Customer"),
-            "fieldtype": "Link",
-            "options": "Customer",
-            "width": 150
-        },
-        {
-            "fieldname": "invoice_total",
-            "label": _("Invoice Total"),
-            "fieldtype": "Currency",
-            "width": 120
-        },
-        {
-            "fieldname": "credit_used",
-            "label": _("Credit Used"),
-            "fieldtype": "Currency",
-            "width": 120
-        },
-        {
-            "fieldname": "outstanding",
-            "label": _("Outstanding"),
-            "fieldtype": "Currency",
-            "width": 120
-        },
-        {
-            "fieldname": "status",
-            "label": _("Status"),
-            "fieldtype": "Data",
-            "width": 100
-        },
-        {
-            "fieldname": "credit_note",
-            "label": _("Credit Note Used"),
-            "fieldtype": "Link",
-            "options": "Sales Invoice",
-            "width": 140
-        },
-        {
-            "fieldname": "credit_amount",
-            "label": _("Credit Note Amount"),
-            "fieldtype": "Currency",
-            "width": 130
-        },
-        {
-            "fieldname": "journal_entry",
-            "label": _("Journal Entry"),
-            "fieldtype": "Link",
-            "options": "Journal Entry",
-            "width": 140
-        },
-        {
-            "fieldname": "je_date",
-            "label": _("JE Date"),
-            "fieldtype": "Date",
-            "width": 100
-        },
-        {
-            "fieldname": "company",
-            "label": _("Company"),
-            "fieldtype": "Link",
-            "options": "Company",
-            "width": 150
-        }
-    ]
+	return [
+		{
+			"fieldname": "new_invoice",
+			"label": _("New Invoice"),
+			"fieldtype": "Link",
+			"options": "Sales Invoice",
+			"width": 140,
+		},
+		{"fieldname": "invoice_date", "label": _("Invoice Date"), "fieldtype": "Date", "width": 100},
+		{
+			"fieldname": "customer",
+			"label": _("Customer"),
+			"fieldtype": "Link",
+			"options": "Customer",
+			"width": 150,
+		},
+		{"fieldname": "invoice_total", "label": _("Invoice Total"), "fieldtype": "Currency", "width": 120},
+		{"fieldname": "credit_used", "label": _("Credit Used"), "fieldtype": "Currency", "width": 120},
+		{"fieldname": "outstanding", "label": _("Outstanding"), "fieldtype": "Currency", "width": 120},
+		{"fieldname": "status", "label": _("Status"), "fieldtype": "Data", "width": 100},
+		{
+			"fieldname": "credit_note",
+			"label": _("Credit Note Used"),
+			"fieldtype": "Link",
+			"options": "Sales Invoice",
+			"width": 140,
+		},
+		{
+			"fieldname": "credit_amount",
+			"label": _("Credit Note Amount"),
+			"fieldtype": "Currency",
+			"width": 130,
+		},
+		{
+			"fieldname": "journal_entry",
+			"label": _("Journal Entry"),
+			"fieldtype": "Link",
+			"options": "Journal Entry",
+			"width": 140,
+		},
+		{"fieldname": "je_date", "label": _("JE Date"), "fieldtype": "Date", "width": 100},
+		{
+			"fieldname": "company",
+			"label": _("Company"),
+			"fieldtype": "Link",
+			"options": "Company",
+			"width": 150,
+		},
+	]
 
 
 def get_data(filters):
-    conditions = get_conditions(filters)
+	conditions = get_conditions(filters)
 
-    query = """
+	query = f"""
         SELECT
             new_invoice.name as new_invoice,
             new_invoice.posting_date as invoice_date,
@@ -125,31 +95,31 @@ def get_data(filters):
         WHERE je.docstatus = 1
             {conditions}
         ORDER BY je.posting_date DESC, je.creation DESC
-    """.format(conditions=conditions)
+    """
 
-    data = frappe.db.sql(query, filters, as_dict=1)
-    return data
+	data = frappe.db.sql(query, filters, as_dict=1)
+	return data
 
 
 def get_conditions(filters):
-    conditions = []
+	conditions = []
 
-    if filters.get("customer"):
-        conditions.append("AND new_invoice.customer = %(customer)s")
+	if filters.get("customer"):
+		conditions.append("AND new_invoice.customer = %(customer)s")
 
-    if filters.get("company"):
-        conditions.append("AND new_invoice.company = %(company)s")
+	if filters.get("company"):
+		conditions.append("AND new_invoice.company = %(company)s")
 
-    if filters.get("from_date"):
-        conditions.append("AND new_invoice.posting_date >= %(from_date)s")
+	if filters.get("from_date"):
+		conditions.append("AND new_invoice.posting_date >= %(from_date)s")
 
-    if filters.get("to_date"):
-        conditions.append("AND new_invoice.posting_date <= %(to_date)s")
+	if filters.get("to_date"):
+		conditions.append("AND new_invoice.posting_date <= %(to_date)s")
 
-    if filters.get("new_invoice"):
-        conditions.append("AND new_invoice.name = %(new_invoice)s")
+	if filters.get("new_invoice"):
+		conditions.append("AND new_invoice.name = %(new_invoice)s")
 
-    if filters.get("credit_note"):
-        conditions.append("AND credit_note.name = %(credit_note)s")
+	if filters.get("credit_note"):
+		conditions.append("AND credit_note.name = %(credit_note)s")
 
-    return " ".join(conditions)
+	return " ".join(conditions)
