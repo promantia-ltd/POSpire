@@ -41,14 +41,8 @@ def ensure_test_customer():
 	if customers:
 		return customers[0]
 
-	customer_group = (
-		frappe.db.get_single_value("Selling Settings", "customer_group")
-		or "All Customer Groups"
-	)
-	territory = (
-		frappe.db.get_single_value("Selling Settings", "territory")
-		or "All Territories"
-	)
+	customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or "All Customer Groups"
+	territory = frappe.db.get_single_value("Selling Settings", "territory") or "All Territories"
 
 	doc = frappe.get_doc(
 		{
@@ -166,9 +160,7 @@ def create_test_opening_shift(company, pos_profile, user="Administrator"):
 	return doc
 
 
-def create_test_closing_shift(
-	company, pos_profile, opening_shift, user="Administrator"
-):
+def create_test_closing_shift(company, pos_profile, opening_shift, user="Administrator"):
 	"""Create a POS Closing Shift (not submitted)."""
 	doc = frappe.get_doc(
 		{
