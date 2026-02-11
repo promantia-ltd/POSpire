@@ -52,13 +52,13 @@ def ensure_test_customer():
 
 	customer_group = (
 		frappe.db.get_single_value("Selling Settings", "customer_group")
-		or frappe.db.get_value("Customer Group", {"is_group": 1}, "name")
-		or _ensure_record("Customer Group", "All Customer Groups", is_group=1)
+		or frappe.db.get_value("Customer Group", {}, "name")
+		or _ensure_customer_group()
 	)
 	territory = (
 		frappe.db.get_single_value("Selling Settings", "territory")
-		or frappe.db.get_value("Territory", {"is_group": 1}, "name")
-		or _ensure_record("Territory", "All Territories", is_group=1)
+		or frappe.db.get_value("Territory", {}, "name")
+		or _ensure_territory()
 	)
 
 	doc = frappe.get_doc(
@@ -73,12 +73,22 @@ def ensure_test_customer():
 	return doc.name
 
 
-def _ensure_record(doctype, name, **kwargs):
-	"""Ensure a record exists, creating it if necessary. Returns the name."""
-	if not frappe.db.exists(doctype, name):
-		doc = frappe.get_doc({"doctype": doctype, "name": name, **kwargs})
-		doc.insert(ignore_permissions=True, ignore_if_duplicate=True)
-	return name
+def _ensure_customer_group():
+	"""Create a root Customer Group for testing. Returns the name."""
+	if not frappe.db.exists("Customer Group", "All Customer Groups"):
+		frappe.get_doc(
+			{"doctype": "Customer Group", "customer_group_name": "All Customer Groups", "is_group": 1}
+		).insert(ignore_permissions=True, ignore_if_duplicate=True)
+	return "All Customer Groups"
+
+
+def _ensure_territory():
+	"""Create a root Territory for testing. Returns the name."""
+	if not frappe.db.exists("Territory", "All Territories"):
+		frappe.get_doc({"doctype": "Territory", "territory_name": "All Territories", "is_group": 1}).insert(
+			ignore_permissions=True, ignore_if_duplicate=True
+		)
+	return "All Territories"
 
 
 def get_test_pos_profile(company):
