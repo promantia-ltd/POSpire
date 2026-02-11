@@ -50,8 +50,16 @@ def ensure_test_customer():
 	if customers:
 		return customers[0]
 
-	customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or "All Customer Groups"
-	territory = frappe.db.get_single_value("Selling Settings", "territory") or "All Territories"
+	customer_group = (
+		frappe.db.get_single_value("Selling Settings", "customer_group")
+		or frappe.db.get_value("Customer Group", {"is_group": 1}, "name")
+		or _ensure_record("Customer Group", "All Customer Groups", is_group=1)
+	)
+	territory = (
+		frappe.db.get_single_value("Selling Settings", "territory")
+		or frappe.db.get_value("Territory", {"is_group": 1}, "name")
+		or _ensure_record("Territory", "All Territories", is_group=1)
+	)
 
 	doc = frappe.get_doc(
 		{
@@ -63,6 +71,14 @@ def ensure_test_customer():
 	)
 	doc.insert(ignore_permissions=True, ignore_if_duplicate=True)
 	return doc.name
+
+
+def _ensure_record(doctype, name, **kwargs):
+	"""Ensure a record exists, creating it if necessary. Returns the name."""
+	if not frappe.db.exists(doctype, name):
+		doc = frappe.get_doc({"doctype": doctype, "name": name, **kwargs})
+		doc.insert(ignore_permissions=True, ignore_if_duplicate=True)
+	return name
 
 
 def get_test_pos_profile(company):
