@@ -127,7 +127,7 @@
 									? (payment.type != 'Phone' ||
 											payment.amount == 0 ||
 											!request_payment_field) &&
-										!is_mpesa_c2b_payment(payment)
+									  !is_mpesa_c2b_payment(payment)
 									: 3
 							"
 						>
@@ -178,8 +178,8 @@
 								class="payment-method-btn"
 								:disabled="payment.amount == 0"
 								@click="
-									((phone_dialog = true),
-									(payment.amount = flt(payment.amount, 0)))
+									(phone_dialog = true),
+										(payment.amount = flt(payment.amount, 0))
 								"
 							>
 								<v-icon start size="20">mdi-send</v-icon>
@@ -827,7 +827,7 @@ export default {
 			}
 
 			let total_change = this.flt(
-				this.flt(this.paid_change) + this.flt(-this.credit_change),
+				this.flt(this.paid_change) + this.flt(-this.credit_change)
 			);
 
 			if (this.is_cashback && total_change != -this.diff_payment) {
@@ -972,7 +972,7 @@ export default {
 					// printWindow.close();
 					// NOTE : uncomoent this to auto closing printing window
 				},
-				true,
+				true
 			);
 		},
 		validate_due_date() {
@@ -1089,7 +1089,7 @@ export default {
 							localStorage.setItem("sales_persons_storage", "");
 							localStorage.setItem(
 								"sales_persons_storage",
-								JSON.stringify(r.message),
+								JSON.stringify(r.message)
 							);
 						}
 					}
@@ -1165,8 +1165,8 @@ export default {
 											this.eventBus.emit("unfreeze");
 											toast.error(
 												__(
-													`Payment Request took too long to respond. Please try requesting for payment again`,
-												),
+													`Payment Request took too long to respond. Please try requesting for payment again`
+												)
 											);
 										} else {
 											this.eventBus.emit("unfreeze");
@@ -1175,9 +1175,9 @@ export default {
 													vm.formatCurrency(
 														message.grand_total,
 														vm.invoice_doc.currency,
-														0,
+														0
 													),
-												]),
+												])
 											);
 											frappe.db
 												.get_doc("Sales Invoice", vm.invoice_doc.name)
@@ -1261,7 +1261,7 @@ export default {
 			let diff_payment = this.flt(
 				(this.invoice_doc.rounded_total || this.invoice_doc.grand_total) -
 					this.total_payments,
-				this.currency_precision,
+				this.currency_precision
 			);
 			this.paid_change = -diff_payment;
 			return diff_payment;
@@ -1330,14 +1330,14 @@ export default {
 			this.eventBus.on("send_invoice_doc_payment", (invoice_doc) => {
 				this.invoice_doc = invoice_doc.invoice_doc;
 				const default_payment = this.invoice_doc.payments.find(
-					(payment) => payment.default == 1,
+					(payment) => payment.default == 1
 				);
 				this.is_credit_sale = 0;
 				this.is_write_off_change = 0;
 				if (default_payment && !invoice_doc.is_return) {
 					default_payment.amount = this.flt(
 						this.invoice_doc.rounded_total || this.invoice_doc.grand_total,
-						this.currency_precision,
+						this.currency_precision
 					);
 				}
 				if (invoice_doc.is_return) {
@@ -1427,7 +1427,7 @@ export default {
 				this.invoice_doc.redeem_loyalty_points = 0;
 				this.invoice_doc.loyalty_points = 0;
 				toast.error(
-					`Loyalty Amount can not be more then ${this.available_pioints_amount}`,
+					`Loyalty Amount can not be more then ${this.available_pioints_amount}`
 				);
 			} else {
 				this.invoice_doc.loyalty_amount = this.flt(this.loyalty_amount);
@@ -1459,7 +1459,7 @@ export default {
 		redeemed_customer_credit(value) {
 			if (value > this.available_customer_credit) {
 				toast.error(
-					`You can redeem customer credit upto ${this.available_customer_credit}`,
+					`You can redeem customer credit upto ${this.available_customer_credit}`
 				);
 			}
 		},
