@@ -1,0 +1,8 @@
+# Jinja template files (contain {% %} syntax that Prettier can't parse)
+pospire/pospire/page/posapp/posapp.js
+
+# Build output
+dist/
+node_modules/
+*.min.js
+*.min.css

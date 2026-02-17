@@ -26,6 +26,9 @@
 	"root": true,
 	"globals": {
 		"frappe": true,
+		"define": true,
+		"oOptions": true,
+		"get_currency_symbol": true,
 		"Vue": true,
 		"SetVueGlobals": true,
 		"__": true,

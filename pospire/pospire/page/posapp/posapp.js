@@ -13,7 +13,7 @@ frappe.pages['posapp'].on_page_load = function (wrapper) {
 	$("head").append("<link href='/assets/pospire/node_modules/vuetify/dist/vuetify.min.css' rel='stylesheet'>");
 	$("head").append("<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css'>");
 	$("head").append("<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900' />");
-	
+
 	// Ensure viewport meta tag is correct and detect zoom
 	(function() {
 		// Check if viewport meta tag exists
@@ -37,12 +37,12 @@ frappe.pages['posapp'].on_page_load = function (wrapper) {
 			meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no';
 			document.getElementsByTagName('head')[0].appendChild(meta);
 		}
-		
+
 		// Detect browser zoom level
 		setTimeout(function() {
 			var zoomLevel = Math.round(window.devicePixelRatio * 100);
 			var actualZoom = Math.round((window.outerWidth / window.innerWidth) * 100);
-			
+
 			if (zoomLevel !== 100 || actualZoom !== 100) {
 				console.warn('POSpire: Browser zoom detected!', {
 					devicePixelRatio: window.devicePixelRatio,

@@ -22,7 +22,7 @@
    "in_list_view": 1,
    "label": "XML Template",
    "options": "XML",
-   "reqd": 1
+   "reqd": 0
   },
   {
    "fieldname": "print_format",
@@ -61,7 +61,8 @@
    "fieldtype": "Check",
    "label": "Default Template for DocType",
    "default": "0",
-   "description": "Use this template by default when printing this DocType"
+   "description": "Use this template by default when printing this DocType",
+   "depends_on": "eval:doc.xml_template"
   },
   {
    "fieldname": "section_break_tlhx",

@@ -9,8 +9,20 @@ from frappe.model.document import Document
 class POSXMLPrintDesigner(Document):
 	def validate(self):
 		"""Validate template before saving"""
+		self.validate_default_requires_template()
 		self.validate_template()
 		self.ensure_single_default()
+
+	def validate_default_requires_template(self):
+		"""Ensure is_default can only be enabled when xml_template has content"""
+		if self.is_default and not self.xml_template:
+			frappe.throw(
+				_(
+					"Cannot set as default template without XML template content. "
+					"Please add XML template first or use 'Convert from Print Format' to generate one."
+				),
+				title=_("Template Required"),
+			)
 
 	def validate_template(self):
 		"""Run template validator and throw if critical errors found"""
@@ -37,16 +49,19 @@ class POSXMLPrintDesigner(Document):
 		"""Ensure only one template is marked as default per DocType"""
 		if self.is_default:
 			# Unset other defaults for this DocType
-			frappe.db.sql("""
+			frappe.db.sql(
+				"""
 				UPDATE `tabPOS XML Print Designer`
 				SET is_default = 0
 				WHERE ref_doctype = %s
 				AND name != %s
 				AND is_default = 1
-			""", (self.ref_doctype, self.name))
+			""",
+				(self.ref_doctype, self.name),
+			)
 
 			frappe.msgprint(
 				_("This template is now the default for {0}").format(self.ref_doctype),
 				indicator="green",
-				alert=True
+				alert=True,
 			)
