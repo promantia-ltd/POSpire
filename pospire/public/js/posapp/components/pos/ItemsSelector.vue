@@ -1,6 +1,6 @@
 <template>
 	<div class="enhanced-items-container pos-panel-container">
-		<v-card class="selection mx-auto pos-scrollable-content" elevation="2" rounded="lg">
+		<v-card class="selection pos-scrollable-content" elevation="2" rounded="lg">
 			<v-progress-linear
 				:active="loading"
 				:indeterminate="loading"
@@ -938,6 +938,7 @@ export default {
 /* Main content card - takes remaining space above controls */
 .selection {
 	flex: 1;
+	width: 100%;
 	min-height: 0;
 	overflow: hidden;
 }
