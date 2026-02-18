@@ -200,6 +200,10 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `test:` Adding tests
 - `chore:` Maintenance tasks
 
+## Acknowledgements
+
+POSpire is built upon [POS Awesome](https://github.com/ucraft-com/POS-Awesome) by the [Ucraft](https://github.com/ucraft-com) team. We are grateful for their foundational work that made this project possible. POSpire extends the original with additional features, UI improvements, and ongoing maintenance for Frappe/ERPNext v15.
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see [LICENSE](LICENSE) for details.
