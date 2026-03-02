@@ -40,12 +40,22 @@
 							$vuetify.display.mdAndDown
 								? 12
 								: pos_profile.posa_allow_sales_order
-								? 8
-								: 9
+								? 7
+								: 8
 						"
 						class="pr-2"
 					>
-						<Customer />
+						<Customer ref="customerRef" />
+					</v-col>
+					<!--New Customer Icon Column-->
+					<v-col cols="auto" class="d-flex align-center">
+						<v-btn
+							variant="text"
+							color="#00BCD4"
+							@click="OpenNewCustomer"
+						>
+							<v-icon size="30" >mdi-account-plus</v-icon>
+						</v-btn>
 					</v-col>
 					<!-- Type: 2 cols (only shown when sales order enabled) -->
 					<v-col
@@ -3394,6 +3404,9 @@ export default {
 				this.delivery_charges_rate = 0;
 			}
 		},
+		OpenNewCustomer(){
+			this.$refs.customerRef?.new_customer();
+		}
 	},
 
 	mounted() {

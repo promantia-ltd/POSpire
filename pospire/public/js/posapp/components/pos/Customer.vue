@@ -38,13 +38,6 @@
 				</v-list-item>
 			</template>
 
-			<template v-slot:append-item>
-				<v-list-item @click="new_customer" class="cursor-pointer">
-					<v-list-item-title class="text-primary">
-						+ Create New Customer
-					</v-list-item-title>
-				</v-list-item>
-			</template>
 		</v-autocomplete>
 
 		<UpdateCustomer />
