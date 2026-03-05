@@ -66,6 +66,7 @@ doctype_js = {
 
 # before_install = "pospire.install.before_install"
 # after_install = "pospire.install.after_install"
+after_install = "pospire.install.after_install"
 # before_uninstall = "pospire.uninstall.before_uninstall"
 after_uninstall = "pospire.uninstall.after_uninstall"
 
@@ -260,6 +261,9 @@ fixtures = [
 					"Sales Invoice-custom_delivery_charge_rate",
 					"POS Profile-posa_hardware_manager_setting",
 					"POS Profile-posa_hardware_manager",
+                    "POS Profile-custom_enable_cash_denominations",
+                    "POS Profile-custom_denominations",
+                    "POS Profile-custom_show_denomination_breakdown_at_closing",
 				),
 			]
 		],

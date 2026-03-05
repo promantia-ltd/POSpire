@@ -10,7 +10,8 @@
 				<v-btn icon="mdi-close" variant="text" @click="go_desk"></v-btn>
 			</v-card-title>
 
-			<v-card-text class="px-6 py-4">
+			<v-card-text class="overflow-y-auto"
+  			style="max-height: 65vh;">
 				<v-container fluid>
 					<v-row dense>
 						<v-col cols="12">
@@ -47,18 +48,65 @@
 							>
 								<template v-slot:item.amount="props">
 									<v-text-field
-										v-model.number="props.item.amount"
+										:model-value="formatCurrency(props.item.amount)"
+										@update:modelValue="props.item.amount = numberAmount($event)"
 										type="text"
 										inputmode="decimal"
 										density="compact"
 										variant="outlined"
-										:rules="amountRules"
-										:prefix="currencySymbol(props.item.currency)"
 										hide-details
-										class="mt-n1"
+										:prefix="currencySymbol(pos_profile.currency)"
+										:readonly="denominations_enabled && 
+													denomination_config[pos_profile] &&
+													props.item.mode_of_payment === denomination_config[pos_profile].cash_mode"
 									/>
 								</template>
 							</v-data-table>
+							<v-expand-transition>
+								<v-card
+									v-if="denominations_enabled"
+									class="rounded-lg elevation-2 mt-3"
+								>
+									<v-card-title class="text-subtitle-2">
+									{{ __("Cash Denomination Breakdown") }}
+									</v-card-title>
+
+									<v-data-table
+									:headers="[
+										{ title: 'Denomination', value: 'denomination_name' },
+										{ title: 'Value', value: 'denomination_value' },
+										{ title: 'Quantity', value: 'quantity' },
+										{ title: 'Amount', value: 'amount' }
+									]"
+									:items="denomination_rows"
+									density="compact"
+									hide-default-footer
+									>
+
+									<template v-slot:item.quantity="props">
+										<v-text-field
+										v-model.number="props.item.quantity"
+										type="number"
+										min="0"
+										density="compact"
+										variant="outlined"
+										:rules="[v => v >= 0 || 'Quantity must be non-negative']"
+										hide-details
+										/>
+									</template>
+
+									<template v-slot:item.amount="{ item }">
+										{{ formatCurrency(item.denomination_value * (item.quantity || 0)) }}
+									</template>
+
+									</v-data-table>
+
+									<v-card-text class="text-right font-weight-bold">
+									{{ __("Total") }}: {{ formatCurrency(denominationTotal) }}
+									</v-card-text>
+
+								</v-card>
+								</v-expand-transition>
 						</v-col>
 					</v-row>
 				</v-container>
@@ -122,6 +170,9 @@ export default {
 			snack: false, // TODO : need to remove
 			snackColor: "", // TODO : need to remove
 			snackText: "", // TODO : need to remove
+			denomination_config: {},       
+			denomination_rows: [],         
+			denominations_enabled: false,    
 		};
 	},
 	watch: {
@@ -149,7 +200,50 @@ export default {
 					});
 				}
 			});
+			if (this.denomination_config[val]) {
+				this.denominations_enabled = true;
+
+				const config = this.denomination_config[val];
+
+				this.denomination_rows = config.denominations.map((d) => ({
+					denomination: d.denomination,
+					denomination_name: d.denomination_name,
+					denomination_value: d.denomination_value,
+					currency: d.currency,
+					quantity: 0,
+					amount: 0,
+				}));
+			} else {
+				this.denominations_enabled = false;
+				this.denomination_rows = [];
+			}
 		},
+		denominationTotal(newVal) {
+			if (!this.denominations_enabled) return;
+
+			const config = this.denomination_config[this.pos_profile];
+			if (!config) return;
+
+			const cashMode = config.cash_mode;
+
+			const cashRow = this.payments_methods.find(
+				(p) => p.mode_of_payment === cashMode
+			);
+
+			if (cashRow) {
+				cashRow.amount = newVal;
+			}
+		},
+	},
+	computed:{
+			denominationTotal() {
+		if (!this.denomination_rows.length) return 0;
+
+		return this.denomination_rows.reduce((sum, row) => {
+			return sum + (row.denomination_value * (row.quantity || 0));
+		}, 0);
+	}
+
 	},
 	methods: {
 		close_opening_dialog() {
@@ -168,6 +262,7 @@ export default {
 						vm.company = vm.companies[0];
 						vm.pos_profiles_data = r.message.pos_profiles_data;
 						vm.payments_method_data = r.message.payments_method;
+						vm.denomination_config = r.message.denomination_config || {};
 					}
 				},
 			});
@@ -176,6 +271,24 @@ export default {
 			if (!this.payments_methods.length || !this.company || !this.pos_profile) {
 				return;
 			}
+
+			if (this.denominations_enabled) {
+				const invalidQty = this.denomination_rows.some((row) => {
+					const qty = row.quantity === "" || row.quantity === null || row.quantity === undefined
+						? 0
+						: Number(row.quantity);
+
+					return qty < 0 || !Number.isInteger(qty);
+				});
+
+				if (invalidQty) {
+					toast.error(__("Quantity must be a non-negative integer."), {
+						autoClose: 5000,
+					});
+					return;
+				}
+			}
+
 			const has_invalid_amount = this.payments_methods.some((p) => !isAmountValid(p.amount));
 			if (has_invalid_amount) {
 				toast.error(__("Please enter valid non-negative amounts."), {
@@ -183,8 +296,9 @@ export default {
 				});
 				return;
 			}
+
 			this.is_loading = true;
-			const vm = this;
+
 			const balance_details = this.payments_methods.map((p) => ({
 				...p,
 				amount:
@@ -192,22 +306,38 @@ export default {
 						? 0
 						: Number(p.amount),
 			}));
+
+			let denomination_details = null;
+
+			if (this.denominations_enabled) {
+				const rows = this.denomination_rows.map((d) => ({
+					denomination: d.denomination,
+					denomination_name: d.denomination_name,
+					denomination_value: d.denomination_value,
+					currency: d.currency,
+					quantity: d.quantity || 0,
+					amount: (d.denomination_value || 0) * (d.quantity || 0),
+				}));
+
+				denomination_details = JSON.stringify(rows);
+			}
+
 			return frappe
 				.call("pospire.pospire.api.posapp.create_opening_voucher", {
 					pos_profile: this.pos_profile,
 					company: this.company,
 					balance_details,
+					denomination_details,
 				})
 				.then((r) => {
 					if (r.message) {
-						vm.eventBus.emit("register_pos_data", r.message);
-						vm.eventBus.emit("set_company", r.message.company);
-						vm.close_opening_dialog();
-						vm.is_loading = false;
+						this.eventBus.emit("register_pos_data", r.message);
+						this.eventBus.emit("set_company", r.message.company);
+						this.close_opening_dialog();
 					}
 				})
 				.finally(() => {
-					vm.is_loading = false;
+					this.is_loading = false;
 				});
 		},
 		go_desk() {

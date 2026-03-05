@@ -65,11 +65,39 @@ def get_opening_dialog_data() -> dict:
 	for mode in data["payments_method"]:
 		mode["currency"] = frappe.get_cached_value("POS Profile", mode["parent"], "currency")
 
+	data["denomination_config"] = {}
+	for profile in data["pos_profiles_data"]:
+		profile_doc = frappe.get_cached_doc("POS Profile", profile.name)
+        
+		if profile_doc.get("custom_enable_cash_denominations"):
+			cash_mode = (
+            profile_doc.get("posa_cash_mode_of_payment") or "Cash"
+        )
+			denominations = []
+			for d in profile_doc.get("custom_denominations", []):
+				denominations.append({
+					"denomination": d.denomination,
+					"denomination_name": frappe.get_cached_value(
+						"POS Denomination",
+						d.denomination,
+						"denomination_name",
+					),
+					"denomination_value": d.denomination_value,
+					"currency": d.currency,
+					"display_order": d.display_order,
+				})
+			denominations.sort(key=lambda x: x.get("display_order") or 0)
+			data["denomination_config"][profile.name] = {
+				"enabled": True,
+				"cash_mode": cash_mode,
+				"denominations": denominations,
+			}
+
 	return data
 
 
 @frappe.whitelist()
-def create_opening_voucher(pos_profile: str, company: str, balance_details: str) -> dict:
+def create_opening_voucher(pos_profile: str, company: str, balance_details: str, denomination_details: str | None = None, ) -> dict:
 	balance_details = json.loads(balance_details)
 
 	new_pos_opening = frappe.get_doc(
@@ -84,6 +112,11 @@ def create_opening_voucher(pos_profile: str, company: str, balance_details: str)
 		}
 	)
 	new_pos_opening.set("balance_details", balance_details)
+	if denomination_details:
+		denomination_details = json.loads(denomination_details)
+		new_pos_opening.set("denomination_details", denomination_details)
+		_validate_denomination_total(new_pos_opening)
+
 	new_pos_opening.insert(ignore_permissions=True)
 
 	data = {}
@@ -91,6 +124,25 @@ def create_opening_voucher(pos_profile: str, company: str, balance_details: str)
 	update_opening_shift_data(data, new_pos_opening.pos_profile)
 	return data
 
+def _validate_denomination_total(doc) -> None:
+	"""Ensure denomination sum matches the configured cash row in balance_details."""
+	cash_mode = (
+		frappe.get_cached_value(
+			"POS Profile", doc.pos_profile, "posa_cash_mode_of_payment"
+		)
+		or "Cash"
+	)
+	denom_total = sum(flt(d.amount) for d in doc.denomination_details)
+	for row in doc.balance_details:
+		if row.mode_of_payment == cash_mode:
+			if flt(row.amount) != flt(denom_total):
+				frappe.throw(
+					_(
+						"Cash opening amount ({0}) does not match "
+						"denomination total ({1})"
+					).format(row.amount, denom_total)
+				)
+			break
 
 @frappe.whitelist()
 def check_opening_shift(user: str):
