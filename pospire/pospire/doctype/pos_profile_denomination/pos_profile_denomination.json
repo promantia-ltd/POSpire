@@ -1,0 +1,62 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-03-02 16:43:05.576822",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "denomination",
+  "denomination_value",
+  "currency",
+  "display_order"
+ ],
+ "fields": [
+  {
+   "fieldname": "denomination",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Denomination",
+   "options": "POS Denomination",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "denomination.denomination_value",
+   "fieldname": "denomination_value",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Denomination Value",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "denomination.currency",
+   "fieldname": "currency",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "display_order",
+   "fieldtype": "Int",
+   "label": "Display Order"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-03-02 17:13:33.622929",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POS Profile Denomination",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

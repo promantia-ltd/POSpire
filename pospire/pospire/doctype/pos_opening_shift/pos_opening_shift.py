@@ -14,6 +14,7 @@ class POSOpeningShift(StatusUpdater):
 	def validate(self):
 		self.validate_pos_profile_and_cashier()
 		self.set_status()
+		self.update_cash_total()
 
 	def validate_pos_profile_and_cashier(self):
 		if self.company != frappe.db.get_value("POS Profile", self.pos_profile, "company"):
@@ -24,3 +25,12 @@ class POSOpeningShift(StatusUpdater):
 
 	def on_submit(self):
 		self.set_status(update=True)
+
+	def update_cash_total(self):
+		total = 0
+		for d in self.denomination_details:
+			d.amount = (d.denomination_value or 0) * (d.quantity or 0)
+			total += d.amount
+		for b in self.balance_details:
+			if b.mode_of_payment == "Cash":
+				b.amount = total

@@ -47,6 +47,31 @@ frappe.ui.form.on("POS Closing Shift", {
 						expected_amount: detail.amount || 0,
 					});
 				});
+				frm.refresh_field("payment_reconciliation");
+				frappe.call({
+					method: "frappe.client.get",
+					args: {
+						doctype: "POS Opening Shift",
+						name: frm.doc.pos_opening_shift,
+					},
+					callback: function(r) {
+						if (r.message && r.message.denomination_details) {
+							frm.clear_table("denomination_details");
+							r.message.denomination_details.forEach(function(d) {
+								let row = frm.add_child("denomination_details");
+								row.denomination = d.denomination;
+								row.denomination_name = d.denomination_name;
+								row.denomination_value = d.denomination_value;
+								row.currency = d.currency;
+								row.opening_quantity = d.quantity;
+								row.opening_amount = d.amount;
+								row.closing_quantity = 0;
+								row.closing_amount = 0;
+							});
+							frm.refresh_field("denomination_details");
+						}
+					}
+				});
 			});
 	},
 

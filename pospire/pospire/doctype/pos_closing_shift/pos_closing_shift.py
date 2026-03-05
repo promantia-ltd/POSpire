@@ -36,6 +36,7 @@ class POSClosingShift(Document):
 				title=_("Invalid Opening Entry"),
 			)
 		self.update_payment_reconciliation()
+		self.update_denomination_totals()
 
 	def update_payment_reconciliation(self):
 		# update the difference values in Payment Reconciliation child table
@@ -43,7 +44,54 @@ class POSClosingShift(Document):
 		precision = frappe.get_cached_value("System Settings", None, "currency_precision") or 3
 		for d in self.payment_reconciliation:
 			d.difference = +flt(d.closing_amount, precision) - flt(d.expected_amount, precision)
+		# validate denomination totals
+		show_breakdown = frappe.get_cached_value(
+			"POS Profile",
+			self.pos_profile,
+			"custom_show_denomination_breakdown_at_closing",
+		)
+		if self.denomination_details and show_breakdown:
+			self._validate_denomination_closing_total(precision)
+		
+	def _validate_denomination_closing_total(self, precision: int) -> None:
+		"""Validate denomination closing total matches cash closing_amount."""
+		
+		cash_mode = (
+			frappe.get_cached_value(
+				"POS Profile",
+				self.pos_profile,
+				"posa_cash_mode_of_payment",
+			)
+			or "Cash"
+		)
 
+		denom_total = sum(
+			flt(d.closing_amount, precision)
+			for d in self.denomination_details
+		)
+
+		for row in self.payment_reconciliation:
+			if row.mode_of_payment == cash_mode:
+				if flt(row.closing_amount, precision) != denom_total:
+					frappe.throw(
+						_(
+							"Cash closing amount ({0}) does not match "
+							"denomination total ({1})"
+						).format(row.closing_amount, denom_total)
+					)
+				break
+
+	def update_denomination_totals(self):
+		total = 0
+
+		for d in self.denomination_details:
+			d.opening_amount = (d.denomination_value or 0) * (d.opening_quantity or 0)
+			d.closing_amount = (d.denomination_value or 0) * (d.closing_quantity or 0)
+			total += d.closing_amount
+
+		for p in self.payment_reconciliation:
+			if p.mode_of_payment == "Cash":
+				p.closing_amount = total
 	def on_submit(self):
 		opening_entry = frappe.get_doc("POS Opening Shift", self.pos_opening_shift)
 		opening_entry.pos_closing_shift = self.name
@@ -247,6 +295,31 @@ def make_closing_shift_from_opening(opening_shift: str):
 	closing_shift.set("taxes", taxes)
 	closing_shift.set("pos_payments", pos_payments_table)
 
+	# Copy denomination details from opening shift
+	opening_doc = frappe.get_doc(
+		"POS Opening Shift", opening_shift.get("name")
+	)
+
+	if opening_doc.denomination_details:
+		denomination_details = []
+
+		for d in opening_doc.denomination_details:
+			denomination_details.append(
+				frappe._dict(
+					{
+						"denomination": d.denomination,
+						"denomination_name": d.denomination_name,
+						"denomination_value": d.denomination_value,
+						"currency": d.currency,
+						"opening_quantity": d.quantity,
+						"closing_quantity": 0,
+						"opening_amount": d.amount,
+						"closing_amount": 0,
+					}
+				)
+			)
+
+		closing_shift.set("denomination_details", denomination_details)
 	return closing_shift
 
 
