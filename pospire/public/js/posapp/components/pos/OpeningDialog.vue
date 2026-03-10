@@ -48,18 +48,19 @@
 							>
 								<template v-slot:item.amount="props">
 									<v-text-field
-										:model-value="formatCurrency(props.item.amount)"
-										@update:modelValue="props.item.amount = numberAmount($event)"
-										type="text"
-										inputmode="decimal"
+										v-model.number="props.item.amount"
+										type="number"
+										min="0"
 										density="compact"
 										variant="outlined"
 										hide-details
 										:prefix="currencySymbol(pos_profile.currency)"
-										:readonly="denominations_enabled && 
-													denomination_config[pos_profile] &&
-													props.item.mode_of_payment === denomination_config[pos_profile].cash_mode"
-									/>
+										:readonly="
+											denominations_enabled &&
+											denomination_config[pos_profile] &&
+											props.item.mode_of_payment === denomination_config[pos_profile].cash_mode
+										"
+										/>
 								</template>
 							</v-data-table>
 							<v-expand-transition>

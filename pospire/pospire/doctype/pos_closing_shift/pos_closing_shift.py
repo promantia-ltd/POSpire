@@ -82,6 +82,9 @@ class POSClosingShift(Document):
 				break
 
 	def update_denomination_totals(self):
+		# If denominations not used, don't override manual closing amount
+		if not self.denomination_details:
+			return
 		total = 0
 
 		for d in self.denomination_details:
