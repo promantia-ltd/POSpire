@@ -37,10 +37,9 @@
 
 					<template v-slot:item.closing_amount="props">
 						<v-text-field
-							:model-value="formatCurrency(props.item.closing_amount)"
-							@update:modelValue="props.item.closing_amount = numberAmount($event)"
-							type="text"
-							inputmode="decimal"
+							v-model.number="props.item.closing_amount"
+							type="number"
+							min="0"
 							density="compact"
 							variant="outlined"
 							:rules="amountRules"
@@ -52,7 +51,7 @@
 								show_denomination_breakdown &&
 								props.item.mode_of_payment === pos_profile.posa_cash_mode_of_payment
 							"
-						/>
+							/>
 					</template>
 
 					<template v-slot:item.difference="{ item }">
