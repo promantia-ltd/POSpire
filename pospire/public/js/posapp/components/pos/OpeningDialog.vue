@@ -56,9 +56,8 @@
 										hide-details
 										:prefix="currencySymbol(pos_profile.currency)"
 										:readonly="
-											denominations_enabled &&
-											denomination_config[pos_profile] &&
-											props.item.mode_of_payment === denomination_config[pos_profile].cash_mode
+											denominations_enabled ||
+											props.item.mode_of_payment !== (denomination_config[pos_profile]?.cash_mode || 'Cash')
 										"
 										/>
 								</template>
@@ -66,7 +65,8 @@
 							<v-expand-transition>
 								<v-card
 									v-if="denominations_enabled"
-									class="rounded-lg elevation-2 mt-3"
+									class="rounded-lg elevation-1 mt-6"
+									style="border-top: none !important;"
 								>
 									<v-card-title class="text-subtitle-2">
 									{{ __("Cash Denomination Breakdown") }}
