@@ -220,7 +220,7 @@
 			<div class="invoice-cart-section">
 				<v-data-table
 					:headers="items_headers"
-					:items="items"
+					:items="items.filter(item => !item.posa_deleted)"
 					v-model:expanded="expanded"
 					show-expand
 					item-value="posa_row_id"
@@ -1148,6 +1148,7 @@ export default {
 				{ title: __("Amount"), key: "amount", align: "center" },
 				{ title: __("Offer?"), key: "posa_is_offer", align: "center" },
 			],
+			deleted_items: [],
 		};
 	},
 
@@ -1337,16 +1338,29 @@ export default {
 
 			this.invoice_doc.sales_team = sales_team;
 		},
-		//
+
 		remove_item(item) {
-			const index = this.items.findIndex((el) => el.posa_row_id == item.posa_row_id);
-			if (index >= 0) {
-				this.items.splice(index, 1);
+			if (!this.deleted_items) {
+				this.deleted_items = [];
 			}
-			const idx = this.expanded.findIndex((el) => el.posa_row_id == item.posa_row_id);
-			if (idx >= 0) {
-				this.expanded.splice(idx, 1);
+			let existing = this.deleted_items.find(
+				d => d.item_code === item.item_code
+			);
+			if (existing) {
+				existing.qty += item.qty;
+				existing.amount = existing.qty * existing.rate;
+			} else {
+				this.deleted_items.push({
+					item_code: item.item_code,
+					item_name: item.item_name,
+					qty: item.qty,
+					rate: item.rate,
+					amount: item.qty * item.rate
+				});
 			}
+			// remove item from cart
+			this.items = this.items.filter(el => el.posa_row_id !== item.posa_row_id);
+			this.$forceUpdate();
 		},
 
 		add_one(item) {
@@ -1379,6 +1393,12 @@ export default {
 		},
 
 		add_item(item) {
+			// remove from deleted list if re-added
+			if (this.deleted_items) {
+				this.deleted_items = this.deleted_items.filter(
+					d => d.item_code !== item.item_code
+				);
+			}
 			// Restrict adding new items during return flow
 			if (this.invoice_doc.is_return) {
 				toast.error(__("Cannot add items in return mode"));
@@ -1389,6 +1409,7 @@ export default {
 				item.uom = item.stock_uom;
 			}
 			let index = -1;
+			let deletedIndex = -1;
 			if (!this.new_line) {
 				index = this.items.findIndex(
 					(el) =>
@@ -1396,8 +1417,29 @@ export default {
 						el.uom === item.uom &&
 						!el.posa_is_offer &&
 						!el.posa_is_replace &&
-						el.batch_no === item.batch_no
+						el.batch_no === item.batch_no &&
+						!el.posa_deleted
 				);
+				deletedIndex = this.items.findIndex(
+					(el) =>
+						el.item_code === item.item_code &&
+						el.uom === item.uom &&
+						!el.posa_is_offer &&
+						!el.posa_is_replace &&
+						el.batch_no === item.batch_no &&
+						el.posa_deleted
+				);
+			}
+			// If the item was previously deleted, restore it
+			if (deletedIndex !== -1) {
+				const deletedItem = this.items[deletedIndex];
+				deletedItem.posa_deleted = false;
+				deletedItem.qty = 1;
+				deletedItem.rate = deletedItem.price_list_rate || deletedItem.rate;
+				deletedItem.amount = deletedItem.qty * deletedItem.rate;
+				this.calc_stock_qty(deletedItem, deletedItem.qty);
+				this.$forceUpdate();
+				return;
 			}
 			if (index === -1 || this.new_line) {
 				const new_item = this.get_new_item(item);
@@ -1502,6 +1544,7 @@ export default {
 
 		clear_invoice() {
 			this.items = [];
+			this.deleted_items = [];
 			this.posa_offers = [];
 			this.expanded = [];
 			this.posa_offers = [];
@@ -1613,6 +1656,7 @@ export default {
 			this.return_doc = "";
 			if (!data.name && !data.is_return) {
 				this.items = [];
+				this.deleted_items = [];
 				this.customer = this.pos_profile.customer;
 				this.invoice_doc = "";
 				this.discount_amount = 0;
@@ -1691,6 +1735,7 @@ export default {
 			// Sales Person
 			doc.sales_team = this.invoice_doc.sales_team || [];
 			//
+			doc.custom_deleted_pos_items = this.deleted_items;
 			return doc;
 		},
 
@@ -1988,7 +2033,7 @@ export default {
 						value = false;
 					}
 				}
-				if (item.qty == 0) {
+				if (item.qty == 0 && !item.posa_deleted) {
 					toast.error(
 						__(`Quantity for item '{0}' cannot be Zero (0)`, [item.item_name])
 					);

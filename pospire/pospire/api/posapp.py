@@ -507,6 +507,18 @@ def update_invoice(data: str):
 	else:
 		invoice_doc = frappe.get_doc(data)
 
+	deleted_items = data.get("custom_deleted_pos_items", [])
+	# clear old rows to avoid duplicates
+	invoice_doc.set("custom_deleted_pos_items", [])
+
+	for d in deleted_items:
+		invoice_doc.append("custom_deleted_pos_items", {
+			"item_code": d.get("item_code"),
+			"item_name": d.get("item_name"),
+			"qty": d.get("qty"),
+			"rate": d.get("rate"),
+			"amount": d.get("amount")
+		})
 	invoice_doc.set_missing_values()
 	invoice_doc.flags.ignore_permissions = True
 	frappe.flags.ignore_account_permission = True
