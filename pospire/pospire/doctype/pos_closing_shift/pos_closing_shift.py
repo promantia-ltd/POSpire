@@ -88,7 +88,6 @@ class POSClosingShift(Document):
 		total = 0
 
 		for d in self.denomination_details:
-			d.opening_amount = (d.denomination_value or 0) * (d.opening_quantity or 0)
 			d.closing_amount = (d.denomination_value or 0) * (d.closing_quantity or 0)
 			total += d.closing_amount
 
@@ -314,9 +313,7 @@ def make_closing_shift_from_opening(opening_shift: str):
 						"denomination_name": d.denomination_name,
 						"denomination_value": d.denomination_value,
 						"currency": d.currency,
-						"opening_quantity": d.quantity,
 						"closing_quantity": 0,
-						"opening_amount": d.amount,
 						"closing_amount": 0,
 					}
 				)

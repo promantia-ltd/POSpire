@@ -11,7 +11,7 @@
 			</v-card-title>
 
 			<v-divider></v-divider>
-			<v-card-text class="px-6 py-4">
+			<v-card-text class="px-6 py-4 overflow-y-auto" style="max-height:65vh;">
 				<v-data-table
 					:headers="headers"
 					:items="dialog_data.payment_reconciliation"
@@ -87,12 +87,6 @@
 								hide-details
 							/>
 						</template>
-							<template v-slot:item.opening_amount="{ item }">
-								<span class="font-mono">
-									{{ currencySymbol(pos_profile.currency) }}
-									{{ formatCurrency(item.opening_amount) }}
-								</span>
-							</template>
 						<template v-slot:item.closing_amount="{ item }">
 							<span class="font-mono">
 								{{ currencySymbol(pos_profile.currency) }}
@@ -103,10 +97,6 @@
 							<tr class="font-weight-bold">
 								<td>Total</td>
 								<td></td>
-								<td></td>
-								<td class="text-end">
-									{{ currencySymbol(pos_profile.currency) }} {{ formatCurrency(opening_total) }}
-								</td>
 								<td class="text-end">
 									{{ currencySymbol(pos_profile.currency) }} {{ formatCurrency(closing_total) }}
 								</td>
@@ -160,11 +150,9 @@ export default {
 			},
 		],
 		denomination_headers: [
-		{ title: __("Denomination"), value: "denomination_name" },
-		{ title: __("Opening Qty"), value: "opening_quantity", align: "end" },
-		{ title: __("Closing Qty"), value: "closing_quantity", align: "end" },
-		{ title: __("Opening Amount"), value: "opening_amount", align: "end" },
-		{ title: __("Closing Amount"), value: "closing_amount", align: "end" },
+		{ title: __("Denomination"), value: "denomination_name", width: "45%" },
+		{ title: __("Closing Qty"), value: "closing_quantity", align: "start", width: "25%" },
+		{ title: __("Closing Amount"), value: "closing_amount", align: "end", width: "30%" },
 		],
 		amountRules,
 		pagination: {},
@@ -256,14 +244,6 @@ export default {
 		},
 	},
 	computed: {
-		opening_total() {
-			if (!this.dialog_data.denomination_details) return 0;
-			return this.dialog_data.denomination_details.reduce(
-				(sum, d) => sum + (d.opening_amount || 0),
-				0
-			);
-		},
-
 		closing_total() {
 			if (!this.dialog_data.denomination_details) return 0;
 			return this.dialog_data.denomination_details.reduce(

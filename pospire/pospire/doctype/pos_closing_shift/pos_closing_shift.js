@@ -63,8 +63,6 @@ frappe.ui.form.on("POS Closing Shift", {
 								row.denomination_name = d.denomination_name;
 								row.denomination_value = d.denomination_value;
 								row.currency = d.currency;
-								row.opening_quantity = d.quantity;
-								row.opening_amount = d.amount;
 								row.closing_quantity = 0;
 								row.closing_amount = 0;
 							});
