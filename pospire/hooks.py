@@ -260,13 +260,6 @@ fixtures = [
 					"Sales Invoice-custom_delivery_charge_rate",
 					"POS Profile-posa_hardware_manager_setting",
 					"POS Profile-posa_hardware_manager",
-<<<<<<< Updated upstream
-=======
-                    "POS Profile-custom_enable_cash_denominations",
-                    "POS Profile-custom_denominations",
-                    "POS Profile-custom_show_denomination_breakdown_at_closing",
-					"Sales Invoice-custom_deleted_pos_items",
->>>>>>> Stashed changes
 				),
 			]
 		],
