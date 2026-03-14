@@ -1,0 +1,80 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-03-04 10:36:58.887502",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "denomination",
+  "denomination_name",
+  "denomination_value",
+  "currency",
+  "closing_quantity",
+  "closing_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "denomination",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Denomination",
+   "options": "POS Denomination",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "denomination.denomination_name",
+   "fieldname": "denomination_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Denomination Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "denomination.denomination_value",
+   "fieldname": "denomination_value",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Denomination Value",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "denomination.denomination_value",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "closing_quantity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Closing Quantity"
+  },
+  {
+   "fieldname": "closing_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Closing Amount",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-03-12 14:56:03.655459",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POS Closing Denomination",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

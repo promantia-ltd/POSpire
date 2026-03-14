@@ -45,15 +45,42 @@ frappe.ui.form.on("POS Opening Shift", {
 
 	pos_profile: (frm) => {
 		if (frm.doc.pos_profile) {
-			frappe.db.get_doc("POS Profile", frm.doc.pos_profile).then(({ payments }) => {
-				if (payments.length) {
-					frm.doc.balance_details = [];
-					payments.forEach(({ mode_of_payment }) => {
+			frappe.db.get_doc("POS Profile", frm.doc.pos_profile).then((doc) => {
+				// Balance Details
+				if (doc.payments && doc.payments.length) {
+					frm.clear_table("balance_details");
+
+					doc.payments.forEach(({ mode_of_payment }) => {
 						frm.add_child("balance_details", { mode_of_payment });
 					});
+
 					frm.refresh_field("balance_details");
 				}
+				frm.clear_table("denomination_details");
+
+				if (doc.custom_enable_cash_denominations) {
+					(doc.custom_denominations || []).forEach((d) => {
+						let row = frm.add_child("denomination_details");
+						row.denomination = d.denomination;
+						row.denomination_value = d.denomination_value;
+						row.currency = d.currency;
+						row.quantity = 0;
+						row.amount = 0;
+					});
+				}
+				frm.refresh_field("denomination_details");
 			});
 		}
-	},
+	}
+});
+frappe.ui.form.on("POS Opening Denomination", {
+    quantity(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        frappe.model.set_value(
+            cdt,
+            cdn,
+            "amount",
+            (row.denomination_value || 0) * (row.quantity || 0)
+        );
+    }
 });
