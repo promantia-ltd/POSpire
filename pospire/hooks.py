@@ -264,6 +264,7 @@ fixtures = [
                     "POS Profile-custom_enable_cash_denominations",
                     "POS Profile-custom_denominations",
                     "POS Profile-custom_show_denomination_breakdown_at_closing",
+					"Sales Invoice-custom_deleted_pos_items",
 				),
 			]
 		],
@@ -274,7 +275,7 @@ fixtures = [
 			[
 				"name",
 				"in",
-				("Sales Invoice-posa_pos_opening_shift-no_copy", "POS Profile-posa_tax_inclusive-hidden"),
+				("Sales Invoice-posa_pos_opening_shift-no_copy", "POS Profile-posa_tax_inclusive-hidden","Sales Invoice-main-field_order"),
 			]
 		],
 	},
