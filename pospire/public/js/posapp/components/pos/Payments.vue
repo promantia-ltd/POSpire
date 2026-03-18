@@ -817,10 +817,18 @@ export default {
 				frappe.utils.play_sound("error");
 				return;
 			}
-
+			if (this.is_credit_sale) {
+				this.paid_change = 0;
+			}
 			if (!this.paid_change) this.paid_change = 0;
 
-			if (this.paid_change > -this.diff_payment) {
+			if (
+				!this.is_credit_sale &&
+				!this.invoice_doc.is_return &&
+				!this.pos_profile.posa_allow_partial_payment &&
+				!this.is_write_off_change &&
+				this.paid_change > -this.diff_payment
+				) {
 				toast.error(`Paid change can not be greater than total change!`);
 				frappe.utils.play_sound("error");
 				return;
@@ -830,7 +838,14 @@ export default {
 				this.flt(this.paid_change) + this.flt(-this.credit_change)
 			);
 
-			if (this.is_cashback && total_change != -this.diff_payment) {
+			if (
+				!this.is_credit_sale &&
+				this.is_cashback &&
+				this.diff_payment < 0 &&
+				!this.invoice_doc.is_return &&
+				this.flt(total_change, this.currency_precision) !==
+					this.flt(-this.diff_payment, this.currency_precision)
+			) {
 				toast.error(`Error in change calculations!`);
 				frappe.utils.play_sound("error");
 				return;
@@ -992,12 +1007,21 @@ export default {
 			}
 		},
 		set_paid_change() {
-			if (!this.paid_change) this.paid_change = 0;
-
+			if (!this.paid_change || this.paid_change < 0) this.paid_change = 0;
 			this.paid_change_rules = [];
 			let change = -this.diff_payment;
-			if (this.paid_change > change) {
-				this.paid_change_rules = ["Paid change can not be greater than total change!"];
+
+			if (
+				!this.is_credit_sale &&
+				!this.invoice_doc.is_return &&
+				this.paid_change > change &&
+				!this.pos_profile.posa_allow_partial_payment &&
+				!this.is_write_off_change
+			) {
+				this.paid_change_rules = [
+					"Paid change cannot be greater than total change!",
+				];
+				this.paid_change = 0;
 				this.credit_change = 0;
 			}
 		},
@@ -1244,7 +1268,10 @@ export default {
 
 	computed: {
 		total_payments() {
-			let total = parseFloat(this.invoice_doc.loyalty_amount);
+			if (this.is_credit_sale || this.invoice_doc.is_return) {
+				return 0;
+			}
+			let total = parseFloat(this.invoice_doc.loyalty_amount || 0);
 			if (this.invoice_doc && this.invoice_doc.payments) {
 				this.invoice_doc.payments.forEach((payment) => {
 					total += this.flt(payment.amount);
@@ -1258,12 +1285,23 @@ export default {
 			return this.flt(total, this.currency_precision);
 		},
 		diff_payment() {
-			let diff_payment = this.flt(
-				(this.invoice_doc.rounded_total || this.invoice_doc.grand_total) -
-					this.total_payments,
+			let invoice_total = this.flt(
+				Math.abs(this.invoice_doc.rounded_total || this.invoice_doc.grand_total),
 				this.currency_precision
 			);
+
+			let diff_payment;
+
+			if (this.invoice_doc.is_return) {
+				diff_payment = -invoice_total;
+			} else {
+				diff_payment = this.flt(
+					invoice_total - this.total_payments,
+					this.currency_precision
+				);
+			}
 			this.paid_change = -diff_payment;
+
 			return diff_payment;
 		},
 		credit_change() {

@@ -67,12 +67,12 @@ export default {
 	},
 
 	methods: {
-		get_customer_names() {
+		get_customer_names(force_refresh = false) {
 			var vm = this;
-			if (this.customers.length > 0) {
+			if (this.customers.length > 0 && !force_refresh) {
 				return;
 			}
-			if (vm.pos_profile.posa_local_storage && localStorage.customer_storage) {
+			if (vm.pos_profile.posa_local_storage && localStorage.customer_storage && !force_refresh) {
 				vm.customers = JSON.parse(localStorage.getItem("customer_storage"));
 			}
 
@@ -142,7 +142,7 @@ export default {
 				this.customer_info = data;
 			});
 			this.eventBus.on("fetch_customer_details", () => {
-				this.get_customer_names();
+				this.get_customer_names(true);// Force refresh to get newly created customers
 			});
 		});
 	},
