@@ -3,8 +3,25 @@
 
 
 import json
+from typing import Any
 
 import frappe
+
+
+def _load(value: Any) -> Any:
+	"""Accept either a JSON-encoded string or a native dict/list.
+
+	The old frappe.call() auto-serialised complex args as JSON strings in form
+	data; frappe-ui's call() sends them as native JSON objects.  This helper
+	lets every API handle both without modification.
+	"""
+	if isinstance(value, (dict, list)):
+		return value
+	if value is None or value == "":
+		return value
+	return json.loads(value)
+
+
 from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
 	get_checks_for_pl_and_bs_accounts,
@@ -97,8 +114,8 @@ def get_opening_dialog_data() -> dict:
 
 
 @frappe.whitelist()
-def create_opening_voucher(pos_profile: str, company: str, balance_details: str, denomination_details: str | None = None, ) -> dict:
-	balance_details = json.loads(balance_details)
+def create_opening_voucher(pos_profile: str, company: str, balance_details: str | list, denomination_details: str | list | None = None) -> dict:
+	balance_details = _load(balance_details)
 
 	new_pos_opening = frappe.get_doc(
 		{
@@ -113,7 +130,7 @@ def create_opening_voucher(pos_profile: str, company: str, balance_details: str,
 	)
 	new_pos_opening.set("balance_details", balance_details)
 	if denomination_details:
-		denomination_details = json.loads(denomination_details)
+		denomination_details = _load(denomination_details)
 		new_pos_opening.set("denomination_details", denomination_details)
 		_validate_denomination_total(new_pos_opening)
 
@@ -175,13 +192,13 @@ def update_opening_shift_data(data, pos_profile):
 
 @frappe.whitelist()
 def get_items(
-	pos_profile: str,
+	pos_profile: str | dict,
 	price_list: str | None = None,
 	item_group: str = "",
 	search_value: str = "",
 	customer: str | None = None,
 ) -> list:
-	_pos_profile = json.loads(pos_profile)
+	_pos_profile = _load(pos_profile)
 	ttl = _pos_profile.get("posa_server_cache_duration")
 	if ttl:
 		ttl = int(ttl) * 30
@@ -191,7 +208,7 @@ def get_items(
 		return _get_items(pos_profile, price_list, item_group, search_value, customer)
 
 	def _get_items(pos_profile, price_list, item_group, search_value, customer=None):
-		pos_profile = json.loads(pos_profile)
+		pos_profile = _load(pos_profile)
 		today = nowdate()
 		data = dict()
 		posa_display_items_in_stock = pos_profile.get("posa_display_items_in_stock")
@@ -451,8 +468,8 @@ def get_customer_group_condition(pos_profile):
 
 
 @frappe.whitelist()
-def get_customer_names(pos_profile: str) -> list:
-	_pos_profile = json.loads(pos_profile)
+def get_customer_names(pos_profile: str | dict) -> list:
+	_pos_profile = _load(pos_profile)
 	ttl = _pos_profile.get("posa_server_cache_duration")
 	if ttl:
 		ttl = int(ttl) * 60
@@ -462,7 +479,7 @@ def get_customer_names(pos_profile: str) -> list:
 		return _get_customer_names(pos_profile)
 
 	def _get_customer_names(pos_profile):
-		pos_profile = json.loads(pos_profile)
+		pos_profile = _load(pos_profile)
 		condition = ""
 		condition += get_customer_group_condition(pos_profile)
 		customers = frappe.db.sql(  # nosemgrep: frappe-sql-format-injection
@@ -527,8 +544,8 @@ def add_taxes_from_tax_template(item, parent_doc):
 
 
 @frappe.whitelist()
-def update_invoice_from_order(data: str):
-	data = json.loads(data)
+def update_invoice_from_order(data: str | dict):
+	data = _load(data)
 	invoice_doc = frappe.get_doc("Sales Invoice", data.get("name"))
 	invoice_doc.update(data)
 	invoice_doc.save()
@@ -536,8 +553,8 @@ def update_invoice_from_order(data: str):
 
 
 @frappe.whitelist()
-def update_invoice(data: str):
-	data = json.loads(data)
+def update_invoice(data: str | dict):
+	data = _load(data)
 	incoming_customer = data.get("customer")
 	if data.get("name"):
 		invoice_doc = frappe.get_doc("Sales Invoice", data.get("name"))
@@ -768,9 +785,9 @@ def update_invoice(data: str):
 
 
 @frappe.whitelist()
-def submit_invoice(invoice: str, data: str) -> dict:
-	data = json.loads(data)
-	invoice = json.loads(invoice)
+def submit_invoice(invoice: str | dict, data: str | dict) -> dict:
+	data = _load(data)
+	invoice = _load(invoice)
 	invoice_doc = frappe.get_doc("Sales Invoice", invoice.get("name"))
 	invoice_doc.update(invoice)
 	if invoice.get("posa_delivery_date"):
@@ -1105,8 +1122,8 @@ def delete_invoice(invoice: str) -> str:
 
 
 @frappe.whitelist()
-def get_items_details(pos_profile: str, items_data: str) -> list:
-	_pos_profile = json.loads(pos_profile)
+def get_items_details(pos_profile: str | dict, items_data: str | list) -> list:
+	_pos_profile = _load(pos_profile)
 	ttl = _pos_profile.get("posa_server_cache_duration")
 	if ttl:
 		ttl = int(ttl) * 60
@@ -1117,8 +1134,8 @@ def get_items_details(pos_profile: str, items_data: str) -> list:
 
 	def _get_items_details(pos_profile, items_data):
 		today = nowdate()
-		pos_profile = json.loads(pos_profile)
-		items_data = json.loads(items_data)
+		pos_profile = _load(pos_profile)
+		items_data = _load(items_data)
 		warehouse = pos_profile.get("warehouse")
 		result = []
 
@@ -1191,9 +1208,9 @@ def get_items_details(pos_profile: str, items_data: str) -> list:
 
 @frappe.whitelist()
 def get_item_detail(
-	item: str, doc: str | None = None, warehouse: str | None = None, price_list: str | None = None
+	item: str | dict, doc: str | dict | None = None, warehouse: str | None = None, price_list: str | None = None
 ):
-	item = json.loads(item)
+	item = _load(item)
 	today = nowdate()
 	item_code = item.get("item_code")
 	batch_no_data = []
@@ -1265,7 +1282,7 @@ def create_customer(
 	gender: str | None = None,
 	method: str = "create",
 ) -> dict | None:
-	pos_profile = json.loads(pos_profile_doc)
+	pos_profile = _load(pos_profile_doc)
 	if method == "create":
 		is_exist = frappe.db.exists("Customer", {"customer_name": customer_name})
 		if pos_profile.get("posa_allow_duplicate_customer_names") or not is_exist:
@@ -1670,8 +1687,8 @@ def get_customer_addresses(customer: str) -> list:
 
 
 @frappe.whitelist()
-def make_address(address_data: str):
-	address_data = json.loads(address_data)
+def make_address(address_data: str | dict):
+	address_data = _load(address_data)
 	address = frappe.get_doc(
 		{
 			"doctype": "Address",
@@ -1773,8 +1790,8 @@ def get_item_attributes(item_code: str) -> list:
 
 
 @frappe.whitelist()
-def create_payment_request(doc: str):
-	doc = json.loads(doc)
+def create_payment_request(doc: str | dict):
+	doc = _load(doc)
 	for pay in doc.get("payments"):
 		if pay.get("type") == "Phone":
 			if pay.get("amount") <= 0:

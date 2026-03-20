@@ -14,11 +14,9 @@ POSPIRE_COLOR = "#2563EB"
 # Includes in <head>
 # ------------------
 
-# include js, css files in header of desk.html
-app_include_css = "/assets/pospire/css/pos-enhancements.css"
-app_include_js = [
-	"pospire.bundle.js",
-]
+# SPA: JS/CSS loaded only at /pospire via Vite, not on every desk page.
+# app_include_css = "/assets/pospire/css/pos-enhancements.css"
+# app_include_js = ["pospire.bundle.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/pospire/css/pospire.css"
@@ -30,6 +28,11 @@ app_include_js = [
 
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
+
+# SPA routing — serves pospire.html for all /pospire/* paths
+website_route_rules = [
+	{"from_route": "/pospire/<path:app_path>", "to_route": "pospire"},
+]
 
 # include js in doctype views
 doctype_js = {
@@ -414,7 +417,7 @@ add_to_apps_screen = [
 	{
 		"name": "POSpire",
 		"title": "POSpire",
-		"route": "/app/pospire",
+		"route": "/pospire",
 		"color": POSPIRE_COLOR,
 		"logo": "/assets/pospire/images/app-128x128-rounded.png",
 	}

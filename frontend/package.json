@@ -1,0 +1,33 @@
+{
+  "name": "pospire-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "@mdi/font": "^7.0.0",
+    "frappe-ui": "^0.1.267",
+    "lodash": "^4.17.21",
+    "mitt": "3.0.1",
+    "onscan.js": "^1.5.2",
+    "pinia": "^2.0.33",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.0",
+    "vue3-toastify": "0.2.0",
+    "vuetify": "3.6.14"
+  },
+  "devDependencies": {
+    "@iconify/utils": "2.1.33",
+    "@vitejs/plugin-vue": "^4.2.3",
+    "unplugin-icons": "^0.21.0",
+    "vite": "^5.0.0",
+    "vite-plugin-vuetify": "^2.0.0"
+  },
+  "overrides": {
+    "@iconify/utils": "2.1.33"
+  }
+}

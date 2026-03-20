@@ -2,8 +2,18 @@
 # For license information, please see license.txt
 
 import json
+from typing import Any
 
 import erpnext
+
+
+def _load(value: Any) -> Any:
+	"""Accept either a JSON-encoded string or a native dict/list."""
+	if isinstance(value, (dict, list)):
+		return value
+	if value is None or value == "":
+		return value
+	return json.loads(value)
 import frappe
 from erpnext.accounts.doctype.bank_account.bank_account import get_party_bank_account
 from erpnext.accounts.doctype.journal_entry.journal_entry import (
@@ -137,10 +147,10 @@ def get_outstanding_invoices(
 	currency: str,
 	customer: str | None = None,
 	pos_profile_name: str | None = None,
-	include_paid: str = "false",
+	include_paid: str | bool = "false",
 ) -> list:
 	if customer:
-		if include_paid == "false":
+		if include_paid in (False, "false", "0", ""):
 			precision = frappe.get_precision("Sales Invoice", "outstanding_amount") or 2
 			outstanding_invoices = _get_outstanding_invoices(
 				party_type="Customer",
@@ -260,8 +270,8 @@ def get_unallocated_payments(
 
 
 @frappe.whitelist()
-def process_pos_payment(payload: str) -> dict:
-	data = json.loads(payload)
+def process_pos_payment(payload: str | dict) -> dict:
+	data = _load(payload)
 	data = frappe._dict(data)
 	if not data.pos_profile.get("posa_use_pos_awesome_payments"):
 		frappe.throw(_("POS Payments is not enabled for this POS Profile"))

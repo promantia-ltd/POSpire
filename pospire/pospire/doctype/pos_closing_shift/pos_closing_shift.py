@@ -3,8 +3,18 @@
 
 
 import json
+from typing import Any
 
 import frappe
+
+
+def _load(value: Any) -> Any:
+	"""Accept either a JSON-encoded string or a native dict/list."""
+	if isinstance(value, (dict, list)):
+		return value
+	if value is None or value == "":
+		return value
+	return json.loads(value)
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
@@ -177,8 +187,8 @@ def get_payments_entries(pos_opening_shift: str) -> list:
 
 
 @frappe.whitelist()
-def make_closing_shift_from_opening(opening_shift: str):
-	opening_shift = json.loads(opening_shift)
+def make_closing_shift_from_opening(opening_shift: str | dict):
+	opening_shift = _load(opening_shift)
 	submit_printed_invoices(opening_shift.get("name"))
 	closing_shift = frappe.new_doc("POS Closing Shift")
 	closing_shift.pos_opening_shift = opening_shift.get("name")
@@ -324,8 +334,8 @@ def make_closing_shift_from_opening(opening_shift: str):
 
 
 @frappe.whitelist()
-def submit_closing_shift(closing_shift: str) -> str:
-	closing_shift = json.loads(closing_shift)
+def submit_closing_shift(closing_shift: str | dict) -> str:
+	closing_shift = _load(closing_shift)
 	closing_shift_doc = frappe.get_doc(closing_shift)
 	closing_shift_doc.flags.ignore_permissions = True
 	closing_shift_doc.save()

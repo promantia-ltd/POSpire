@@ -11,4 +11,20 @@ ISSUES.md
 
 # Build artifacts
 pospire/public/dist/
+pospire/public/frontend/
 yarn.lock
+
+# Local tarballs
+*.tgz
+
+# Claude Code session data
+.claude/
+
+# npm lock at repo root (bench manages its own)
+package-lock.json
+
+# Local CI/lint run logs
+scripts/output/
+
+# Semgrep rules cloned locally for testing — not committed
+frappe-semgrep-rules/
