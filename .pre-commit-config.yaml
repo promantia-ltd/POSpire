@@ -38,7 +38,7 @@ repos:
         # Ignore any files that might contain jinja / bundles
         exclude: |
             (?x)^(
-                pospire/public/dist/.*|
+                pospire/public/frontend/.*|
                 .*node_modules.*|
                 .*boilerplate.*|
                 pospire/templates/includes/.*|
@@ -55,7 +55,7 @@ repos:
         # Ignore any files that might contain jinja / bundles
         exclude: |
             (?x)^(
-                pospire/public/dist/.*|
+                pospire/public/frontend/.*|
                 cypress/.*|
                 .*node_modules.*|
                 .*boilerplate.*|
