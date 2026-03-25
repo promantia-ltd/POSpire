@@ -8,6 +8,7 @@ app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "rajit@example.com"
 app_license = "GPLv3"
+required_apps = ["erpnext"]
 
 POSPIRE_COLOR = "#2563EB"
 
