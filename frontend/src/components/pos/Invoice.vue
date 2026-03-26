@@ -1950,7 +1950,7 @@ export default {
 					});
 				} else {
 					this.eventBus.emit("show_payment", "true");
-					const invoice_doc = this.process_invoice();
+					const invoice_doc = await this.process_invoice();
 					this.eventBus.emit("send_invoice_doc_payment", {
 						invoice_doc,
 						inclusive_tax: this.inclusive_tax, // Add this line
@@ -1958,7 +1958,7 @@ export default {
 				}
 			} else {
 				this.eventBus.emit("show_payment", "true");
-				const invoice_doc = this.process_invoice();
+				const invoice_doc = await this.process_invoice();
 				this.eventBus.emit("send_invoice_doc_payment", {
 					invoice_doc,
 					inclusive_tax: this.inclusive_tax, // Add this line
