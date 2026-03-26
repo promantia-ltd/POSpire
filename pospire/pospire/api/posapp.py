@@ -296,7 +296,7 @@ def get_items(
 				},
 				or_filters=[
 					["valid_upto", ">=", today],
-					["valid_upto", "in", ["", None]],
+					["valid_upto", "is", "not set"],
 				],
 				order_by="valid_from ASC, valid_upto DESC",
 			)
