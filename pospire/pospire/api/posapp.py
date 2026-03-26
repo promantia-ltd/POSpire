@@ -43,6 +43,8 @@ from erpnext.stock.doctype.batch.batch import (
 )
 from erpnext.stock.get_item_details import get_item_details
 from frappe import _
+from frappe.query_builder import Field
+from frappe.query_builder.functions import IfNull
 from frappe.utils import cstr, flt, getdate, nowdate
 from frappe.utils.background_jobs import enqueue
 from frappe.utils.caching import redis_cache
@@ -167,7 +169,7 @@ def check_opening_shift(user: str):
 		"POS Opening Shift",
 		filters={
 			"user": user,
-			"pos_closing_shift": ["in", ["", None]],
+			"pos_closing_shift": ["is", "not set"],
 			"docstatus": 1,
 			"status": "Open",
 		},
@@ -286,14 +288,14 @@ def get_items(
 			item_prices_data = frappe.get_all(
 				"Item Price",
 				fields=["item_code", "price_list_rate", "currency", "uom"],
-				filters={
-					"price_list": price_list,
-					"item_code": ["in", items],
-					"currency": pos_profile.get("currency"),
-					"selling": 1,
-					"valid_from": ["<=", today],
-					"customer": ["in", ["", None, customer]],
-				},
+				filters=[
+					["price_list", "=", price_list],
+					["item_code", "in", items],
+					["currency", "=", pos_profile.get("currency")],
+					["selling", "=", 1],
+					["valid_from", "<=", today],
+					[IfNull(Field("customer"), ""), "in", ["", customer or ""]],
+				],
 				or_filters=[
 					["valid_upto", ">=", today],
 					["valid_upto", "is", "not set"],
@@ -1375,7 +1377,7 @@ def get_items_from_barcode(selling_price_list: str, currency: str, barcode: str)
 		if prices_with_uom > 0:
 			filters["uom"] = item.stock_uom
 		else:
-			filters["uom"] = ["in", ["", None, item.stock_uom]]
+			filters["uom"] = ["is", "not set"]
 
 		item_prices_data = frappe.get_all(
 			"Item Price",

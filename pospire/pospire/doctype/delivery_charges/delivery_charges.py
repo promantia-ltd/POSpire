@@ -68,7 +68,7 @@ def get_applicable_delivery_charges(
 	if len(delivery_charges_list) > 0:
 		delivery_charges_filters["name"] = ["in", delivery_charges_list]
 	if restrict:
-		delivery_charges_filters["profiles_list"] = ["not in", ["", None]]
+		delivery_charges_filters["profiles_list"] = ["is", "set"]
 
 	delivery_charges_items = frappe.get_all(
 		"Delivery Charges",
