@@ -227,6 +227,19 @@ def get_items(
 		condition = ""
 		condition += get_item_group_condition(pos_profile.get("name"))
 
+		assortment = pos_profile.get("custom_assortment")
+
+		if assortment:
+			assortment_doc = frappe.get_doc("Assortment", assortment)
+			if assortment_doc.disabled:
+				pass  
+			else:
+				assortment_items = [d.item for d in assortment_doc.assortment_items]
+				if not assortment_items:
+					return []
+				items_str = ", ".join([frappe.db.escape(i) for i in assortment_items])
+				condition += f" AND name IN ({items_str})"
+
 		if use_limit_search:
 			search_limit = pos_profile.get("posa_search_limit") or 500
 			if search_value:
