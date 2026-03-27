@@ -18,7 +18,7 @@
 		>
 			<template #prepend-inner>
 				<v-icon
-					class="customer-action-icon"
+					class="customer-action-icon mr-2"
 					color="primary"
 					@click.stop="edit_customer"
 				>mdi-account-edit</v-icon>
