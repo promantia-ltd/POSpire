@@ -233,14 +233,12 @@ def get_items(
 
 		if assortment:
 			assortment_doc = frappe.get_doc("Assortment", assortment)
-			if assortment_doc.disabled:
-				pass  
-			else:
+			if not assortment_doc.disabled:
 				assortment_items = [d.item for d in assortment_doc.assortment_items]
 				if not assortment_items:
 					return []
 				items_str = ", ".join([frappe.db.escape(i) for i in assortment_items])
-				condition += f" AND name IN ({items_str})"
+				condition += f" AND name IN ({items_str})"  # nosemgrep: frappe-sql-format-injection -- items_str is built entirely from frappe.db.escape() values
 
 		if use_limit_search:
 			search_limit = pos_profile.get("posa_search_limit") or 500

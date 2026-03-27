@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 
@@ -13,5 +14,4 @@ class Assortment(Document):
 		items = [d.item for d in self.assortment_items if d.item]
 
 		if len(items) != len(set(items)):
-			frappe.throw("Duplicate items are not allowed in Assortment")
-			
+			frappe.throw(_("Duplicate items are not allowed in Assortment"))
