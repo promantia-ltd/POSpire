@@ -157,12 +157,13 @@ export default {
 <style scoped>
 .customer-action-icon {
 	cursor: pointer;
-	transition: transform 0.15s ease, filter 0.15s ease;
+	transition: transform 0.15s ease, filter 0.15s ease, color 0.15s ease;
 }
 
 .customer-action-icon:hover {
 	transform: scale(1.3);
-	filter: brightness(1.25) drop-shadow(0 0 4px currentColor);
+	color: #00BCD4 !important;
+	filter: brightness(1.25) drop-shadow(0 0 4px #00BCD4);
 }
 
 .customer-action-icon:active {
