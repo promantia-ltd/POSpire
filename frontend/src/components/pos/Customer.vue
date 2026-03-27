@@ -18,12 +18,12 @@
 		>
 			<template #prepend-inner>
 				<v-icon
-					class="cursor-pointer"
+					class="customer-action-icon"
 					color="primary"
 					@click.stop="edit_customer"
 				>mdi-account-edit</v-icon>
 				<v-icon
-					class="cursor-pointer mr-1"
+					class="customer-action-icon mr-1"
 					color="#00BCD4"
 					@click.stop="new_customer"
 				>mdi-account-plus</v-icon>
@@ -153,3 +153,19 @@ export default {
 	},
 };
 </script>
+
+<style scoped>
+.customer-action-icon {
+	cursor: pointer;
+	transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.customer-action-icon:hover {
+	transform: scale(1.3);
+	filter: brightness(1.25) drop-shadow(0 0 4px currentColor);
+}
+
+.customer-action-icon:active {
+	transform: scale(1.1);
+}
+</style>
