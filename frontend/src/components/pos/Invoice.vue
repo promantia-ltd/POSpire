@@ -34,28 +34,18 @@
 			<!-- Fixed Customer Selector Section (Fixed at Top) -->
 			<div class="invoice-header-section">
 				<v-row align="center" no-gutters class="px-3 py-2">
-					<!-- Customer: 7 cols with sales order, 8 cols without -->
+					<!-- Customer: 8 cols with sales order, 9 cols without -->
 					<v-col
 						:cols="
 							$vuetify.display.mdAndDown
 								? 12
 								: pos_profile.posa_allow_sales_order
-								? 7
-								: 8
+								? 8
+								: 9
 						"
 						class="pr-2"
 					>
-						<Customer ref="customerRef" />
-					</v-col>
-					<!-- New Customer Icon -->
-					<v-col cols="auto" class="d-flex align-center">
-						<v-btn
-							variant="text"
-							color="#00BCD4"
-							@click="openNewCustomer"
-						>
-							<v-icon size="30">mdi-account-plus</v-icon>
-						</v-btn>
+						<Customer />
 					</v-col>
 					<!-- Type: 2 cols (only shown when sales order enabled) -->
 					<v-col
@@ -3376,9 +3366,6 @@ export default {
 			} else {
 				this.delivery_charges_rate = 0;
 			}
-		},
-		openNewCustomer() {
-			this.$refs.customerRef?.new_customer();
 		},
 	},
 

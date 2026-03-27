@@ -15,9 +15,19 @@
 			hide-details
 			:customFilter="customFilter"
 			:disabled="readonly"
-			prepend-inner-icon="mdi-account-edit"
-			@click:prepend-inner="edit_customer"
 		>
+			<template #prepend-inner>
+				<v-icon
+					class="cursor-pointer"
+					color="primary"
+					@click.stop="edit_customer"
+				>mdi-account-edit</v-icon>
+				<v-icon
+					class="cursor-pointer mr-1"
+					color="#00BCD4"
+					@click.stop="new_customer"
+				>mdi-account-plus</v-icon>
+			</template>
 			<template v-slot:item="{ props, item }">
 				<v-list-item v-bind="props">
 					<v-list-item-subtitle v-if="item.raw.customer_name != item.raw.name">
