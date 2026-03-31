@@ -270,7 +270,6 @@ fixtures = [
 					"POS Profile-posa_hardware_manager",
                     "POS Profile-custom_enable_cash_denominations",
                     "POS Profile-custom_denominations",
-                    "POS Profile-custom_show_denomination_breakdown_at_closing",
 					"Sales Invoice-custom_deleted_pos_items",
                     "POS Profile-custom_assortment",
                     "POS Profile-custom_denomination"

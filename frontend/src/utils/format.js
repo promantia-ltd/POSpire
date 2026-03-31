@@ -52,26 +52,23 @@ export default {
 		},
 
 		setFormatedFloat(el, field_name, precision, no_negative = false, $event) {
-			let value = 0;
+			let raw = 0;
 			try {
-				// make sure it is a number and positive
-				value = parseFloat($event);
-				if (isNaN(value)) {
-					value = 0;
-				} else if (no_negative && value < 0) {
-					value = value * -1;
-				}
-				value = this.formatFloat($event, precision);
+				// Support both native DOM Event (Vuetify 3 @change) and direct string/number value
+				let inputValue = typeof $event === "object" ? $event.target.value : $event;
+				inputValue = String(inputValue).replace(/[^\d.-]/g, ""); // strip commas, currency symbols
+				let _value = parseFloat(inputValue);
+				if (!isNaN(_value)) raw = _value;
+				if (no_negative && raw < 0) raw = Math.abs(raw);
 			} catch (e) {
-				value = 0;
+				raw = 0;
 			}
-			// check if el is an object
 			if (typeof el === "object") {
-				el[field_name] = value;
+				el[field_name] = raw;
 			} else {
-				this[field_name] = value;
+				this[field_name] = raw;
 			}
-			return value;
+			return raw;
 		},
 		currencySymbol(currency) {
 			return get_currency_symbol(currency);

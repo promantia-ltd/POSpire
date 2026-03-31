@@ -217,16 +217,18 @@
             <template v-slot:item.return_qty="{ item }">
               <v-text-field
                 v-if="item.can_return && isItemSelected(item.sales_invoice_item)"
-                v-model.number="returnQuantities[item.sales_invoice_item]"
+                v-model="returnQuantities[item.sales_invoice_item]"
                 type="number"
                 :min="1"
                 :max="item.remaining_qty"
+                step="any"
                 density="compact"
                 hide-details
                 variant="outlined"
                 class="return-qty-input"
                 style="max-width: 100px"
-                @update:model-value="validateReturnQty(item)"
+                @blur="validateReturnQty(item)"
+                @keyup.enter="validateReturnQty(item)"
               ></v-text-field>
               <span v-else-if="!item.can_return" class="text-grey">-</span>
               <span v-else class="text-grey text-caption">{{ __('Select to edit') }}</span>
@@ -290,6 +292,7 @@ export default {
     returnQuantities: {},
     dialog_data: [],
     company: '',
+    customer: '',
     invoice_name: '',
     loading: false,
     selectedInvoice: null,
@@ -402,7 +405,7 @@ export default {
       this.selectedItems.forEach((itemId) => {
         const item = this.returnableItems.find(i => i.sales_invoice_item === itemId);
         if (item) {
-          const qty = this.returnQuantities[itemId] || 0;
+          const qty = this.getDraftReturnQty(item);
           total += qty * item.rate;
         }
       });
@@ -410,6 +413,107 @@ export default {
     },
   },
   methods: {
+    getReturnableItemStatus(itemName) {
+      return this.returnableItems.find((item) => item.sales_invoice_item === itemName) || null;
+    },
+    getIncompleteOfferReturnIssues() {
+      const invoiceItems = Array.isArray(this.selectedInvoice?.items) ? this.selectedInvoice.items : [];
+      const invoiceOffers = Array.isArray(this.selectedInvoice?.posa_offers)
+        ? this.selectedInvoice.posa_offers
+        : [];
+
+      if (!invoiceItems.length || !invoiceOffers.length) {
+        return [];
+      }
+
+      const itemsByRowId = new Map(
+        invoiceItems
+          .filter((item) => item.posa_row_id)
+          .map((item) => [item.posa_row_id, item])
+      );
+      const selectedItemIds = new Set(this.selectedItems);
+      const selectedRowIds = new Set(
+        invoiceItems
+          .filter((item) => selectedItemIds.has(item.name) && item.posa_row_id)
+          .map((item) => item.posa_row_id)
+      );
+
+      const issues = [];
+
+      invoiceOffers.forEach((offer) => {
+        if (offer.offer !== 'Give Product' || !offer.give_item_row_id) {
+          return;
+        }
+
+        let triggeringRowIds = [];
+        try {
+          triggeringRowIds = typeof offer.items === 'string' ? JSON.parse(offer.items) : offer.items || [];
+        } catch (e) {
+          triggeringRowIds = [];
+        }
+
+        if (!triggeringRowIds.length) {
+          return;
+        }
+
+        const triggeringItems = triggeringRowIds
+          .map((rowId) => itemsByRowId.get(rowId))
+          .filter(Boolean);
+        const freeItem = itemsByRowId.get(offer.give_item_row_id);
+
+        if (!triggeringItems.length || !freeItem) {
+          return;
+        }
+
+        const hasSelectedTrigger = triggeringItems.some((item) => selectedRowIds.has(item.posa_row_id));
+        const isFreeItemSelected = selectedRowIds.has(offer.give_item_row_id);
+        const canReturnTrigger = triggeringItems.some(
+          (item) => this.getReturnableItemStatus(item.name)?.can_return
+        );
+        const canReturnFreeItem = this.getReturnableItemStatus(freeItem.name)?.can_return;
+
+        if (hasSelectedTrigger && !isFreeItemSelected && canReturnFreeItem) {
+          issues.push({
+            type: 'missing_free_item',
+            offer_name: offer.offer_name,
+            free_item_name: freeItem.item_name,
+          });
+        }
+
+        if (isFreeItemSelected && !hasSelectedTrigger && canReturnTrigger) {
+          issues.push({
+            type: 'missing_trigger_item',
+            offer_name: offer.offer_name,
+            free_item_name: freeItem.item_name,
+          });
+        }
+      });
+
+      return issues;
+    },
+    getDraftReturnQty(item) {
+      const rawQty = parseFloat(this.returnQuantities[item.sales_invoice_item]);
+      if (!Number.isFinite(rawQty) || rawQty <= 0) {
+        return 0;
+      }
+      return Math.min(rawQty, item.remaining_qty);
+    },
+    normalizeReturnQty(item, inputValue, showMessage = false) {
+      let qty = parseFloat(inputValue);
+
+      if (!Number.isFinite(qty) || qty <= 0) {
+        qty = 1;
+      }
+
+      if (qty > item.remaining_qty) {
+        qty = item.remaining_qty;
+        if (showMessage) {
+          toast.warning(__('Cannot return more than {0} {1}', [item.remaining_qty, item.uom]));
+        }
+      }
+
+      return qty;
+    },
     close_dialog() {
       this.invoicesDialog = false;
     },
@@ -426,6 +530,7 @@ export default {
         const r = await call('pospire.pospire.api.posapp.search_invoices_for_return', {
           invoice_name: vm.invoice_name,
           company: vm.company,
+          customer: vm.customer,
         });
         vm.loading = false;
         if (r && Array.isArray(r)) {
@@ -474,18 +579,34 @@ export default {
     },
     validateReturnQty(item) {
       const itemId = item.sales_invoice_item;
-      let qty = this.returnQuantities[itemId];
-
-      if (qty < 1) {
-        this.returnQuantities[itemId] = 1;
-      } else if (qty > item.remaining_qty) {
-        this.returnQuantities[itemId] = item.remaining_qty;
-        toast.warning(__('Cannot return more than {0} {1}', [item.remaining_qty, item.uom]));
-      }
+      this.returnQuantities[itemId] = this.normalizeReturnQty(
+        item,
+        this.returnQuantities[itemId],
+        true
+      );
     },
     submit_return() {
       if (this.selectedItems.length === 0) {
         toast.warning(__('Please select at least one item to return'));
+        return;
+      }
+
+      const offerIssues = this.getIncompleteOfferReturnIssues();
+      if (offerIssues.length) {
+        const firstIssue = offerIssues[0];
+        if (firstIssue.type === 'missing_free_item') {
+          toast.error(
+            __('Select the promotional item "{0}" as well before loading this return.', [
+              firstIssue.free_item_name,
+            ])
+          );
+        } else {
+          toast.error(
+            __('Select the main offer item along with promotional item "{0}" before loading this return.', [
+              firstIssue.free_item_name,
+            ])
+          );
+        }
         return;
       }
 
@@ -497,7 +618,8 @@ export default {
       this.selectedItems.forEach((itemId) => {
         const item = this.returnableItems.find(i => i.sales_invoice_item === itemId);
         if (item) {
-          const return_qty = this.returnQuantities[itemId] || item.remaining_qty;
+          const return_qty = this.normalizeReturnQty(item, this.returnQuantities[itemId], true);
+          this.returnQuantities[itemId] = return_qty;
 
           // Find the original item from the invoice for complete data
           const original_item = return_doc.items.find(i => i.name === itemId);
@@ -548,7 +670,13 @@ export default {
   created: function () {
     this.eventBus.on('open_returns', (data) => {
       this.invoicesDialog = true;
-      this.company = data;
+      if (typeof data === 'string') {
+        this.company = data;
+        this.customer = '';
+      } else {
+        this.company = data?.company || '';
+        this.customer = data?.customer || '';
+      }
       this.invoice_name = '';
       this.dialog_data = [];
       this.selected = [];

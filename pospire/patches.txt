@@ -4,3 +4,5 @@
 
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
+pospire.patches.v1_1.remove_missing_stock_dashboard_chart_source
+pospire.patches.v1_1.remove_denomination_breakdown_at_closing_field

@@ -17,8 +17,8 @@
    "is_query_report": 0,
    "label": "POSpire",
    "link_count": 0,
-   "link_to": "posapp",
-   "link_type": "Page",
+   "link_to": "/pospire",
+   "link_type": "URL",
    "onboard": 0,
    "type": "Link"
   },
@@ -109,8 +109,8 @@
    "is_query_report": 0,
    "label": "POSpire App",
    "link_count": 0,
-   "link_to": "posapp",
-   "link_type": "Page",
+   "link_to": "/pospire",
+   "link_type": "URL",
    "onboard": 0,
    "type": "Link"
   },
@@ -159,8 +159,9 @@
    "color": "Grey",
    "doc_view": "List",
    "label": "POSpire App",
-   "link_to": "posapp",
-   "type": "Page"
+   "link_to": null,
+   "type": "URL",
+   "url": "/pospire"
   }
  ],
  "title": "POSpire"

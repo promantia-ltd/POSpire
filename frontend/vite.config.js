@@ -20,6 +20,9 @@ export default defineConfig({
 		vue(),
 		vuetify({ autoImport: true }),
 	],
+	optimizeDeps: {
+		exclude: ["frappe-ui"],
+	},
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "src"),
