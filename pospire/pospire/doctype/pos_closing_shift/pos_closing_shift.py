@@ -55,12 +55,12 @@ class POSClosingShift(Document):
 		for d in self.payment_reconciliation:
 			d.difference = +flt(d.closing_amount, precision) - flt(d.expected_amount, precision)
 		# validate denomination totals
-		show_breakdown = frappe.get_cached_value(
+		denominations_enabled = frappe.get_cached_value(
 			"POS Profile",
 			self.pos_profile,
-			"custom_show_denomination_breakdown_at_closing",
+			"custom_enable_cash_denominations",
 		)
-		if self.denomination_details and show_breakdown:
+		if self.denomination_details and denominations_enabled:
 			self._validate_denomination_closing_total(precision)
 		
 	def _validate_denomination_closing_total(self, precision: int) -> None:

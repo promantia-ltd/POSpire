@@ -48,7 +48,7 @@
 							class="mt-n1"
 							:readonly="
 								has_denominations &&
-								show_denomination_breakdown &&
+								denominations_enabled &&
 								props.item.mode_of_payment === pos_profile.posa_cash_mode_of_payment
 							"
 							/>
@@ -67,7 +67,7 @@
 					</template>
 				</v-data-table>
 				<!-- Denomination Grid -->
-				 <div v-if="has_denominations && show_denomination_breakdown" class="mt-4 ">
+				 <div v-if="has_denominations && denominations_enabled" class="mt-4 ">
 					<h4 class="mb-2">{{ __("Denomination Details") }}</h4>
 					<v-data-table
 						:headers="denomination_headers"
@@ -158,7 +158,6 @@ export default {
 		pagination: {},
 		has_denominations: false,
 		denominations_enabled: false,
-		show_denomination_breakdown: false,
 
 	}),
 	watch: {
@@ -264,7 +263,6 @@ export default {
 	this.eventBus.on("register_pos_profile", (data) => {
 	this.pos_profile = data.pos_profile;
 	this.denominations_enabled = this.pos_profile.custom_enable_cash_denominations || false;
-	this.show_denomination_breakdown = this.pos_profile.custom_show_denomination_breakdown_at_closing || false;
 	if (!this.pos_profile.hide_expected_amount) {
 		this.headers.push({
 			title: __("Expected Amount"),
