@@ -15,16 +15,6 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "POSpire",
-   "link_count": 0,
-   "link_to": "/pospire",
-   "link_type": "URL",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
    "label": "Profile",
    "link_count": 1,
    "onboard": 0,
@@ -103,16 +93,6 @@
    "link_count": 1,
    "onboard": 0,
    "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "POSpire App",
-   "link_count": 0,
-   "link_to": "/pospire",
-   "link_type": "URL",
-   "onboard": 0,
-   "type": "Link"
   },
   {
    "hidden": 0,
