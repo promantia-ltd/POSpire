@@ -1,7 +1,25 @@
 import frappe
 
+
 def after_install():
-    seed_default_denomination_data()
+	seed_default_denomination_data()
+
+
+def fix_desktop_icon_on_boot(bootinfo):
+	"""Ensure POSpire Desktop Icon uses Workspace Sidebar, not External.
+
+	add_to_apps_screen creates the icon with link_type="External" on first desk
+	load. This hook corrects it so the icon navigates to /desk/pospire (workspace)
+	instead of opening /pospire in a new tab. Runs on every boot but is a no-op
+	once the icon is already correct.
+	"""
+	icon = frappe.db.get_value(
+		"Desktop Icon",
+		{"label": "POSpire", "link_type": "External"},
+		"name",
+	)
+	if icon:
+		frappe.db.set_value("Desktop Icon", icon, {"link_type": "Workspace Sidebar", "link": None})
 
 def seed_default_denomination_data():
     default_data={

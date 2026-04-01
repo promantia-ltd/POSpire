@@ -71,6 +71,7 @@ doctype_js = {
 # before_install = "pospire.install.before_install"
 # after_install = "pospire.install.after_install"
 after_install = "pospire.install.after_install"
+boot_session = "pospire.install.fix_desktop_icon_on_boot"
 # before_uninstall = "pospire.uninstall.before_uninstall"
 after_uninstall = "pospire.uninstall.after_uninstall"
 
@@ -270,7 +271,6 @@ fixtures = [
 					"POS Profile-posa_hardware_manager",
                     "POS Profile-custom_enable_cash_denominations",
                     "POS Profile-custom_denominations",
-                    "POS Profile-custom_show_denomination_breakdown_at_closing",
 					"Sales Invoice-custom_deleted_pos_items",
                     "POS Profile-custom_assortment",
                     "POS Profile-custom_denomination"
