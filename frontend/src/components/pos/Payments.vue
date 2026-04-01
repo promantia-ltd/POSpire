@@ -1298,20 +1298,20 @@ export default {
 
 	mounted: function () {
 		this.$nextTick(function () {
-			this.eventBus.on("send_invoice_doc_payment", (invoice_doc) => {
-				this.invoice_doc = invoice_doc.invoice_doc;
+			this.eventBus.on("send_invoice_doc_payment", (payload) => {
+				this.invoice_doc = payload.invoice_doc;
 				const default_payment = this.invoice_doc.payments.find(
 					(payment) => payment.default == 1
 				);
 				this.is_credit_sale = 0;
 				this.is_write_off_change = 0;
-				if (default_payment && !invoice_doc.is_return) {
+				if (default_payment && !payload.is_return) {
 					default_payment.amount = this.flt(
 						this.invoice_doc.rounded_total || this.invoice_doc.grand_total,
 						this.currency_precision
 					);
 				}
-				if (invoice_doc.is_return) {
+				if (payload.is_return) {
 					this.is_return = true;
 					// Initialize is_cashback based on POS Profile setting for returns
 					if (this.pos_profile && this.pos_profile.use_cashback == 0) {
@@ -1319,10 +1319,12 @@ export default {
 					} else if (this.pos_profile && this.pos_profile.use_cashback == 1) {
 						this.is_cashback = true;
 					}
-					invoice_doc.payments.forEach((payment) => {
+					this.invoice_doc.payments.forEach((payment) => {
 						payment.amount = 0;
 						payment.base_amount = 0;
 					});
+				} else {
+					this.is_return = false;
 				}
 				this.loyalty_amount = 0;
 				this.get_addresses();

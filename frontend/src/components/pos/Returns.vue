@@ -290,6 +290,7 @@ export default {
     returnQuantities: {},
     dialog_data: [],
     company: '',
+    customer: '',
     invoice_name: '',
     loading: false,
     selectedInvoice: null,
@@ -426,6 +427,7 @@ export default {
         const r = await call('pospire.pospire.api.posapp.search_invoices_for_return', {
           invoice_name: vm.invoice_name,
           company: vm.company,
+          customer: vm.customer,
         });
         vm.loading = false;
         if (r && Array.isArray(r)) {
@@ -548,7 +550,8 @@ export default {
   created: function () {
     this.eventBus.on('open_returns', (data) => {
       this.invoicesDialog = true;
-      this.company = data;
+      this.company = data.company || data;
+      this.customer = data.customer || '';
       this.invoice_name = '';
       this.dialog_data = [];
       this.selected = [];

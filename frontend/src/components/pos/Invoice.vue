@@ -991,6 +991,8 @@
 									block
 									class="pa-0 enhanced-action-btn"
 									theme="dark"
+									:loading="savingDraft"
+									:disabled="savingDraft"
 									@click="save_and_clear_invoice"
 								>
 									{{ __("Save and Clear") }}</v-btn
@@ -1077,6 +1079,8 @@
 								block
 								class="btn-primary-action pay-button ma-1"
 								elevation="4"
+								:loading="processingPayment"
+								:disabled="processingPayment"
 								@click="show_payment"
 							>
 								<v-icon start size="20">mdi-credit-card</v-icon>
@@ -1137,6 +1141,8 @@ export default {
 			invoice_posting_date: false,
 			raw_posting_date: new Date(),
 			posting_date: datetime.now_date(),
+			savingDraft: false,
+			processingPayment: false,
 			items_headers: [
 				{
 					title: __("Name"),
@@ -1177,8 +1183,9 @@ export default {
 		Total() {
 			let sum = 0;
 			this.items.forEach((item) => {
-				sum += flt(item.qty) * flt(item.rate) + this.delivery_charges_rate;
+				sum += flt(item.qty) * flt(item.rate);
 			});
+			sum += this.delivery_charges_rate;
 			return this.flt(sum, this.currency_precision);
 		},
 		subtotal() {
@@ -1620,23 +1627,36 @@ export default {
 				this.eventBus.emit("set_pos_coupons", data.posa_coupons);
 			}
 		},
-		save_and_clear_invoice() {
+		async save_and_clear_invoice() {
+			if (this.savingDraft) {
+				return null;
+			}
+
 			const doc = this.get_invoice_doc();
-			if (doc.name) {
-				old_invoice = this.update_invoice(doc);
-			} else {
-				if (doc.items.length) {
-					old_invoice = this.update_invoice(doc);
+			let old_invoice = null;
+			this.savingDraft = true;
+			try {
+				if (doc.name) {
+					old_invoice = await this.update_invoice(doc);
 				} else {
-					toast.error("Nothing to save");
+					if (doc.items.length) {
+						old_invoice = await this.update_invoice(doc);
+					} else {
+						toast.error("Nothing to save");
+						return null;
+					}
 				}
+			} catch (error) {
+				return null;
+			} finally {
+				this.savingDraft = false;
 			}
 			if (!old_invoice) {
 				toast.error("Error saving the current invoice");
-			} else {
-				this.clear_invoice();
-				return old_invoice;
+				return null;
 			}
+			this.clear_invoice();
+			return old_invoice;
 		},
 
 		async new_order(data = {}) {
@@ -1713,20 +1733,20 @@ export default {
 			doc.discount_amount = flt(this.discount_amount);
 			doc.additional_discount_percentage = flt(this.additional_discount_percentage);
 			doc.custom_delivery_charge_rate = this.delivery_charges_rate || 0;
-			doc.posa_pos_opening_shift = this.pos_opening_shift.name;
+			doc.posa_pos_opening_shift = this.pos_opening_shift?.name || "";
 			doc.disable_rounded_total = this.pos_profile.disable_rounded_total ? 1 : 0;
 			doc.payments = this.get_payments();
 			doc.taxes = [];
-			doc.is_return = this.invoice_doc.is_return;
-			doc.return_against = this.invoice_doc.return_against;
+			doc.is_return = this.invoice_doc?.is_return || 0;
+			doc.return_against = this.invoice_doc?.return_against || "";
 			doc.posa_offers = this.posa_offers;
 			doc.posa_coupons = this.posa_coupons;
-			doc.posa_delivery_charges = this.selected_delivery_charge.name;
+			doc.posa_delivery_charges = this.selected_delivery_charge?.name || "";
 			doc.posa_delivery_charges_rate = this.delivery_charges_rate || 0;
 			doc.posting_date = this.posting_date;
 			doc.inclusive_tax = this.inclusive_tax;
 			// Sales Person
-			doc.sales_team = this.invoice_doc.sales_team || [];
+			doc.sales_team = this.invoice_doc?.sales_team || [];
 			//
 			doc.custom_deleted_pos_items = this.deleted_items;
 			return doc;
@@ -1911,6 +1931,10 @@ export default {
 		},
 
 		async show_payment() {
+			if (this.processingPayment) {
+				return;
+			}
+
 			if (!this.customer) {
 				toast.error(__("Select a customer"));
 				return;
@@ -1924,45 +1948,52 @@ export default {
 			if (!this.validate()) {
 				return;
 			}
-			if (this.invoice_doc.doctype == "Sales Order") {
-				this.eventBus.emit("show_payment", "true");
-				const invoice_doc = await this.process_invoice_from_order();
-				this.eventBus.emit("send_invoice_doc_payment", {
-					invoice_doc,
-					inclusive_tax: this.inclusive_tax, // Add this line
-				});
-			} else if (this.invoice_doc.doctype == "Sales Invoice") {
-				const sales_invoice_item = this.invoice_doc.items[0];
-				var sales_invoice_item_doc = {};
-				const siChildResult = await call("pospire.pospire.api.posapp.get_sales_invoice_child_table", {
-					sales_invoice: this.invoice_doc.name,
-					sales_invoice_item: sales_invoice_item.name,
-				});
-				if (siChildResult) {
-					sales_invoice_item_doc = siChildResult;
-				}
-				if (sales_invoice_item_doc.sales_order) {
+			this.processingPayment = true;
+			try {
+				let invoice_doc = null;
+
+				if (this.invoice_doc.doctype == "Sales Order") {
 					this.eventBus.emit("show_payment", "true");
-					const invoice_doc = await this.process_invoice_from_order();
+					invoice_doc = await this.process_invoice_from_order();
 					this.eventBus.emit("send_invoice_doc_payment", {
 						invoice_doc,
-						inclusive_tax: this.inclusive_tax, // Add this line
+						inclusive_tax: this.inclusive_tax,
 					});
+				} else if (this.invoice_doc.doctype == "Sales Invoice") {
+					const sales_invoice_item = this.invoice_doc.items[0];
+					var sales_invoice_item_doc = {};
+					const siChildResult = await call("pospire.pospire.api.posapp.get_sales_invoice_child_table", {
+						sales_invoice: this.invoice_doc.name,
+						sales_invoice_item: sales_invoice_item.name,
+					});
+					if (siChildResult) {
+						sales_invoice_item_doc = siChildResult;
+					}
+					if (sales_invoice_item_doc.sales_order) {
+						this.eventBus.emit("show_payment", "true");
+						invoice_doc = await this.process_invoice_from_order();
+						this.eventBus.emit("send_invoice_doc_payment", {
+							invoice_doc,
+							inclusive_tax: this.inclusive_tax,
+						});
+					} else {
+						this.eventBus.emit("show_payment", "true");
+						invoice_doc = await this.process_invoice();
+						this.eventBus.emit("send_invoice_doc_payment", {
+							invoice_doc,
+							inclusive_tax: this.inclusive_tax,
+						});
+					}
 				} else {
 					this.eventBus.emit("show_payment", "true");
-					const invoice_doc = await this.process_invoice();
+					invoice_doc = await this.process_invoice();
 					this.eventBus.emit("send_invoice_doc_payment", {
 						invoice_doc,
-						inclusive_tax: this.inclusive_tax, // Add this line
+						inclusive_tax: this.inclusive_tax,
 					});
 				}
-			} else {
-				this.eventBus.emit("show_payment", "true");
-				const invoice_doc = await this.process_invoice();
-				this.eventBus.emit("send_invoice_doc_payment", {
-					invoice_doc,
-					inclusive_tax: this.inclusive_tax, // Add this line
-				});
+			} finally {
+				this.processingPayment = false;
 			}
 		},
 
@@ -2125,7 +2156,14 @@ export default {
 		},
 
 		open_returns() {
-			this.eventBus.emit("open_returns", this.pos_profile.company);
+			this.eventBus.emit("open_returns", {
+				company: this.pos_profile.company,
+				customer: this.customer || "",
+			});
+		},
+
+		get_current_invoice_name() {
+			return this.invoice_doc?.name || "";
 		},
 
 		close_payments() {
@@ -2572,6 +2610,9 @@ export default {
 		shortOpenPayment(e) {
 			if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
 				e.preventDefault();
+				if (this.processingPayment) {
+					return;
+				}
 				this.show_payment();
 			}
 		},
@@ -3310,8 +3351,11 @@ export default {
 				toast.error(__(`You are not allowed to print draft invoices`));
 				return;
 			}
-			let invoice_name = this.invoice_doc.name;
-			const invoice_doc = this.save_and_clear_invoice();
+			let invoice_name = this.get_current_invoice_name();
+			const invoice_doc = await this.save_and_clear_invoice();
+			if (!invoice_doc) {
+				return;
+			}
 			invoice_name = invoice_doc.name ? invoice_doc.name : invoice_name;
 			await this.handlePrint(invoice_name);
 		},

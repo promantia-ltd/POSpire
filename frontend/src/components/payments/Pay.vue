@@ -11,7 +11,7 @@
 					<div class="modern-payments-content">
 						<!-- Customer Section -->
 						<div class="mb-6 customer-section-wrapper">
-							<Customer></Customer>
+							<Customer :show-actions="false"></Customer>
 						</div>
 
 						<!-- Invoices Section -->

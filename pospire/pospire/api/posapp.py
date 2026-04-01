@@ -747,6 +747,10 @@ def update_invoice(data: str | dict):
 		for payment in invoice_doc.payments:
 			if payment.default:
 				payment.amount = invoice_doc.paid_amount
+	elif invoice_doc.is_pos and invoice_doc.pos_profile:
+		invoice_doc.update_stock = (
+			frappe.get_cached_value("POS Profile", invoice_doc.pos_profile, "update_stock") or 0
+		)
 	allow_zero_rated_items = frappe.get_cached_value(
 		"POS Profile", invoice_doc.pos_profile, "posa_allow_zero_rated_items"
 	)
@@ -780,7 +784,10 @@ def update_invoice(data: str | dict):
 			invoice_doc.rounded_total = data["grand_total"]
 			invoice_doc.base_grand_total = data["grand_total"]
 			invoice_doc.base_rounded_total = data["grand_total"]
-			invoice_doc.run_method("calculate_taxes_and_totals")
+
+		# Always recalculate after delivery/tax changes; the frontend does not
+		# guarantee a grand_total payload on every draft update.
+		invoice_doc.run_method("calculate_taxes_and_totals")
 
 		if data.get("paid_amount"):
 			invoice_doc.paid_amount = data["paid_amount"]
@@ -1283,7 +1290,7 @@ def create_customer(
 	customer_id: str,
 	customer_name: str,
 	company: str,
-	pos_profile_doc: str,
+	pos_profile_doc: str | dict[str, Any],
 	tax_id: str | None = None,
 	mobile_no: str | None = None,
 	email_id: str | None = None,
@@ -1545,7 +1552,9 @@ def get_invoice_return_status(invoice_name: str) -> list:
 
 
 @frappe.whitelist()
-def search_invoices_for_return(invoice_name: str | None, company: str) -> list:
+def search_invoices_for_return(
+	invoice_name: str | None, company: str, customer: str | None = None
+) -> list:
 	"""
 	Search for invoices available for return.
 
@@ -1557,6 +1566,9 @@ def search_invoices_for_return(invoice_name: str | None, company: str) -> list:
 		"docstatus": 1,
 		"is_return": 0,
 	}
+
+	if customer and customer.strip():
+		filters["customer"] = customer.strip()
 
 	# If search term provided, filter by invoice name
 	if invoice_name and invoice_name.strip():
@@ -1624,8 +1636,14 @@ def get_version():
 		return 12
 	elif "13" in branch_name:
 		return 13
+	elif "14" in branch_name:
+		return 14
+	elif "15" in branch_name:
+		return 15
+	elif "16" in branch_name:
+		return 16
 	else:
-		return 13
+		return 16
 
 
 def get_app_branch(app):

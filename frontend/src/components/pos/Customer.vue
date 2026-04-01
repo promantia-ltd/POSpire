@@ -18,11 +18,13 @@
 		>
 			<template #prepend-inner>
 				<v-icon
+					v-if="showActions"
 					class="customer-action-icon mr-2"
 					color="primary"
 					@click.stop="edit_customer"
 				>mdi-account-edit</v-icon>
 				<v-icon
+					v-if="showActions"
 					class="customer-action-icon mr-1"
 					color="#00BCD4"
 					@click.stop="new_customer"
@@ -57,6 +59,13 @@
 import { call } from "frappe-ui";
 import UpdateCustomer from "./UpdateCustomer.vue";
 export default {
+	props: {
+		showActions: {
+			type: Boolean,
+			default: true,
+		},
+	},
+
 	data: () => ({
 		pos_profile: "",
 		customers: [],
