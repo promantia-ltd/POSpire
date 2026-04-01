@@ -3,7 +3,6 @@ import os
 import frappe
 from frappe.modules import get_module_path, scrub
 
-
 OBSOLETE_STOCK_CHART_SOURCE = "Stock Value by Item Group"
 
 
@@ -46,4 +45,3 @@ def execute() -> None:
 		OBSOLETE_STOCK_CHART_SOURCE,
 		ignore_permissions=True,
 	)
-

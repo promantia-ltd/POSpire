@@ -4,6 +4,8 @@
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
+test_ignore = ["DocType"]
+
 
 class TestPOSHardwareManagerSetting(FrappeTestCase):
 	def test_single_doctype_exists(self):

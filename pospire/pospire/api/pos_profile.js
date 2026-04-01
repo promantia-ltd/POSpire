@@ -35,7 +35,7 @@ frappe.ui.form.on("POS Profile", {
 	},
 	currency(frm) {
 		set_denomination_query(frm);
-	}
+	},
 });
 
 async function sync_profile_currency_from_company(frm, { force = false } = {}) {
@@ -59,17 +59,15 @@ async function sync_profile_currency_from_company(frm, { force = false } = {}) {
 function set_denomination_query(frm) {
 	if (!frm.fields_dict.custom_denominations) return;
 
-	frm.fields_dict.custom_denominations.grid
-		.get_field("denomination")
-		.get_query = function () {
-			if (!frm.doc.currency) {
-				return {};
-			}
-			return {
-				filters: {
-					currency: frm.doc.currency,
-					enabled: 1
-				}
-			};
+	frm.fields_dict.custom_denominations.grid.get_field("denomination").get_query = function () {
+		if (!frm.doc.currency) {
+			return {};
+		}
+		return {
+			filters: {
+				currency: frm.doc.currency,
+				enabled: 1,
+			},
 		};
+	};
 }

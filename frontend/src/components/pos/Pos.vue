@@ -141,7 +141,10 @@ export default {
 			}
 		},
 		async get_pos_setting() {
-			const doc = await call("frappe.client.get", { doctype: "POS Settings", name: "POS Settings" });
+			const doc = await call("frappe.client.get", {
+				doctype: "POS Settings",
+				name: "POS Settings",
+			});
 			if (doc) {
 				this.eventBus.emit("set_pos_settings", doc);
 			}

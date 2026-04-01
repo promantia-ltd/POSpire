@@ -688,9 +688,7 @@ export default {
 			});
 			if (r) {
 				items.forEach((item) => {
-					const updated_item = r.find(
-						(element) => element.item_code == item.item_code
-					);
+					const updated_item = r.find((element) => element.item_code == item.item_code);
 					item.actual_qty = updated_item.actual_qty;
 					item.serial_no_data = updated_item.serial_no_data;
 					item.batch_no_data = updated_item.batch_no_data;

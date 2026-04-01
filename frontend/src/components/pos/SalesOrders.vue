@@ -184,9 +184,12 @@ export default {
 		async submit_dialog() {
 			if (this.selected.length > 0) {
 				var invoice_doc_for_load = {};
-				const r = await call("pospire.pospire.api.posapp.create_sales_invoice_from_order", {
-					sales_order: this.selected[0].name,
-				});
+				const r = await call(
+					"pospire.pospire.api.posapp.create_sales_invoice_from_order",
+					{
+						sales_order: this.selected[0].name,
+					}
+				);
 				if (r) {
 					invoice_doc_for_load = r;
 				}

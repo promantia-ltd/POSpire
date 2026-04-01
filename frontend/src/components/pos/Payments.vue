@@ -883,8 +883,7 @@ export default {
 			vm.customer_credit_dict = [];
 			vm.redeem_customer_credit = false;
 			// Reset is_cashback based on POS Profile setting
-			vm.is_cashback =
-				vm.pos_profile && vm.pos_profile.use_cashback == 1 ? true : false;
+			vm.is_cashback = vm.pos_profile && vm.pos_profile.use_cashback == 1 ? true : false;
 			vm.sales_person = "";
 
 			vm.eventBus.emit("set_last_invoice", vm.invoice_doc.name);
@@ -895,7 +894,6 @@ export default {
 			vm.eventBus.emit("clear_invoice");
 			vm.back_to_invoice();
 			return;
-			console.log(this.is_sucessful_invoice);
 		},
 		async handlePrint(invoice_name) {
 			try {
@@ -903,7 +901,7 @@ export default {
 					if (res === true) {
 						this.custom_print(invoice_name);
 					} else {
-						vm.load_print_page();
+						this.load_print_page(invoice_name);
 					}
 				});
 			} catch (err) {
@@ -998,8 +996,7 @@ export default {
 					company: this.pos_profile.company,
 				});
 				if (data && data.length) {
-					const amount =
-						this.invoice_doc.rounded_total || this.invoice_doc.grand_total;
+					const amount = this.invoice_doc.rounded_total || this.invoice_doc.grand_total;
 					let remainAmount = amount;
 
 					data.forEach((row) => {
@@ -1066,10 +1063,7 @@ export default {
 				vm.sales_persons = r;
 				if (vm.pos_profile.posa_local_storage) {
 					localStorage.setItem("sales_persons_storage", "");
-					localStorage.setItem(
-						"sales_persons_storage",
-						JSON.stringify(r)
-					);
+					localStorage.setItem("sales_persons_storage", JSON.stringify(r));
 				}
 			}
 		},

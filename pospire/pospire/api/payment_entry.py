@@ -9,11 +9,13 @@ import erpnext
 
 def _load(value: Any) -> Any:
 	"""Accept either a JSON-encoded string or a native dict/list."""
-	if isinstance(value, (dict, list)):
+	if isinstance(value, dict | list):
 		return value
 	if value is None or value == "":
 		return value
 	return json.loads(value)
+
+
 import frappe
 from erpnext.accounts.doctype.bank_account.bank_account import get_party_bank_account
 from erpnext.accounts.doctype.journal_entry.journal_entry import (

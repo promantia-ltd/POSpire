@@ -211,9 +211,7 @@ export default {
 	computed: {
 		birthday_string: {
 			get() {
-				return this.birthday
-					? datetime.obj_to_str(this.birthday, "dd-mm-yyyy")
-					: "";
+				return this.birthday ? datetime.obj_to_str(this.birthday, "dd-mm-yyyy") : "";
 			},
 			set(val) {
 				this.birthday = val ? datetime.str_to_obj(val) : null;

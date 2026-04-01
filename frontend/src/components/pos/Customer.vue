@@ -22,13 +22,15 @@
 					class="customer-action-icon mr-2"
 					color="primary"
 					@click.stop="edit_customer"
-				>mdi-account-edit</v-icon>
+					>mdi-account-edit</v-icon
+				>
 				<v-icon
 					v-if="showActions"
 					class="customer-action-icon mr-1"
 					color="#00BCD4"
 					@click.stop="new_customer"
-				>mdi-account-plus</v-icon>
+					>mdi-account-plus</v-icon
+				>
 			</template>
 			<template v-slot:item="{ props, item }">
 				<v-list-item v-bind="props">
@@ -171,8 +173,8 @@ export default {
 
 .customer-action-icon:hover {
 	transform: scale(1.3);
-	color: #00BCD4 !important;
-	filter: brightness(1.25) drop-shadow(0 0 4px #00BCD4);
+	color: #00bcd4 !important;
+	filter: brightness(1.25) drop-shadow(0 0 4px #00bcd4);
 }
 
 .customer-action-icon:active {

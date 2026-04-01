@@ -15,7 +15,7 @@ def _load(value: Any) -> Any:
 	data; frappe-ui's call() sends them as native JSON objects.  This helper
 	lets every API handle both without modification.
 	"""
-	if isinstance(value, (dict, list)):
+	if isinstance(value, dict | list):
 		return value
 	if value is None or value == "":
 		return value
@@ -85,24 +85,24 @@ def get_opening_dialog_data() -> dict:
 	data["denomination_config"] = {}
 	for profile in data["pos_profiles_data"]:
 		profile_doc = frappe.get_cached_doc("POS Profile", profile.name)
-        
+
 		if profile_doc.get("custom_enable_cash_denominations"):
-			cash_mode = (
-            profile_doc.get("posa_cash_mode_of_payment") or "Cash"
-        )
+			cash_mode = profile_doc.get("posa_cash_mode_of_payment") or "Cash"
 			denominations = []
 			for d in profile_doc.get("custom_denominations", []):
-				denominations.append({
-					"denomination": d.denomination,
-					"denomination_name": frappe.get_cached_value(
-						"POS Denomination",
-						d.denomination,
-						"denomination_name",
-					),
-					"denomination_value": d.denomination_value,
-					"currency": d.currency,
-					"display_order": d.display_order,
-				})
+				denominations.append(
+					{
+						"denomination": d.denomination,
+						"denomination_name": frappe.get_cached_value(
+							"POS Denomination",
+							d.denomination,
+							"denomination_name",
+						),
+						"denomination_value": d.denomination_value,
+						"currency": d.currency,
+						"display_order": d.display_order,
+					}
+				)
 			denominations.sort(key=lambda x: x.get("display_order") or 0)
 			data["denomination_config"][profile.name] = {
 				"enabled": True,
@@ -114,7 +114,12 @@ def get_opening_dialog_data() -> dict:
 
 
 @frappe.whitelist()
-def create_opening_voucher(pos_profile: str, company: str, balance_details: str | list, denomination_details: str | list | None = None) -> dict:
+def create_opening_voucher(
+	pos_profile: str,
+	company: str,
+	balance_details: str | list,
+	denomination_details: str | list | None = None,
+) -> dict:
 	balance_details = _load(balance_details)
 
 	new_pos_opening = frappe.get_doc(
@@ -141,25 +146,21 @@ def create_opening_voucher(pos_profile: str, company: str, balance_details: str 
 	update_opening_shift_data(data, new_pos_opening.pos_profile)
 	return data
 
+
 def _validate_denomination_total(doc) -> None:
 	"""Ensure denomination sum matches the configured cash row in balance_details."""
-	cash_mode = (
-		frappe.get_cached_value(
-			"POS Profile", doc.pos_profile, "posa_cash_mode_of_payment"
-		)
-		or "Cash"
-	)
+	cash_mode = frappe.get_cached_value("POS Profile", doc.pos_profile, "posa_cash_mode_of_payment") or "Cash"
 	denom_total = sum(flt(d.amount) for d in doc.denomination_details)
 	for row in doc.balance_details:
 		if row.mode_of_payment == cash_mode:
 			if flt(row.amount) != flt(denom_total):
 				frappe.throw(
-					_(
-						"Cash opening amount ({0}) does not match "
-						"denomination total ({1})"
-					).format(row.amount, denom_total)
+					_("Cash opening amount ({0}) does not match " "denomination total ({1})").format(
+						row.amount, denom_total
+					)
 				)
 			break
+
 
 @frappe.whitelist()
 def check_opening_shift(user: str):
@@ -592,13 +593,16 @@ def update_invoice(data: str | dict):
 	invoice_doc.set("custom_deleted_pos_items", [])
 
 	for d in deleted_items:
-		invoice_doc.append("custom_deleted_pos_items", {
-			"item_code": d.get("item_code"),
-			"item_name": d.get("item_name"),
-			"qty": d.get("qty"),
-			"rate": d.get("rate"),
-			"amount": d.get("amount")
-		})
+		invoice_doc.append(
+			"custom_deleted_pos_items",
+			{
+				"item_code": d.get("item_code"),
+				"item_name": d.get("item_name"),
+				"qty": d.get("qty"),
+				"rate": d.get("rate"),
+				"amount": d.get("amount"),
+			},
+		)
 	invoice_doc.set_missing_values()
 	invoice_doc.flags.ignore_permissions = True
 	frappe.flags.ignore_account_permission = True
@@ -741,7 +745,9 @@ def update_invoice(data: str | dict):
 				invoice_doc.update_stock = 0
 			if len(invoice_doc.payments) == 0:
 				invoice_doc.payments = ref_doc.payments
-			invoice_doc.paid_amount = invoice_doc.rounded_total or invoice_doc.grand_total or invoice_doc.total
+			invoice_doc.paid_amount = (
+				invoice_doc.rounded_total or invoice_doc.grand_total or invoice_doc.total
+			)
 			for payment in invoice_doc.payments:
 				if payment.default:
 					payment.amount = invoice_doc.paid_amount
@@ -1226,7 +1232,10 @@ def get_items_details(pos_profile: str | dict, items_data: str | list) -> list:
 
 @frappe.whitelist()
 def get_item_detail(
-	item: str | dict, doc: str | dict | None = None, warehouse: str | None = None, price_list: str | None = None
+	item: str | dict,
+	doc: str | dict | None = None,
+	warehouse: str | None = None,
+	price_list: str | None = None,
 ):
 	item = _load(item)
 	today = nowdate()
@@ -1550,9 +1559,7 @@ def get_invoice_return_status(invoice_name: str) -> list:
 
 
 @frappe.whitelist()
-def search_invoices_for_return(
-	invoice_name: str | None, company: str, customer: str | None = None
-) -> list:
+def search_invoices_for_return(invoice_name: str | None, company: str, customer: str | None = None) -> list:
 	"""
 	Search for invoices available for return.
 

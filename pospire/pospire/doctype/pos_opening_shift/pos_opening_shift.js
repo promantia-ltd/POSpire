@@ -71,16 +71,16 @@ frappe.ui.form.on("POS Opening Shift", {
 				frm.refresh_field("denomination_details");
 			});
 		}
-	}
+	},
 });
 frappe.ui.form.on("POS Opening Denomination", {
-    quantity(frm, cdt, cdn) {
-        let row = locals[cdt][cdn];
-        frappe.model.set_value(
-            cdt,
-            cdn,
-            "amount",
-            (row.denomination_value || 0) * (row.quantity || 0)
-        );
-    }
+	quantity(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		frappe.model.set_value(
+			cdt,
+			cdn,
+			"amount",
+			(row.denomination_value || 0) * (row.quantity || 0)
+		);
+	},
 });

@@ -874,7 +874,9 @@ export default {
 			payload.total_payment_methods = flt(this.total_payment_methods);
 			payload.total_selected_mpesa_payments = flt(this.total_selected_mpesa_payments);
 
-			const r = await call("pospire.pospire.api.payment_entry.process_pos_payment", { payload });
+			const r = await call("pospire.pospire.api.payment_entry.process_pos_payment", {
+				payload,
+			});
 			if (r) {
 				playSound("submit");
 				vm.clear_all(false);

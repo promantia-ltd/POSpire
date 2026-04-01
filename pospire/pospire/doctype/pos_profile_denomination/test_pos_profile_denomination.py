@@ -4,6 +4,8 @@
 # import frappe
 from frappe.tests.utils import FrappeTestCase
 
+test_ignore = ["POS Denomination", "Currency"]
+
 
 class TestPOSProfileDenomination(FrappeTestCase):
 	pass

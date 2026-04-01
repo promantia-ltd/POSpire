@@ -51,7 +51,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
           check-latest: true
 
       - name: Cache pip
@@ -99,6 +99,12 @@ jobs:
           bench build
         env:
           CI: 'Yes'
+
+      - name: Build Vue SPA
+        working-directory: /home/runner/frappe-bench/apps/pospire/frontend
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
 
       - name: Run Tests
         working-directory: /home/runner/frappe-bench

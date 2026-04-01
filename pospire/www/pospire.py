@@ -29,9 +29,7 @@ def get_boot() -> dict:
 			"default_route": "/pospire/pos",
 			"sys_defaults": {
 				"float_precision": frappe.db.get_single_value("System Settings", "float_precision") or 2,
-				"currency_precision": frappe.db.get_single_value(
-					"System Settings", "currency_precision"
-				)
+				"currency_precision": frappe.db.get_single_value("System Settings", "currency_precision")
 				or 2,
 			},
 			"user_defaults": frappe.defaults.get_defaults_for(frappe.session.user),
@@ -39,7 +37,10 @@ def get_boot() -> dict:
 	)
 
 
-@frappe.whitelist(methods=["POST"], allow_guest=True)
+@frappe.whitelist(  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method -- dev-only endpoint; throws immediately if not in developer_mode
+	methods=["POST"],
+	allow_guest=True,
+)
 def get_context_for_dev() -> dict:
 	"""Boot data endpoint for Vite dev server."""
 	if not frappe.conf.developer_mode:

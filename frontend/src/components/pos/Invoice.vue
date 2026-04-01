@@ -220,7 +220,7 @@
 			<div class="invoice-cart-section">
 				<v-data-table
 					:headers="items_headers"
-					:items="items.filter(item => !item.posa_deleted)"
+					:items="items.filter((item) => !item.posa_deleted)"
 					v-model:expanded="expanded"
 					show-expand
 					item-value="posa_row_id"
@@ -246,7 +246,12 @@
 								:prefix="invoice_doc.is_return ? '-' : ''"
 								@change="
 									[
-										this.setReturnQty(item, typeof $event === 'object' ? $event.target.value : $event),
+										this.setReturnQty(
+											item,
+											typeof $event === 'object'
+												? $event.target.value
+												: $event
+										),
 										this.resetDiscountOnQtyChange(item),
 									]
 								"
@@ -446,7 +451,12 @@
 										@change="
 											[
 												setFormatedFloat(item, 'qty', null, false, $event),
-												calc_stock_qty(item, typeof $event === 'object' ? $event.target.value : $event),
+												calc_stock_qty(
+													item,
+													typeof $event === 'object'
+														? $event.target.value
+														: $event
+												),
 												resetDiscountOnQtyChange(item),
 											]
 										"
@@ -985,19 +995,19 @@
 				<v-col cols="12" sm="6" no-gutters class="pa-1 pt-2 pl-0 flex-wrap">
 					<div class="flex-grow-1 d-flex flex-wrap">
 						<v-row no-gutters class="pa-1 pt-2 pl-0">
-								<v-col cols="6" class="pa-1">
-									<v-btn
-										variant="tonal"
-										block
-										class="pa-0 enhanced-action-btn"
-										theme="dark"
-										:loading="savingDraft"
-										:disabled="savingDraft"
-										@click="save_and_clear_invoice"
-									>
-										{{ __("Save and Clear") }}</v-btn
-									>
-								</v-col>
+							<v-col cols="6" class="pa-1">
+								<v-btn
+									variant="tonal"
+									block
+									class="pa-0 enhanced-action-btn"
+									theme="dark"
+									:loading="savingDraft"
+									:disabled="savingDraft"
+									@click="save_and_clear_invoice"
+								>
+									{{ __("Save and Clear") }}</v-btn
+								>
+							</v-col>
 							<v-col cols="6" class="pa-1">
 								<v-btn
 									variant="tonal"
@@ -1301,10 +1311,7 @@ export default {
 				vm.sales_persons = r;
 				if (vm.pos_profile.posa_local_storage) {
 					localStorage.setItem("sales_persons_storage", "");
-					localStorage.setItem(
-						"sales_persons_storage",
-						JSON.stringify(r)
-					);
+					localStorage.setItem("sales_persons_storage", JSON.stringify(r));
 				}
 			}
 		},
@@ -1349,9 +1356,7 @@ export default {
 			if (!this.deleted_items) {
 				this.deleted_items = [];
 			}
-			let existing = this.deleted_items.find(
-				d => d.item_code === item.item_code
-			);
+			let existing = this.deleted_items.find((d) => d.item_code === item.item_code);
 			if (existing) {
 				existing.qty += item.qty;
 				existing.amount = existing.qty * existing.rate;
@@ -1361,11 +1366,11 @@ export default {
 					item_name: item.item_name,
 					qty: item.qty,
 					rate: item.rate,
-					amount: item.qty * item.rate
+					amount: item.qty * item.rate,
 				});
 			}
 			// remove item from cart
-			this.items = this.items.filter(el => el.posa_row_id !== item.posa_row_id);
+			this.items = this.items.filter((el) => el.posa_row_id !== item.posa_row_id);
 			this.$forceUpdate();
 		},
 
@@ -1402,7 +1407,7 @@ export default {
 			// remove from deleted list if re-added
 			if (this.deleted_items) {
 				this.deleted_items = this.deleted_items.filter(
-					d => d.item_code !== item.item_code
+					(d) => d.item_code !== item.item_code
 				);
 			}
 			// Restrict adding new items during return flow
@@ -1578,7 +1583,9 @@ export default {
 			this.invoiceTypes = ["Invoice", "Order"];
 			this.posting_date = datetime.nowdate();
 			if (invoice_name && this.pos_profile.posa_allow_delete) {
-				const r = await call("pospire.pospire.api.posapp.delete_invoice", { invoice: invoice_name });
+				const r = await call("pospire.pospire.api.posapp.delete_invoice", {
+					invoice: invoice_name,
+				});
 				if (r) {
 					toast.warn(r);
 				}
@@ -1759,9 +1766,12 @@ export default {
 		async get_invoice_from_order_doc() {
 			let doc = {};
 			if (this.invoice_doc.doctype == "Sales Order") {
-				const r = await call("pospire.pospire.api.posapp.create_sales_invoice_from_order", {
-					sales_order: this.invoice_doc.name,
-				});
+				const r = await call(
+					"pospire.pospire.api.posapp.create_sales_invoice_from_order",
+					{
+						sales_order: this.invoice_doc.name,
+					}
+				);
 				if (r) {
 					doc = r;
 				}
@@ -2281,11 +2291,7 @@ export default {
 						}
 					}
 					if (!item.batch_price) {
-						if (
-							!item.is_free_item &&
-							!item.posa_is_offer &&
-							!item.posa_is_replace
-						) {
+						if (!item.is_free_item && !item.posa_is_offer && !item.posa_is_replace) {
 							item.price_list_rate = data.price_list_rate;
 						}
 					}
@@ -3351,19 +3357,19 @@ export default {
 			);
 		},
 
-			async print_draft_invoice() {
-				if (!this.pos_profile.posa_allow_print_draft_invoices) {
-					toast.error(__(`You are not allowed to print draft invoices`));
-					return;
-				}
-				let invoice_name = this.get_current_invoice_name();
-				const invoice_doc = await this.save_and_clear_invoice();
-				if (!invoice_doc) {
-					return;
-				}
-				invoice_name = invoice_doc.name ? invoice_doc.name : invoice_name;
-				await this.handlePrint(invoice_name);
-			},
+		async print_draft_invoice() {
+			if (!this.pos_profile.posa_allow_print_draft_invoices) {
+				toast.error(__(`You are not allowed to print draft invoices`));
+				return;
+			}
+			let invoice_name = this.get_current_invoice_name();
+			const invoice_doc = await this.save_and_clear_invoice();
+			if (!invoice_doc) {
+				return;
+			}
+			invoice_name = invoice_doc.name ? invoice_doc.name : invoice_name;
+			await this.handlePrint(invoice_name);
+		},
 		async handlePrint(invoice_name) {
 			try {
 				await this.hardwareConfiguration(this.pos_profile.name).then((res) => {
