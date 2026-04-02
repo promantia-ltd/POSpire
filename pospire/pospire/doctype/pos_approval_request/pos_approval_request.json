@@ -13,6 +13,7 @@
   "requested_by",
   "requested_at",
   "expires_at",
+  "selected_manager",
   "reason",
   "section_break_action",
   "invoice",
@@ -100,6 +101,15 @@
    "fieldtype": "Datetime",
    "label": "Expires At",
    "read_only": 1
+  },
+  {
+   "fieldname": "selected_manager",
+   "fieldtype": "Link",
+   "label": "Selected Manager",
+   "options": "User",
+   "read_only": 1,
+   "in_list_view": 0,
+   "description": "The manager the cashier nominated to approve this request"
   },
   {
    "fieldname": "reason",

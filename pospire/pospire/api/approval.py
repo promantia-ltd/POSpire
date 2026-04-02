@@ -157,8 +157,13 @@ def create_approval_request(
 	request_payload: str | None = None,
 	offline_id: str | None = None,
 	device_id: str | None = None,
+	selected_manager: str | None = None,
 ) -> dict:
 	"""Create a POS Approval Request and broadcast to eligible managers.
+
+	selected_manager: the specific manager the cashier nominated from the
+	    dropdown. When set, remote broadcast targets only that manager.
+	    When None, broadcasts to all eligible managers for the approver role.
 
 	Idempotent when offline_id is provided: returns the existing record
 	if a request with the same offline_id already exists.
@@ -181,6 +186,7 @@ def create_approval_request(
 			"requested_by": frappe.session.user,
 			"requested_at": now_datetime(),
 			"expires_at": add_to_date(now_datetime(), minutes=expiry_minutes),
+			"selected_manager": selected_manager,
 			"invoice": invoice,
 			"item_code": item_code,
 			"item_name": item_name,
@@ -196,17 +202,33 @@ def create_approval_request(
 	doc.insert(ignore_permissions=True)
 
 	if action_config and action_config.get("remote_approval"):
-		_broadcast_request_to_managers(doc, action_config)
+		_broadcast_request_to_managers(doc, action_config, selected_manager)
 
 	return doc.as_dict()
 
 
-def _broadcast_request_to_managers(doc: frappe.model.document.Document, action_config: dict) -> None:
+def _broadcast_request_to_managers(
+	doc: frappe.model.document.Document,
+	action_config: dict,
+	selected_manager: str | None = None,
+) -> None:
+	"""Broadcast the approval request via WebSocket to the relevant manager(s).
+
+	If the cashier selected a specific manager, notify only that one.
+	Otherwise notify all managers with the configured approver role + active PIN.
+	"""
 	approver_role = action_config.get("approver_role")
 	if not approver_role:
 		return
 
-	managers = _get_eligible_managers(doc.pos_profile, approver_role)
+	if selected_manager:
+		recipients = [selected_manager]
+	else:
+		recipients = _get_eligible_managers(doc.pos_profile, approver_role)
+
+	if not recipients:
+		return
+
 	cashier_name = frappe.db.get_value("User", doc.requested_by, "full_name") or doc.requested_by
 
 	message = {
@@ -223,7 +245,7 @@ def _broadcast_request_to_managers(doc: frappe.model.document.Document, action_c
 		"expires_at": str(doc.expires_at),
 	}
 
-	for manager_user in managers:
+	for manager_user in recipients:
 		frappe.publish_realtime(
 			event="pos_approval_request",
 			message=message,
