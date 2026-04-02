@@ -22,6 +22,7 @@ def validate(doc, method):
 
 
 def before_submit(doc, method):
+	validate_approval_requests(doc)
 	add_loyalty_point(doc)
 	create_sales_order(doc)
 	update_coupon(doc, "used")
@@ -225,6 +226,60 @@ def calc_delivery_charges(doc):
 
 	if calculate_taxes_and_totals:
 		doc.calculate_taxes_and_totals()
+
+
+def validate_approval_requests(doc) -> None:
+	"""Enforce server-side that all required approvals exist before submit.
+
+	This is the security boundary — the frontend dialog is UX only.
+	Even if the frontend is bypassed, this blocks unauthorised submissions.
+	"""
+	if not doc.pos_profile:
+		return
+
+	if not frappe.db.get_value("POS Profile", doc.pos_profile, "posa_enable_approval_workflow"):
+		return
+
+	submit_data = frappe.parse_json(getattr(doc, "posa_submit_data", None) or "{}")
+	approved_requests = submit_data.get("approved_requests", [])
+
+	if not approved_requests:
+		return
+
+	for request_name in approved_requests:
+		if not request_name:
+			continue
+
+		# Support both server names (POSA-AR-...) and offline IDs
+		if str(request_name).startswith("OFFLINE-AR-"):
+			request = frappe.db.get_value(
+				"POS Approval Request",
+				{"offline_id": request_name},
+				["name", "status", "pos_profile"],
+				as_dict=True,
+			)
+		else:
+			request = frappe.db.get_value(
+				"POS Approval Request",
+				request_name,
+				["name", "status", "pos_profile"],
+				as_dict=True,
+			)
+
+		if not request:
+			frappe.throw(
+				_("Approval request {0} not found. Please re-approve the action.").format(request_name)
+			)
+
+		if request.status != "Approved":
+			frappe.throw(
+				_("Approval request {0} has status '{1}'. Only Approved requests are valid.").format(
+					request_name, request.status
+				)
+			)
+
+		if request.pos_profile != doc.pos_profile:
+			frappe.throw(_("Approval request {0} belongs to a different POS Profile.").format(request_name))
 
 
 def validate_shift(doc):

@@ -1,0 +1,298 @@
+{
+ "actions": [],
+ "autoname": "POSA-AR-.YY.-.#####",
+ "creation": "2026-04-02 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "action_type",
+  "status",
+  "pos_profile",
+  "pos_opening_shift",
+  "column_break_request",
+  "requested_by",
+  "requested_at",
+  "expires_at",
+  "reason",
+  "section_break_action",
+  "invoice",
+  "item_code",
+  "item_name",
+  "column_break_action",
+  "original_value",
+  "requested_value",
+  "value_field_label",
+  "section_break_resolution",
+  "resolved_by",
+  "resolved_at",
+  "resolution_method",
+  "column_break_resolution",
+  "resolution_note",
+  "section_break_payload",
+  "request_payload",
+  "section_break_offline",
+  "offline_id",
+  "device_id",
+  "column_break_offline",
+  "offline_duration_seconds",
+  "synced_at",
+  "sync_validation_result",
+  "sync_rejection_reason",
+  "client_clock_skew_seconds"
+ ],
+ "fields": [
+  {
+   "fieldname": "action_type",
+   "fieldtype": "Select",
+   "label": "Action Type",
+   "options": "\nDelete Item\nEdit Rate\nEdit Item Discount\nEdit Additional Discount\nVoid Invoice\nSales Return",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nApproved\nRejected\nExpired\nCancelled",
+   "default": "Pending",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "pos_profile",
+   "fieldtype": "Link",
+   "label": "POS Profile",
+   "options": "POS Profile",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "pos_opening_shift",
+   "fieldtype": "Link",
+   "label": "POS Opening Shift",
+   "options": "POS Opening Shift"
+  },
+  {
+   "fieldname": "column_break_request",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "User",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "requested_at",
+   "fieldtype": "Datetime",
+   "label": "Requested At",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "expires_at",
+   "fieldtype": "Datetime",
+   "label": "Expires At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "description": "Optional cashier justification"
+  },
+  {
+   "fieldname": "section_break_action",
+   "fieldtype": "Section Break",
+   "label": "Action Context"
+  },
+  {
+   "fieldname": "invoice",
+   "fieldtype": "Link",
+   "label": "Invoice",
+   "options": "Sales Invoice"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_action",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "original_value",
+   "fieldtype": "Currency",
+   "label": "Original Value"
+  },
+  {
+   "fieldname": "requested_value",
+   "fieldtype": "Currency",
+   "label": "Requested Value"
+  },
+  {
+   "fieldname": "value_field_label",
+   "fieldtype": "Data",
+   "label": "Value Field",
+   "description": "e.g. Rate, Discount %"
+  },
+  {
+   "fieldname": "section_break_resolution",
+   "fieldtype": "Section Break",
+   "label": "Resolution"
+  },
+  {
+   "fieldname": "resolved_by",
+   "fieldtype": "Link",
+   "label": "Resolved By",
+   "options": "User",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "resolved_at",
+   "fieldtype": "Datetime",
+   "label": "Resolved At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "resolution_method",
+   "fieldtype": "Select",
+   "label": "Resolution Method",
+   "options": "\nPIN\nRemote\nAuto-Expired\nOffline-PIN\nOffline-Expired",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_resolution",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "resolution_note",
+   "fieldtype": "Small Text",
+   "label": "Resolution Note",
+   "description": "Optional manager comment on rejection"
+  },
+  {
+   "fieldname": "section_break_payload",
+   "fieldtype": "Section Break",
+   "label": "Request Payload",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "request_payload",
+   "fieldtype": "JSON",
+   "label": "Request Payload",
+   "hidden": 0,
+   "read_only": 1,
+   "description": "Full doc and action context at the time of the request"
+  },
+  {
+   "fieldname": "section_break_offline",
+   "fieldtype": "Section Break",
+   "label": "Offline Sync",
+   "collapsible": 1,
+   "description": "Populated only for approvals made while the POS terminal was offline"
+  },
+  {
+   "fieldname": "offline_id",
+   "fieldtype": "Data",
+   "label": "Offline ID",
+   "read_only": 1,
+   "search_index": 1,
+   "description": "Client-generated UUID for offline approval records"
+  },
+  {
+   "fieldname": "device_id",
+   "fieldtype": "Data",
+   "label": "Device ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_offline",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "offline_duration_seconds",
+   "fieldtype": "Int",
+   "label": "Offline Duration (seconds)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "synced_at",
+   "fieldtype": "Datetime",
+   "label": "Synced At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sync_validation_result",
+   "fieldtype": "Select",
+   "label": "Sync Validation Result",
+   "options": "\nAccepted\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sync_rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Sync Rejection Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_clock_skew_seconds",
+   "fieldtype": "Int",
+   "label": "Client Clock Skew (seconds)",
+   "read_only": 1,
+   "description": "Difference between client and server timestamps. Large values may indicate device time manipulation."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-04-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POS Approval Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "Accounts User",
+   "share": 0,
+   "write": 1
+  }
+ ],
+ "sort_field": "requested_at",
+ "sort_order": "DESC",
+ "title_field": "action_type",
+ "track_changes": 1
+}

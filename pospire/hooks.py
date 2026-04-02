@@ -19,6 +19,9 @@ POSPIRE_COLOR = "#2563EB"
 # app_include_css = "/assets/pospire/css/pos-enhancements.css"
 # app_include_js = ["pospire.bundle.js"]
 
+# Approval workflow desk notifications (runs on all desk pages for managers)
+app_include_js = ["/assets/pospire/js/pos_approval_desk.js"]
+
 # include js, css files in header of web template
 # web_include_css = "/assets/pospire/css/pospire.css"
 # web_include_js = "/assets/pospire/js/pospire.js"
@@ -40,6 +43,7 @@ doctype_js = {
 	"POS Profile": "pospire/api/pos_profile.js",
 	"Sales Invoice": "pospire/api/invoice.js",
 	"Company": "pospire/api/company.js",
+	"POS Manager PIN": "pospire/pospire/doctype/pos_manager_pin/pos_manager_pin.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -132,6 +136,12 @@ doc_events = {
 # 		"pospire.tasks.monthly"
 # 	]
 # }
+
+scheduler_events = {
+	"*/5 * * * *": [
+		"pospire.pospire.api.approval.expire_stale_requests",
+	],
+}
 
 # Testing
 # -------
@@ -269,6 +279,10 @@ fixtures = [
 					"Sales Invoice-custom_delivery_charge_rate",
 					"POS Profile-posa_hardware_manager_setting",
 					"POS Profile-posa_hardware_manager",
+					"POS Profile-posa_approval_workflow_tab",
+					"POS Profile-posa_enable_approval_workflow",
+					"POS Profile-posa_approval_actions",
+					"Sales Invoice-posa_submit_data",
 					"POS Profile-custom_enable_cash_denominations",
 					"POS Profile-custom_denominations",
 					"Sales Invoice-custom_deleted_pos_items",
