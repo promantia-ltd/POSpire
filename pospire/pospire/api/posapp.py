@@ -71,7 +71,7 @@ def get_opening_dialog_data() -> dict:
 	for i in data["pos_profiles_data"]:
 		pos_profiles_list.append(i.name)
 
-	payment_method_table = "POS Payment Method" if get_version() == 13 else "Sales Invoice Payment"
+	payment_method_table = "POS Payment Method"
 	data["payments_method"] = frappe.get_list(
 		payment_method_table,
 		filters={"parent": ["in", pos_profiles_list]},
@@ -106,11 +106,12 @@ def get_opening_dialog_data() -> dict:
 					"display_order": d.display_order,
 				})
 			denominations.sort(key=lambda x: x.get("display_order") or 0)
-			data["denomination_config"][profile.name] = {
-				"enabled": True,
-				"cash_mode": cash_mode,
-				"denominations": denominations,
-			}
+			if denominations:
+				data["denomination_config"][profile.name] = {
+					"enabled": True,
+					"cash_mode": cash_mode,
+					"denominations": denominations,
+				}
 
 	return data
 
@@ -1629,34 +1630,6 @@ def search_orders(company: str, currency: str, order_name: str | None = None) ->
 		data.append(frappe.get_doc("Sales Order", order["name"]))
 	return data
 
-
-def get_version():
-	branch_name = get_app_branch("erpnext")
-	if "12" in branch_name:
-		return 12
-	elif "13" in branch_name:
-		return 13
-	elif "14" in branch_name:
-		return 14
-	elif "15" in branch_name:
-		return 15
-	elif "16" in branch_name:
-		return 16
-	else:
-		return 16
-
-
-def get_app_branch(app):
-	"""Returns branch of an app"""
-	import subprocess
-
-	try:
-		branch = subprocess.check_output(f"cd ../apps/{app} && git rev-parse --abbrev-ref HEAD", shell=True)
-		branch = branch.decode("utf-8")
-		branch = branch.strip()
-		return branch
-	except Exception:
-		return ""
 
 
 @frappe.whitelist()

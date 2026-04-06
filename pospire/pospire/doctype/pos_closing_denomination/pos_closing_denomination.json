@@ -11,7 +11,6 @@
   "denomination_value",
   "currency",
   "closing_quantity",
-  "closing_quantity",
   "closing_amount"
  ],
  "fields": [
@@ -40,7 +39,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "denomination.denomination_value",
+   "fetch_from": "denomination.currency",
    "fieldname": "currency",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -69,7 +68,6 @@
  "links": [],
 
  "modified": "2026-03-12 14:56:03.655459",
- "modified": "2026-03-04 11:03:19.555236",
  "modified_by": "Administrator",
  "module": "POSpire",
  "name": "POS Closing Denomination",

@@ -7,6 +7,7 @@
  "field_order": [
   "denomination",
   "denomination_value",
+  "currency",
   "display_order"
  ],
  "fields": [
@@ -26,6 +27,14 @@
    "label": "Denomination Value",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fetch_from": "denomination.currency",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
+   "read_only": 1
   },
   {
    "default": "0",
