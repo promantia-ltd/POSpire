@@ -104,11 +104,12 @@ def get_opening_dialog_data() -> dict:
 					}
 				)
 			denominations.sort(key=lambda x: x.get("display_order") or 0)
-			data["denomination_config"][profile.name] = {
-				"enabled": True,
-				"cash_mode": cash_mode,
-				"denominations": denominations,
-			}
+			if denominations:
+				data["denomination_config"][profile.name] = {
+					"enabled": True,
+					"cash_mode": cash_mode,
+					"denominations": denominations,
+				}
 
 	return data
 

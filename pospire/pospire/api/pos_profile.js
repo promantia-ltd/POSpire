@@ -10,6 +10,50 @@ frappe.ui.form.on("POS Profile", {
 		});
 	},
 
+	custom_enable_cash_denominations: async function (frm) {
+		if (!frm.doc.custom_enable_cash_denominations) return;
+
+		if (!frm.doc.currency) {
+			frm.set_value("custom_enable_cash_denominations", 0);
+			frappe.msgprint(
+				__(
+					"Please set the Profile Currency before enabling Cash Denominations."
+				)
+			);
+			return;
+		}
+
+		const result = await frappe.db.get_list("POS Denomination", {
+			filters: { currency: frm.doc.currency, enabled: 1 },
+			limit: 1,
+		});
+
+		if (!result || !result.length) {
+			frm.set_value("custom_enable_cash_denominations", 0);
+			frappe.msgprint(
+				__(
+					"No active denominations found for currency {0}. Please add denominations in the POS Denomination list before enabling this.",
+					[frm.doc.currency]
+				)
+			);
+		}
+	},
+
+	validate: function (frm) {
+		if (
+			frm.doc.custom_enable_cash_denominations &&
+			!(frm.doc.custom_denominations && frm.doc.custom_denominations.length)
+		) {
+			frm.set_value("custom_enable_cash_denominations", 0);
+			frappe.msgprint(
+				__(
+					"Cash Denominations have been disabled because no denominations were added to the table. Please add at least one denomination before enabling."
+				)
+			);
+			frappe.validated = false;
+		}
+	},
+
 	refresh: function (frm) {
 		// Hardware manager section is always visible
 		// The checkbox enables/disables hardware manager functionality

@@ -99,6 +99,10 @@
 											/>
 										</template>
 
+										<template v-slot:item.denomination_value="{ item }">
+											{{ formatCurrency(item.denomination_value) }}
+										</template>
+
 										<template v-slot:item.amount="{ item }">
 											{{
 												formatCurrency(
@@ -206,11 +210,9 @@ export default {
 					});
 				}
 			});
-			if (this.denomination_config[val]) {
+			const config = this.denomination_config[val];
+			if (config?.denominations?.length) {
 				this.denominations_enabled = true;
-
-				const config = this.denomination_config[val];
-
 				this.denomination_rows = config.denominations.map((d) => ({
 					denomination: d.denomination,
 					denomination_name: d.denomination_name,
@@ -222,6 +224,14 @@ export default {
 			} else {
 				this.denominations_enabled = false;
 				this.denomination_rows = [];
+				if (config) {
+					toast.warning(
+						__(
+							"Cash denominations are enabled for this profile but none are configured. Using standard opening flow."
+						),
+						{ autoClose: 6000 }
+					);
+				}
 			}
 		},
 		denominationTotal(newVal) {
