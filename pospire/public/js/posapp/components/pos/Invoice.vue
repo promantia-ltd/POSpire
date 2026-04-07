@@ -1794,7 +1794,7 @@ export default {
 				}
 			});
 			doc.items = newItems;
-			doc.update_stock = 1;
+			doc.update_stock = this.pos_profile.update_stock ? 1 : 0;
 			doc.is_pos = 1;
 			doc.payments = this.get_payments();
 			return doc;
