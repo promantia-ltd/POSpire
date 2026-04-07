@@ -30,6 +30,26 @@
 				</v-card-actions>
 			</v-card>
 		</v-dialog>
+
+		<ApprovalDialog
+			v-if="approval_dialog.show"
+			v-model="approval_dialog.show"
+			:action-type="approval_dialog.action_type"
+			:action-config="approval_dialog.action_config"
+			:managers="approval_config && approval_config.managers ? approval_config.managers : []"
+			:pos-profile="pos_profile && pos_profile.name ? pos_profile.name : ''"
+			:pos-opening-shift="pos_opening_shift && pos_opening_shift.name ? pos_opening_shift.name : ''"
+			:item-code="approval_dialog.item_code"
+			:item-name="approval_dialog.item_name"
+			:original-value="approval_dialog.original_value"
+			:requested-value="approval_dialog.requested_value"
+			:value-field-label="approval_dialog.value_field_label"
+			:invoice-name="invoice_doc && invoice_doc.name ? invoice_doc.name : null"
+			:currency="pos_profile ? pos_profile.currency : ''"
+			@approved="on_approval_approved"
+			@rejected="on_approval_rejected"
+		/>
+
 		<v-card class="cards my-0 py-0 bg-grey-lighten-5 pos-scrollable-content">
 			<!-- Fixed Customer Selector Section (Fixed at Top) -->
 			<div class="invoice-header-section">
@@ -290,6 +310,7 @@
 					</template>
 					<template v-slot:item.rate="{ item }">
 						<v-text-field
+							:key="'grid-rate-' + item.item_code + '-' + approval_rejection_key"
 							density="compact"
 							variant="outlined"
 							color="primary"
@@ -298,18 +319,7 @@
 							hide-details
 							:prefix="currencySymbol(pos_profile.currency)"
 							:model-value="formatCurrency(item.rate)"
-							@change="
-								[
-									setFormatedCurrency(
-										item,
-										'rate',
-										null,
-										false,
-										typeof $event === 'object' ? $event.target.value : $event
-									),
-									calc_prices(item, typeof $event === 'object' ? $event.target.value : $event),
-								]
-							"
+							@change="on_rate_change_grid(item, $event)"
 							:rules="[isNumber]"
 							id="gridRate"
 							:disabled="
@@ -372,7 +382,7 @@
 												:disabled="
 													!!item.posa_is_offer || !!item.posa_is_replace
 												"
-												@click.stop="remove_item(item)"
+												@click.stop="on_remove_item(item)"
 											>
 												<v-icon>mdi-delete</v-icon>
 											</v-btn>
@@ -486,6 +496,7 @@
 								</v-col>
 								<v-col cols="4">
 									<v-text-field
+										:key="'rate-' + item.item_code + '-' + approval_rejection_key"
 										density="compact"
 										variant="outlined"
 										color="primary"
@@ -494,18 +505,7 @@
 										hide-details
 										:prefix="currencySymbol(pos_profile.currency)"
 										:model-value="formatCurrency(item.rate)"
-										@change="
-											[
-												setFormatedCurrency(
-													item,
-													'rate',
-													null,
-													false,
-													$event
-												),
-												calc_prices(item, $event),
-											]
-										"
+										@change="on_rate_change(item, $event)"
 										:rules="[isNumber]"
 										id="rate"
 										:disabled="
@@ -544,10 +544,9 @@
 								</v-col>
 								<v-col cols="4">
 									<v-text-field
+										:key="'disc-pct-' + item.item_code + '-' + approval_rejection_key"
 										:model-value="formatFloat(item.discount_percentage)"
-										@change="
-											(event) => handleDiscountPercentageChange(item, event)
-										"
+										@change="(event) => on_discount_percentage_change(item, event)"
 										density="compact"
 										variant="outlined"
 										color="primary"
@@ -568,6 +567,7 @@
 								</v-col>
 								<v-col cols="4">
 									<v-text-field
+										:key="'disc-amt-' + item.item_code + '-' + approval_rejection_key"
 										density="compact"
 										variant="outlined"
 										color="primary"
@@ -576,21 +576,7 @@
 										hide-details
 										:model-value="formatCurrency(item.discount_amount)"
 										:rules="[isNumber]"
-										@change="
-											[
-												setFormatedCurrency(
-													item,
-													'discount_amount',
-													null,
-													true,
-													$event
-												),
-												,
-												pos_profile.custom_allow_user_to_edit_item_total
-													? applyCustomDiscount(item, $event)
-													: calc_prices(item, $event),
-											]
-										"
+										@change="on_discount_amount_change(item, $event)"
 										:prefix="currencySymbol(pos_profile.currency)"
 										id="discount_amount"
 										:disabled="
@@ -917,16 +903,9 @@
 							class="pa-1"
 						>
 							<v-text-field
+								:key="'add-disc-' + approval_rejection_key"
 								:model-value="formatCurrency(discount_amount)"
-								@change="
-									setFormatedCurrency(
-										discount_amount,
-										'discount_amount',
-										null,
-										false,
-										$event
-									)
-								"
+								@change="on_additional_discount_change($event)"
 								:rules="[isNumber]"
 								:label="__('Additional Discount')"
 								ref="discount"
@@ -950,7 +929,8 @@
 						>
 							<v-text-field
 								v-model="additional_discount_percentage"
-								@change="update_discount_umount"
+								@focus="prev_additional_discount_pct = additional_discount_percentage"
+								@change="on_additional_discount_percentage_change"
 								@blur="format_discount_input"
 								:rules="[isNumber]"
 								:label="__('Additional Discount %')"
@@ -1038,7 +1018,7 @@
 									variant="tonal"
 									class="pa-0 enhanced-action-btn"
 									theme="dark"
-									@click="cancel_dialog = true"
+									@click="on_cancel_sale_click"
 									>{{ __("Cancel Sale") }}</v-btn
 								>
 							</v-col>
@@ -1049,7 +1029,7 @@
 									class="pa-0 enhanced-action-btn"
 									:class="{ 'disable-events': !pos_profile.posa_allow_return }"
 									theme="dark"
-									@click="open_returns"
+									@click="on_open_returns"
 									>{{ __("Sales Return") }}</v-btn
 								>
 							</v-col>
@@ -1111,6 +1091,7 @@ import { call } from "frappe-ui";
 import format from "@/utils/format";
 import hardwareUtils from "@/utils/hardwareUtils";
 import Customer from "./Customer.vue";
+import ApprovalDialog from "./ApprovalDialog.vue";
 import { toast } from "vue3-toastify";
 import { datetime } from "@/utils/datetime";
 
@@ -1157,6 +1138,22 @@ export default {
 			processingPayment: false,
 			cancellingInvoice: false,
 			printingDraft: false,
+			// Approval workflow state
+			approval_config: null,
+			approval_dialog: {
+				show: false,
+				action_type: "",
+				action_config: null,
+				item_code: null,
+				item_name: null,
+				original_value: null,
+				requested_value: null,
+				value_field_label: null,
+			},
+			approval_resolve: null,
+			approved_request_names: [],
+			approval_rejection_key: 0,
+			prev_additional_discount_pct: 0,
 			items_headers: [
 				{
 					title: __("Name"),
@@ -1176,6 +1173,7 @@ export default {
 
 	components: {
 		Customer,
+		ApprovalDialog,
 	},
 
 	computed: {
@@ -1383,6 +1381,188 @@ export default {
 			this.$forceUpdate();
 		},
 
+		// ─── Approval Workflow ───────────────────────────────────────────────────
+
+		async load_approval_config() {
+			if (!this.pos_profile?.name) return;
+			try {
+				const r = await call("pospire.pospire.api.approval.get_approval_config", {
+					pos_profile: this.pos_profile.name,
+				});
+				this.approval_config = r || null;
+			} catch {
+				this.approval_config = null;
+			}
+		},
+
+		async approvalGuard(action_type, { item = null, originalValue = null, requestedValue = null, valueFieldLabel = null } = {}) {
+			if (!this.approval_config?.enabled) return true;
+			const action = this.approval_config.actions?.find((a) => a.action_type === action_type);
+			if (!action) return true;
+			if (action.approval_mode === "Not Required") return true;
+			if (action.approval_mode === "Blocked") {
+				toast.error(__("{0} is not permitted on this POS profile.", [action_type]));
+				return false;
+			}
+			// approval_mode === "Required" — evaluate condition, then show dialog
+
+			if (action.condition_js) {
+				try {
+					const required = new Function("doc", "action_ctx", `return (${action.condition_js})`)(
+						{ ...this.invoice_doc, items: this.items },
+						{ item, original_value: originalValue, requested_value: requestedValue }
+					);
+					if (!required) return true;
+				} catch {
+					// fail-safe: require approval on condition error
+				}
+			}
+
+			return new Promise((resolve) => {
+				this.approval_dialog = {
+					show: true,
+					action_type,
+					action_config: action,
+					item_code: item?.item_code || null,
+					item_name: item?.item_name || null,
+					original_value: originalValue,
+					requested_value: requestedValue,
+					value_field_label: valueFieldLabel,
+				};
+				this.approval_resolve = resolve;
+			});
+		},
+
+		on_approval_approved(request_name) {
+			this.approval_dialog.show = false;
+			if (request_name) this.approved_request_names.push(request_name);
+			if (this.approval_resolve) {
+				this.approval_resolve(true);
+				this.approval_resolve = null;
+			}
+		},
+
+		on_approval_rejected() {
+			this.approval_dialog.show = false;
+			if (this.approval_resolve) {
+				this.approval_resolve(false);
+				this.approval_resolve = null;
+			}
+			// Increment key to force Vuetify inputs to remount from current data,
+			// discarding whatever the cashier typed before approval was requested.
+			this.approval_rejection_key++;
+		},
+
+		// ─── Approval-guarded action handlers ────────────────────────────────────
+
+		async on_rate_change(item, event) {
+			const raw = event?.srcElement?._value ?? event?.target?.value ?? "0";
+			const newRate = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
+			const approved = await this.approvalGuard("Edit Rate", {
+				item,
+				originalValue: item.rate,
+				requestedValue: newRate,
+				valueFieldLabel: __("Rate"),
+			});
+			if (!approved) return;
+			this.setFormatedCurrency(item, "rate", null, false, event);
+			this.calc_prices(item, event);
+		},
+
+		async on_rate_change_grid(item, event) {
+			const raw = event?.srcElement?._value ?? event?.target?.value ?? "0";
+			const newRate = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
+			const approved = await this.approvalGuard("Edit Rate", {
+				item,
+				originalValue: item.rate,
+				requestedValue: newRate,
+				valueFieldLabel: __("Rate"),
+			});
+			if (!approved) return;
+			this.setFormatedCurrency(item, "rate", null, false, event.srcElement._value);
+			this.calc_prices(item, event.srcElement._value);
+		},
+
+		async on_discount_percentage_change(item, event) {
+			const value = event?.target?.value || "0";
+			const newValue = this.flt(this.parseFormattedCurrency(value), this.currency_precision) || 0;
+			const approved = await this.approvalGuard("Edit Item Discount", {
+				item,
+				originalValue: item.discount_percentage,
+				requestedValue: newValue,
+				valueFieldLabel: __("Discount %"),
+			});
+			if (!approved) return;
+			this.handleDiscountPercentageChange(item, event);
+		},
+
+		async on_discount_amount_change(item, event) {
+			const raw = event?.srcElement?._value ?? event?.target?.value ?? "0";
+			const newValue = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
+			const approved = await this.approvalGuard("Edit Item Discount", {
+				item,
+				originalValue: item.discount_amount,
+				requestedValue: newValue,
+				valueFieldLabel: __("Discount Amount"),
+			});
+			if (!approved) return;
+			this.setFormatedCurrency(item, "discount_amount", null, true, event);
+			if (this.pos_profile.custom_allow_user_to_edit_item_total) {
+				this.applyCustomDiscount(item, event);
+			} else {
+				this.calc_prices(item, event);
+			}
+		},
+
+		async on_additional_discount_change(event) {
+			const raw = event?.srcElement?._value ?? event?.target?.value ?? "0";
+			const newValue = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
+			const approved = await this.approvalGuard("Edit Additional Discount", {
+				originalValue: this.discount_amount,
+				requestedValue: newValue,
+				valueFieldLabel: __("Additional Discount"),
+			});
+			if (!approved) return;
+			this.setFormatedCurrency(this.discount_amount, "discount_amount", null, false, event);
+		},
+
+		async on_additional_discount_percentage_change() {
+			const newValue = this.additional_discount_percentage;
+			const approved = await this.approvalGuard("Edit Additional Discount", {
+				originalValue: this.prev_additional_discount_pct,
+				requestedValue: newValue,
+				valueFieldLabel: __("Additional Discount %"),
+			});
+			if (!approved) {
+				this.additional_discount_percentage = this.prev_additional_discount_pct;
+				return;
+			}
+			this.update_discount_umount();
+		},
+
+		async on_cancel_sale_click() {
+			const approved = await this.approvalGuard("Void Invoice");
+			if (approved) this.cancel_dialog = true;
+		},
+
+		async on_open_returns() {
+			const approved = await this.approvalGuard("Sales Return");
+			if (approved) this.open_returns();
+		},
+
+		async on_remove_item(item) {
+			const approved = await this.approvalGuard("Delete Item", {
+				item,
+				originalValue: item.qty,
+				requestedValue: 0,
+				valueFieldLabel: __("Qty"),
+			});
+			if (!approved) return;
+			this.remove_item(item);
+		},
+
+		// ─────────────────────────────────────────────────────────────────────────
+
 		add_one(item) {
 			if (this.invoice_doc.is_return) {
 				// For returns: "+" increases return qty (more negative)
@@ -1577,6 +1757,7 @@ export default {
 			this.additional_discount_percentage = 0;
 			this.delivery_charges_rate = 0;
 			this.selected_delivery_charge = "";
+			this.approved_request_names = [];
 			this.eventBus.emit("set_customer_readonly", false);
 			this.invoiceType = this.pos_profile.posa_default_sales_order ? "Order" : "Invoice";
 			this.invoiceTypes = ["Invoice", "Order"];
@@ -1998,6 +2179,13 @@ export default {
 
 				if (!invoice_doc) {
 					return;
+				}
+
+				// Attach collected approval request names for server-side validation
+				if (this.approved_request_names.length) {
+					invoice_doc.posa_submit_data = JSON.stringify({
+						approved_requests: this.approved_request_names,
+					});
 				}
 
 				this.eventBus.emit("show_payment", "true");
@@ -3459,6 +3647,7 @@ export default {
 			this.float_precision = window.sys_defaults?.float_precision || 2;
 			this.currency_precision = window.sys_defaults?.currency_precision || 2;
 			this.invoiceType = this.pos_profile.posa_default_sales_order ? "Order" : "Invoice";
+			this.load_approval_config();
 		});
 		this.eventBus.on("auto_set_delivery_charge", () => {
 			if (this.delivery_charges.length > 0 && !this.selected_delivery_charge) {

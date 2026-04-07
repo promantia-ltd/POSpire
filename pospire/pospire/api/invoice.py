@@ -240,46 +240,216 @@ def validate_approval_requests(doc) -> None:
 	if not frappe.db.get_value("POS Profile", doc.pos_profile, "posa_enable_approval_workflow"):
 		return
 
+	required_checks = _get_required_approval_checks(doc)
 	submit_data = frappe.parse_json(getattr(doc, "posa_submit_data", None) or "{}")
-	approved_requests = submit_data.get("approved_requests", [])
+	approved_requests = [request_name for request_name in submit_data.get("approved_requests", []) if request_name]
 
-	if not approved_requests:
+	if not required_checks:
 		return
 
-	for request_name in approved_requests:
-		if not request_name:
-			continue
+	if not approved_requests:
+		frappe.throw(_("This invoice contains changes that require manager approval before submission."))
 
-		# Support both server names (POSA-AR-...) and offline IDs
-		if str(request_name).startswith("OFFLINE-AR-"):
-			request = frappe.db.get_value(
-				"POS Approval Request",
-				{"offline_id": request_name},
-				["name", "status", "pos_profile"],
-				as_dict=True,
-			)
-		else:
-			request = frappe.db.get_value(
-				"POS Approval Request",
-				request_name,
-				["name", "status", "pos_profile"],
-				as_dict=True,
-			)
+	requests = [_get_submitted_approval_request(request_name, doc) for request_name in approved_requests]
+	remaining_requests = requests.copy()
 
-		if not request:
+	for check in required_checks:
+		match_index = _find_matching_approved_request(remaining_requests, check)
+		if match_index is None:
+			if check.get("label"):
+				frappe.throw(
+					_("{0} requires manager approval for {1}. Please re-approve before submitting.").format(
+						check["action_type"], check["label"]
+					)
+				)
 			frappe.throw(
-				_("Approval request {0} not found. Please re-approve the action.").format(request_name)
-			)
-
-		if request.status != "Approved":
-			frappe.throw(
-				_("Approval request {0} has status '{1}'. Only Approved requests are valid.").format(
-					request_name, request.status
+				_("{0} requires manager approval before submitting this invoice.").format(
+					check["action_type"]
 				)
 			)
 
-		if request.pos_profile != doc.pos_profile:
-			frappe.throw(_("Approval request {0} belongs to a different POS Profile.").format(request_name))
+		remaining_requests.pop(match_index)
+
+
+def _get_required_approval_checks(doc) -> list[dict]:
+	"""Infer which protected actions are reflected in the current invoice state."""
+	doc_context = frappe._dict(doc.as_dict())
+	checks: list[dict] = []
+
+	if doc.is_return and _approval_required(doc, "Sales Return", {}, doc_context):
+		checks.append({"action_type": "Sales Return", "label": doc.name or _("this return")})
+
+	deleted_items = frappe.parse_json(getattr(doc, "custom_deleted_pos_items", None) or "[]") or []
+	for item in deleted_items:
+		action_context = {
+			"item_code": item.get("item_code"),
+			"item_name": item.get("item_name"),
+			"original_value": flt(item.get("qty")),
+			"requested_value": 0,
+			"value_field_label": "Qty",
+		}
+		if _approval_required(doc, "Delete Item", action_context, doc_context):
+			checks.append(
+				{
+					"action_type": "Delete Item",
+					"item_code": item.get("item_code"),
+					"label": item.get("item_name") or item.get("item_code") or _("a deleted item"),
+				}
+			)
+
+	additional_discount_context = {
+		"requested_value": flt(doc.additional_discount_percentage or doc.discount_amount or 0),
+		"discount_percentage": flt(doc.additional_discount_percentage or 0),
+		"discount_amount": flt(doc.discount_amount or 0),
+		"value_field_label": "Additional Discount",
+	}
+	if _has_additional_discount(doc) and _approval_required(
+		doc, "Edit Additional Discount", additional_discount_context, doc_context
+	):
+		checks.append({"action_type": "Edit Additional Discount", "label": _("additional discount")})
+
+	for item in doc.items or []:
+		item_dict = item.as_dict() if hasattr(item, "as_dict") else dict(item)
+		item_label = item_dict.get("item_name") or item_dict.get("item_code") or _("an item")
+
+		if _has_item_discount(item_dict):
+			action_context = {
+				"item_code": item_dict.get("item_code"),
+				"item_name": item_dict.get("item_name"),
+				"requested_value": flt(item_dict.get("discount_percentage") or item_dict.get("discount_amount") or 0),
+				"discount_percentage": flt(item_dict.get("discount_percentage") or 0),
+				"discount_amount": flt(item_dict.get("discount_amount") or 0),
+				"value_field_label": "Discount",
+			}
+			if _approval_required(doc, "Edit Item Discount", action_context, doc_context):
+				checks.append(
+					{
+						"action_type": "Edit Item Discount",
+						"item_code": item_dict.get("item_code"),
+						"label": item_label,
+					}
+				)
+
+		if _has_rate_edit(item_dict):
+			original_value = flt(item_dict.get("price_list_rate") or 0)
+			requested_value = flt(item_dict.get("rate") or 0)
+			change_percent = abs(((requested_value - original_value) / original_value) * 100) if original_value else 0
+			action_context = {
+				"item_code": item_dict.get("item_code"),
+				"item_name": item_dict.get("item_name"),
+				"original_value": original_value,
+				"requested_value": requested_value,
+				"change_percent": change_percent,
+				"value_field_label": "Rate",
+			}
+			if _approval_required(doc, "Edit Rate", action_context, doc_context):
+				checks.append(
+					{
+						"action_type": "Edit Rate",
+						"item_code": item_dict.get("item_code"),
+						"label": item_label,
+					}
+				)
+
+	return checks
+
+
+def _approval_required(doc, action_type: str, action_context: dict, doc_context=None) -> bool:
+	from pospire.pospire.api.approval import _get_action_config, _get_approval_safe_globals
+
+	action_config = _get_action_config(doc.pos_profile, action_type)
+	if not action_config:
+		return False
+
+	mode = action_config.get("approval_mode", "Not Required")
+	if mode == "Not Required":
+		return False
+	if mode == "Blocked":
+		return True
+
+	condition = action_config.get("condition")
+	if not condition:
+		return True
+
+	context = _get_approval_safe_globals()
+	context.update(
+		{
+			"doc": frappe._dict(doc_context or frappe._dict(doc.as_dict())),
+			"action": frappe._dict(action_context or {}),
+		}
+	)
+
+	try:
+		return bool(frappe.safe_eval(condition, eval_globals=context))
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), f"POS Approval: submit-time condition eval error ({action_type})")
+		return True
+
+
+def _get_submitted_approval_request(request_name: str, doc):
+	if str(request_name).startswith("OFFLINE-AR-"):
+		request = frappe.db.get_value(
+			"POS Approval Request",
+			{"offline_id": request_name},
+			["name", "status", "pos_profile", "action_type", "item_code", "requested_by", "invoice"],
+			as_dict=True,
+		)
+	else:
+		request = frappe.db.get_value(
+			"POS Approval Request",
+			request_name,
+			["name", "status", "pos_profile", "action_type", "item_code", "requested_by", "invoice"],
+			as_dict=True,
+		)
+
+	if not request:
+		frappe.throw(_("Approval request {0} not found. Please re-approve the action.").format(request_name))
+
+	if request.status != "Approved":
+		frappe.throw(
+			_("Approval request {0} has status '{1}'. Only Approved requests are valid.").format(
+				request_name, request.status
+			)
+		)
+
+	if request.pos_profile != doc.pos_profile:
+		frappe.throw(_("Approval request {0} belongs to a different POS Profile.").format(request_name))
+
+	if request.requested_by and request.requested_by != frappe.session.user:
+		frappe.throw(_("Approval request {0} belongs to a different cashier.").format(request_name))
+
+	if request.invoice and doc.name and request.invoice != doc.name:
+		frappe.throw(_("Approval request {0} belongs to a different invoice.").format(request_name))
+
+	return request
+
+
+def _find_matching_approved_request(requests: list, check: dict) -> int | None:
+	for index, request in enumerate(requests):
+		if request.action_type != check["action_type"]:
+			continue
+		if check.get("item_code") and request.item_code != check["item_code"]:
+			continue
+		return index
+
+	return None
+
+
+def _has_additional_discount(doc) -> bool:
+	return abs(flt(doc.discount_amount or 0)) > 0 or abs(flt(doc.additional_discount_percentage or 0)) > 0
+
+
+def _has_item_discount(item_dict: dict) -> bool:
+	return abs(flt(item_dict.get("discount_amount") or 0)) > 0 or abs(flt(item_dict.get("discount_percentage") or 0)) > 0
+
+
+def _has_rate_edit(item_dict: dict) -> bool:
+	if _has_item_discount(item_dict):
+		return False
+
+	price_list_rate = flt(item_dict.get("price_list_rate") or 0)
+	rate = flt(item_dict.get("rate") or 0)
+	return abs(rate - price_list_rate) > 1e-9
 
 
 def validate_shift(doc):
