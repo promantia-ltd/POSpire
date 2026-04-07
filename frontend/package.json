@@ -19,6 +19,7 @@
     "mitt": "3.0.1",
     "onscan.js": "^1.5.2",
     "pinia": "^2.0.33",
+    "scrypt-js": "^3.0.1",
     "vue": "^3.4.0",
     "vue-router": "^4.2.0",
     "vue3-toastify": "0.2.0",

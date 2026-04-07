@@ -137,9 +137,11 @@ doc_events = {
 # }
 
 scheduler_events = {
-	"*/5 * * * *": [
-		"pospire.pospire.api.approval.expire_stale_requests",
-	],
+	"cron": {
+		"*/5 * * * *": [
+			"pospire.pospire.api.approval.expire_stale_requests",
+		],
+	},
 }
 
 # Testing

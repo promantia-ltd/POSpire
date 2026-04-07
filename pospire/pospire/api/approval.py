@@ -158,12 +158,13 @@ def create_approval_request(
 	offline_id: str | None = None,
 	device_id: str | None = None,
 	selected_manager: str | None = None,
+	broadcast: bool = True,
 ) -> dict:
-	"""Create a POS Approval Request and broadcast to eligible managers.
+	"""Create a POS Approval Request and optionally broadcast to eligible managers.
 
-	selected_manager: the specific manager the cashier nominated from the
-	    dropdown. When set, remote broadcast targets only that manager.
-	    When None, broadcasts to all eligible managers for the approver role.
+	broadcast: set False when both PIN and remote modes are available and the
+	    cashier hasn't chosen remote yet — prevents premature desk notifications.
+	    The frontend calls notify_remote_manager explicitly once remote is chosen.
 
 	Idempotent when offline_id is provided: returns the existing record
 	if a request with the same offline_id already exists.
@@ -201,7 +202,7 @@ def create_approval_request(
 	)
 	doc.insert(ignore_permissions=True)
 
-	if action_config and action_config.get("remote_approval"):
+	if broadcast and action_config and action_config.get("remote_approval"):
 		_broadcast_request_to_managers(doc, action_config, selected_manager)
 
 	return doc.as_dict()
@@ -224,7 +225,13 @@ def _broadcast_request_to_managers(
 	if selected_manager:
 		recipients = [selected_manager]
 	else:
-		recipients = _get_eligible_managers(doc.pos_profile, approver_role)
+		# For remote approval notifications, include all users with the approver role
+		# (PIN is only required for PIN-based approval, not remote desk approval).
+		recipients = frappe.get_all(
+			"Has Role",
+			filters={"role": approver_role, "parenttype": "User"},
+			pluck="parent",
+		)
 
 	if not recipients:
 		return
@@ -263,6 +270,7 @@ def verify_pin_and_approve(
 	request_name: str,
 	pin: str,
 	manager_user: str,
+	resolution_note: str | None = None,
 ) -> dict:
 	"""Verify the manager's PIN and approve the request in one step.
 
@@ -280,16 +288,19 @@ def verify_pin_and_approve(
 
 	_validate_approver_role(doc.pos_profile, doc.action_type, manager_user)
 
-	pin_doc = frappe.db.get_value(
+	pin_doc_name = frappe.db.get_value(
 		"POS Manager PIN",
 		{"user": manager_user, "is_active": 1},
-		["pin_hash"],
-		as_dict=True,
+		"name",
 	)
-	if not pin_doc:
+	if not pin_doc_name:
 		frappe.throw(_("No active PIN found for {0}.").format(manager_user))
 
-	if not check_password_hash(pin_doc.pin_hash, pin):
+	# Password fieldtype is Frappe-encrypted at rest — must use get_password() to decrypt
+	pin_doc = frappe.get_doc("POS Manager PIN", pin_doc_name)
+	stored_hash = pin_doc.get_password("pin_hash")
+
+	if not check_password_hash(stored_hash, pin):
 		_increment_attempts(request_name, manager_user)
 		attempts = _get_attempt_count(request_name, manager_user)
 		remaining = _MAX_PIN_ATTEMPTS - attempts
@@ -298,7 +309,7 @@ def verify_pin_and_approve(
 		frappe.throw(_("Invalid PIN. {0} attempt(s) remaining.").format(remaining))
 
 	_clear_attempts(request_name, manager_user)
-	_resolve_request(doc, "Approved", manager_user, "PIN")
+	_resolve_request(doc, "Approved", manager_user, "PIN", resolution_note)
 
 	return {"status": "Approved", "request_name": request_name}
 
@@ -350,6 +361,105 @@ def resolve_approval_request(
 
 
 # ---------------------------------------------------------------------------
+# Cashier cancellation
+# ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def cancel_approval_request(request_name: str) -> dict:
+	"""Allow the requesting cashier to cancel their own pending approval request."""
+	doc = frappe.get_doc("POS Approval Request", request_name)
+
+	if doc.requested_by != frappe.session.user:
+		frappe.throw(_("You can only cancel your own approval requests."))
+
+	if doc.status != "Pending":
+		frappe.throw(_("Approval request {0} is no longer pending.").format(request_name))
+
+	# Use db.set_value to bypass validate (which blocks self-resolution).
+	# Cashier withdrawing their own request is intentionally exempt from that check.
+	frappe.db.set_value(
+		"POS Approval Request",
+		request_name,
+		{
+			"status": "Cancelled",
+			"resolved_by": frappe.session.user,
+			"resolved_at": now_datetime(),
+			"resolution_method": "Remote",
+			"resolution_note": _("Cancelled by cashier"),
+		},
+	)
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- set_value outside request lifecycle requires explicit commit
+	return {"status": "Cancelled", "request_name": request_name}
+
+
+@frappe.whitelist()
+def notify_remote_manager(request_name: str, selected_manager: str | None = None) -> dict:
+	"""Broadcast a pending request to a specific manager or all eligible managers.
+
+	Called when the cashier explicitly chooses remote approval mode.
+	selected_manager=None broadcasts to all managers with the approver role.
+	"""
+	doc = frappe.get_doc("POS Approval Request", request_name)
+
+	if doc.requested_by != frappe.session.user:
+		frappe.throw(_("You can only notify managers for your own requests."))
+
+	if doc.status != "Pending":
+		frappe.throw(_("Approval request {0} is no longer pending.").format(request_name))
+
+	action_config = _get_action_config(doc.pos_profile, doc.action_type) or {}
+	cashier_name = frappe.db.get_value("User", doc.requested_by, "full_name") or doc.requested_by
+
+	message = {
+		"request_name": doc.name,
+		"action_type": doc.action_type,
+		"item_code": doc.item_code,
+		"item_name": doc.item_name,
+		"original_value": doc.original_value,
+		"requested_value": doc.requested_value,
+		"value_field_label": doc.value_field_label,
+		"requested_by": doc.requested_by,
+		"requested_by_full_name": cashier_name,
+		"pos_profile": doc.pos_profile,
+		"expires_at": str(doc.expires_at),
+	}
+
+	if selected_manager:
+		frappe.publish_realtime(event="pos_approval_request", message=message, user=selected_manager)
+	else:
+		approver_role = action_config.get("approver_role")
+		recipients = (
+			frappe.get_all("Has Role", filters={"role": approver_role, "parenttype": "User"}, pluck="parent")
+			if approver_role
+			else []
+		)
+		for user in recipients:
+			frappe.publish_realtime(event="pos_approval_request", message=message, user=user)
+
+	return {"status": "notified"}
+
+
+@frappe.whitelist()
+def get_approval_request_status(request_name: str) -> dict:
+	"""Poll endpoint — returns current status for reconnect/catch-up."""
+	doc = frappe.get_doc("POS Approval Request", request_name)
+
+	if doc.requested_by != frappe.session.user:
+		frappe.throw(_("Access denied."))
+
+	resolver_name = None
+	if doc.resolved_by:
+		resolver_name = frappe.db.get_value("User", doc.resolved_by, "full_name") or doc.resolved_by
+
+	return {
+		"status": doc.status,
+		"resolved_by_full_name": resolver_name,
+		"resolution_note": doc.resolution_note,
+	}
+
+
+# ---------------------------------------------------------------------------
 # Queries
 # ---------------------------------------------------------------------------
 
@@ -393,31 +503,6 @@ def get_managers_for_approval(pos_profile: str, action_type: str) -> list:
 		return []
 
 	return _get_eligible_managers_with_names(pos_profile, approver_role)
-
-
-@frappe.whitelist()
-def get_approval_request_status(request_name: str) -> dict:
-	"""Lightweight polling endpoint — used on WebSocket reconnect catch-up."""
-	doc = frappe.db.get_value(
-		"POS Approval Request",
-		request_name,
-		["status", "resolved_by", "resolution_note"],
-		as_dict=True,
-	)
-	if not doc:
-		frappe.throw(_("Approval request {0} not found.").format(request_name))
-
-	resolved_by_name = None
-	if doc.resolved_by:
-		resolved_by_name = frappe.db.get_value("User", doc.resolved_by, "full_name")
-
-	return {
-		"request_name": request_name,
-		"status": doc.status,
-		"resolved_by": doc.resolved_by,
-		"resolved_by_full_name": resolved_by_name,
-		"resolution_note": doc.resolution_note,
-	}
 
 
 # ---------------------------------------------------------------------------
@@ -566,20 +651,22 @@ def _get_managers_with_pins(pos_profile: str) -> list[dict]:
 	if not unique_managers:
 		return []
 
-	pin_records = frappe.get_all(
+	pin_record_names = frappe.get_all(
 		"POS Manager PIN",
 		filters={"user": ["in", unique_managers], "is_active": 1},
-		fields=["user", "pin_hash"],
+		fields=["name", "user"],
 	)
 
 	result = []
-	for record in pin_records:
+	for record in pin_record_names:
 		full_name = frappe.db.get_value("User", record.user, "full_name") or record.user
+		# Password fieldtype is Frappe-encrypted — must use get_password() to get real hash
+		pin_doc = frappe.get_doc("POS Manager PIN", record.name)
 		result.append(
 			{
 				"user": record.user,
 				"full_name": full_name,
-				"pin_hash": record.pin_hash,
+				"pin_hash": pin_doc.get_password("pin_hash"),
 				"pin_hash_expires_at": str(add_to_date(now_datetime(), hours=24)),
 			}
 		)
