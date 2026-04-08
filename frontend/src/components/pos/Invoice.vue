@@ -1803,7 +1803,7 @@ export default {
 				}
 			});
 			doc.items = newItems;
-			doc.update_stock = 1;
+			doc.update_stock = this.pos_profile.update_stock ? 1 : 0;
 			doc.is_pos = 1;
 			doc.payments = this.get_payments();
 			return doc;
@@ -1958,6 +1958,7 @@ export default {
 					this.eventBus.emit("send_invoice_doc_payment", {
 						invoice_doc,
 						inclusive_tax: this.inclusive_tax,
+						is_return: invoice_doc.is_return,
 					});
 				} else if (this.invoice_doc.doctype == "Sales Invoice") {
 					const sales_invoice_item = this.invoice_doc.items[0];
@@ -1975,6 +1976,7 @@ export default {
 						this.eventBus.emit("send_invoice_doc_payment", {
 							invoice_doc,
 							inclusive_tax: this.inclusive_tax,
+							is_return: invoice_doc.is_return,
 						});
 					} else {
 						this.eventBus.emit("show_payment", "true");
@@ -1982,6 +1984,7 @@ export default {
 						this.eventBus.emit("send_invoice_doc_payment", {
 							invoice_doc,
 							inclusive_tax: this.inclusive_tax,
+							is_return: invoice_doc.is_return,
 						});
 					}
 				} else {
@@ -1990,6 +1993,7 @@ export default {
 					this.eventBus.emit("send_invoice_doc_payment", {
 						invoice_doc,
 						inclusive_tax: this.inclusive_tax,
+						is_return: invoice_doc.is_return,
 					});
 				}
 			} finally {

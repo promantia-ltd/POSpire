@@ -740,11 +740,12 @@ def update_invoice(data: str | dict):
 
 	if invoice_doc.is_return and invoice_doc.return_against:
 		ref_doc = frappe.get_cached_doc(invoice_doc.doctype, invoice_doc.return_against)
-		if not ref_doc.update_stock:
-			invoice_doc.update_stock = 0
+		invoice_doc.update_stock = ref_doc.update_stock
 		if len(invoice_doc.payments) == 0:
 			invoice_doc.payments = ref_doc.payments
-		invoice_doc.paid_amount = invoice_doc.rounded_total or invoice_doc.grand_total or invoice_doc.total
+		invoice_doc.paid_amount = (
+			invoice_doc.rounded_total or invoice_doc.grand_total or invoice_doc.total
+		)
 		for payment in invoice_doc.payments:
 			if payment.default:
 				payment.amount = invoice_doc.paid_amount

@@ -192,7 +192,7 @@ export default {
 		mobile_no: "",
 		email_id: "",
 		referral_code: "",
-		birthday: new Date(),
+		birthday: null,
 		birthday_menu: false,
 		group: "",
 		groups: [],
@@ -218,6 +218,10 @@ export default {
 		},
 	},
 	methods: {
+		resetBirthday() {
+			this.birthday = null;
+			this.birthday_menu = false;
+		},
 		close_dialog() {
 			this.customerDialog = false;
 			this.clear_customer();
@@ -332,11 +336,10 @@ export default {
 					method: "pospire.pospire.api.posapp.create_customer",
 					args: args,
 					callback: (r) => {
-						if (!r.exc && r.message.name) {
-							let text = __("Customer Created Successfully.");
-							if (vm.customer_id) {
-								text = __("Customer Updated Successfully.");
-							}
+						if (!r.exc && r.message && r.message.name) {
+							const text = vm.customer_id
+								? __("Customer Updated Successfully.")
+								: __("Customer Created Successfully.");
 							toast.success(text);
 							args.name = r.message.name;
 							frappe.utils.play_sound("submit");
@@ -349,8 +352,14 @@ export default {
 							toast.error(__("Customer creation failed."));
 						}
 					},
+					error: (r) => {
+						frappe.utils.play_sound("error");
+						const serverMsg =
+							r?.responseJSON?._server_messages &&
+							JSON.parse(JSON.parse(r.responseJSON._server_messages)[0])?.message;
+						toast.error(serverMsg || __("Customer creation failed."));
+					},
 				});
-				this.customerDialog = false;
 			}
 		},
 	},

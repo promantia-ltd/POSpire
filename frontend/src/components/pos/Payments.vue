@@ -912,7 +912,6 @@ export default {
 			vm.eventBus.emit("clear_invoice");
 			vm.back_to_invoice();
 			return;
-			console.log(this.is_sucessful_invoice);
 		},
 		async handlePrint(invoice_name) {
 			try {
@@ -1313,12 +1312,7 @@ export default {
 				}
 				if (payload.is_return) {
 					this.is_return = true;
-					// Initialize is_cashback based on POS Profile setting for returns
-					if (this.pos_profile && this.pos_profile.use_cashback == 0) {
-						this.is_cashback = false;
-					} else if (this.pos_profile && this.pos_profile.use_cashback == 1) {
-						this.is_cashback = true;
-					}
+					this.is_cashback = false;
 					this.invoice_doc.payments.forEach((payment) => {
 						payment.amount = 0;
 						payment.base_amount = 0;

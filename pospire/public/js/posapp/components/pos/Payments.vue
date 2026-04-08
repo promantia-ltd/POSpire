@@ -915,7 +915,6 @@ export default {
 					return;
 				},
 			});
-			console.log(this.is_sucessful_invoice);
 		},
 		async handlePrint(invoice_name) {
 			try {
@@ -1342,16 +1341,13 @@ export default {
 				}
 				if (invoice_doc.is_return) {
 					this.is_return = true;
-					// Initialize is_cashback based on POS Profile setting for returns
-					if (this.pos_profile && this.pos_profile.use_cashback == 0) {
-						this.is_cashback = false;
-					} else if (this.pos_profile && this.pos_profile.use_cashback == 1) {
-						this.is_cashback = true;
-					}
+					this.is_cashback = false;
 					invoice_doc.payments.forEach((payment) => {
 						payment.amount = 0;
 						payment.base_amount = 0;
 					});
+				} else {
+					this.is_return = false;
 				}
 				this.loyalty_amount = 0;
 				this.get_addresses();

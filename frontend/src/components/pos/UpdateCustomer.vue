@@ -195,7 +195,7 @@ export default {
 		mobile_no: "",
 		email_id: "",
 		referral_code: "",
-		birthday: new Date(),
+		birthday: null,
 		birthday_menu: false,
 		group: "",
 		groups: [],
@@ -207,6 +207,9 @@ export default {
 		loyalty_points: null,
 		loyalty_program: null,
 	}),
+	setup() {
+		return { datetime };
+	},
 	watch: {},
 	computed: {
 		birthday_string: {
@@ -221,6 +224,10 @@ export default {
 		},
 	},
 	methods: {
+		resetBirthday() {
+			this.birthday = null;
+			this.birthday_menu = false;
+		},
 		close_dialog() {
 			this.customerDialog = false;
 			this.clear_customer();
@@ -293,7 +300,6 @@ export default {
 			}
 		},
 		async submit_dialog() {
-			// validate if all required fields are filled
 			if (!this.customer_name) {
 				toast.error(__("Customer name is required."));
 				return;
@@ -306,45 +312,52 @@ export default {
 				toast.error(__("Customer territory is required."));
 				return;
 			}
-			if (this.customer_name) {
-				var vm = this;
-				const args = {
-					customer_id: this.customer_id,
-					customer_name: this.customer_name,
-					company: this.pos_profile.company,
-					tax_id: this.tax_id,
-					mobile_no: this.mobile_no,
-					email_id: this.email_id,
-					referral_code: this.referral_code,
-					birthday: this.birthday
-						? datetime.obj_to_str(this.birthday, "yyyy-mm-dd")
-						: null,
-					customer_group: this.group,
-					territory: this.territory,
-					customer_type: this.customer_type,
-					gender: this.gender,
-					method: this.customer_id ? "update" : "create",
-					pos_profile_doc: this.pos_profile,
-				};
+			const args = {
+				customer_id: this.customer_id,
+				customer_name: this.customer_name,
+				company: this.pos_profile.company,
+				tax_id: this.tax_id,
+				mobile_no: this.mobile_no,
+				email_id: this.email_id,
+				referral_code: this.referral_code,
+				birthday: this.birthday
+					? datetime.obj_to_str(this.birthday, "yyyy-mm-dd")
+					: null,
+				customer_group: this.group,
+				territory: this.territory,
+				customer_type: this.customer_type,
+				gender: this.gender,
+				method: this.customer_id ? "update" : "create",
+				pos_profile_doc: this.pos_profile,
+			};
+			try {
 				const r = await call("pospire.pospire.api.posapp.create_customer", args);
 				if (r && r.name) {
-					let text = __("Customer Created Successfully.");
-					if (vm.customer_id) {
-						text = __("Customer Updated Successfully.");
-					}
+					const text = this.customer_id
+						? __("Customer Updated Successfully.")
+						: __("Customer Created Successfully.");
 					toast.success(text);
 					args.name = r.name;
 					playSound("submit");
-					vm.eventBus.emit("add_customer_to_list", args);
-					vm.eventBus.emit("set_customer", r.name);
-					vm.eventBus.emit("fetch_customer_details");
-					vm.close_dialog();
+					this.eventBus.emit("add_customer_to_list", args);
+					this.eventBus.emit("set_customer", r.name);
+					this.eventBus.emit("fetch_customer_details");
+					this.close_dialog();
 				} else {
 					playSound("error");
 					toast.error(__("Customer creation failed."));
 				}
-				this.customerDialog = false;
+			} catch (error) {
+				playSound("error");
+				const serverMessage = this.extractServerMessage(error);
+				toast.error(serverMessage || __("Customer creation failed."));
 			}
+		},
+		extractServerMessage(error) {
+			if (error?.messages?.length) {
+				return error.messages[error.messages.length - 1];
+			}
+			return null;
 		},
 	},
 	created: function () {
