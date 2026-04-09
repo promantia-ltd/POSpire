@@ -36,6 +36,7 @@
 			v-model="approval_dialog.show"
 			:action-type="approval_dialog.action_type"
 			:action-config="approval_dialog.action_config"
+			:remote-approval-enabled="!!(approval_config && approval_config.remote_approval_enabled)"
 			:managers="approval_config && approval_config.managers ? approval_config.managers : []"
 			:pos-profile="pos_profile && pos_profile.name ? pos_profile.name : ''"
 			:pos-opening-shift="pos_opening_shift && pos_opening_shift.name ? pos_opening_shift.name : ''"
@@ -1146,12 +1147,15 @@ export default {
 				action_config: null,
 				item_code: null,
 				item_name: null,
+				posa_row_id: null,
 				original_value: null,
 				requested_value: null,
 				value_field_label: null,
 			},
 			approval_resolve: null,
-			approved_request_names: [],
+			// Each entry: { request_name, action_type, posa_row_id }
+			// posa_row_id is null for invoice-level actions (Void, Return, Additional Discount).
+			approved_requests_context: [],
 			approval_rejection_key: 0,
 			prev_additional_discount_pct: 0,
 			items_headers: [
@@ -1418,6 +1422,13 @@ export default {
 				}
 			}
 
+			// Evict any prior approval for the same row + action (e.g. cashier edits
+			// rate twice on the same row — only the latest approval should be kept).
+			const posa_row_id = item?.posa_row_id || null;
+			if (posa_row_id) {
+				await this.evict_row_approvals(posa_row_id, action_type);
+			}
+
 			return new Promise((resolve) => {
 				this.approval_dialog = {
 					show: true,
@@ -1425,6 +1436,7 @@ export default {
 					action_config: action,
 					item_code: item?.item_code || null,
 					item_name: item?.item_name || null,
+					posa_row_id,
 					original_value: originalValue,
 					requested_value: requestedValue,
 					value_field_label: valueFieldLabel,
@@ -1435,7 +1447,13 @@ export default {
 
 		on_approval_approved(request_name) {
 			this.approval_dialog.show = false;
-			if (request_name) this.approved_request_names.push(request_name);
+			if (request_name) {
+				this.approved_requests_context.push({
+					request_name,
+					action_type: this.approval_dialog.action_type,
+					posa_row_id: this.approval_dialog.posa_row_id || null,
+				});
+			}
 			if (this.approval_resolve) {
 				this.approval_resolve(true);
 				this.approval_resolve = null;
@@ -1558,7 +1576,32 @@ export default {
 				valueFieldLabel: __("Qty"),
 			});
 			if (!approved) return;
+			// Cancel any row-level approvals tied to this row — the row is gone,
+			// so those approvals are now stale and must not carry forward.
+			await this.evict_row_approvals(item.posa_row_id);
 			this.remove_item(item);
+		},
+
+		// Cancel all approved_requests_context entries for a given row (and
+		// optionally a specific action_type). Approved requests are only
+		// cancelled if still Pending; already-Approved ones are simply removed
+		// from context so they are not submitted with the invoice.
+		async evict_row_approvals(posa_row_id, action_type = null) {
+			if (!posa_row_id) return;
+			const stale = this.approved_requests_context.filter(
+				(r) => r.posa_row_id === posa_row_id && (!action_type || r.action_type === action_type)
+			);
+			if (!stale.length) return;
+
+			this.approved_requests_context = this.approved_requests_context.filter(
+				(r) => !stale.includes(r)
+			);
+
+			const pending_names = stale.map((r) => r.request_name);
+			// Fire-and-forget — don't block the UI for this cleanup
+			call("pospire.pospire.api.approval.bulk_cancel_approval_requests", {
+				request_names: JSON.stringify(pending_names),
+			}).catch(() => {});
 		},
 
 		// ─────────────────────────────────────────────────────────────────────────
@@ -1742,7 +1785,19 @@ export default {
 			return new_item;
 		},
 
-		clear_invoice() {
+		clear_invoice({ submitted = false } = {}) {
+			if (!submitted) {
+				// Cancel any requests that are still Pending (not yet resolved by a
+				// manager). Approved requests are left on the server — if this cart
+				// was saved as a draft and reloaded, those approvals remain valid.
+				const pending_names = this.approved_requests_context.map((r) => r.request_name);
+				if (pending_names.length) {
+					call("pospire.pospire.api.approval.bulk_cancel_approval_requests", {
+						request_names: JSON.stringify(pending_names),
+					}).catch(() => {});
+				}
+			}
+			this.approved_requests_context = [];
 			this.items = [];
 			this.deleted_items = [];
 			this.posa_offers = [];
@@ -1757,7 +1812,6 @@ export default {
 			this.additional_discount_percentage = 0;
 			this.delivery_charges_rate = 0;
 			this.selected_delivery_charge = "";
-			this.approved_request_names = [];
 			this.eventBus.emit("set_customer_readonly", false);
 			this.invoiceType = this.pos_profile.posa_default_sales_order ? "Order" : "Invoice";
 			this.invoiceTypes = ["Invoice", "Order"];
@@ -1785,6 +1839,8 @@ export default {
 		},
 
 		async load_invoice(data = {}) {
+			// clear_invoice cancels any Pending approvals from the previous cart.
+			// We pass submitted=false so orphaned Pending requests are cancelled.
 			this.clear_invoice();
 			if (data.is_return) {
 				this.eventBus.emit("set_customer_readonly", true);
@@ -1826,6 +1882,11 @@ export default {
 			} else {
 				this.eventBus.emit("set_pos_coupons", data.posa_coupons);
 			}
+
+			// Restore approval context persisted when the draft was saved.
+			// This allows already-Approved requests to carry forward to final submit.
+			const saved_data = frappe.parse_json(data.posa_submit_data || "{}");
+			this.approved_requests_context = saved_data.approved_requests_context || [];
 		},
 		async save_and_clear_invoice() {
 			if (this.savingDraft) {
@@ -1861,6 +1922,14 @@ export default {
 
 		async new_order(data = {}) {
 			let old_invoice = null;
+			// Cancel any Pending approvals from the outgoing cart before switching context.
+			if (this.approved_requests_context.length) {
+				const pending_names = this.approved_requests_context.map((r) => r.request_name);
+				call("pospire.pospire.api.approval.bulk_cancel_approval_requests", {
+					request_names: JSON.stringify(pending_names),
+				}).catch(() => {});
+				this.approved_requests_context = [];
+			}
 			this.eventBus.emit("set_customer_readonly", false);
 			this.expanded = [];
 			this.posa_offers = [];
@@ -1950,6 +2019,14 @@ export default {
 			doc.sales_team = this.invoice_doc?.sales_team || [];
 			//
 			doc.custom_deleted_pos_items = this.deleted_items;
+			// Persist approval context so it survives a Save & Close / draft reload.
+			// On final submit this is overwritten with the definitive list (see submit path).
+			if (this.approved_requests_context.length) {
+				doc.posa_submit_data = JSON.stringify({
+					approved_requests: this.approved_requests_context.map((r) => r.request_name),
+					approved_requests_context: this.approved_requests_context,
+				});
+			}
 			return doc;
 		},
 
@@ -2181,10 +2258,12 @@ export default {
 					return;
 				}
 
-				// Attach collected approval request names for server-side validation
-				if (this.approved_request_names.length) {
+				// Attach collected approval request names for server-side validation.
+				// Overwrite any draft-persisted posa_submit_data with the definitive list.
+				if (this.approved_requests_context.length) {
 					invoice_doc.posa_submit_data = JSON.stringify({
-						approved_requests: this.approved_request_names,
+						approved_requests: this.approved_requests_context.map((r) => r.request_name),
+						approved_requests_context: this.approved_requests_context,
 					});
 				}
 
@@ -3666,8 +3745,8 @@ export default {
 		this.eventBus.on("fetch_customer_details", () => {
 			this.fetch_customer_details();
 		});
-		this.eventBus.on("clear_invoice", () => {
-			this.clear_invoice();
+		this.eventBus.on("clear_invoice", ({ submitted = false } = {}) => {
+			this.clear_invoice({ submitted });
 		});
 		this.eventBus.on("load_invoice", (data) => {
 			this.load_invoice(data);

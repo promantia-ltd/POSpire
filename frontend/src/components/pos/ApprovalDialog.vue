@@ -65,7 +65,7 @@
 				<v-card-text class="pospire-modal-body">
 					<div class="text-body-2 mb-4">{{ __("How would you like to get approval?") }}</div>
 					<v-row>
-						<v-col cols="6">
+						<v-col :cols="remoteApprovalEnabled && actionConfig && actionConfig.remote_approval ? 6 : 12">
 							<v-btn block variant="tonal" color="primary" height="60" @click="step = 'pin'">
 								<div class="d-flex flex-column align-center">
 									<v-icon size="22">mdi-key-variant</v-icon>
@@ -73,7 +73,7 @@
 								</div>
 							</v-btn>
 						</v-col>
-						<v-col cols="6">
+						<v-col v-if="remoteApprovalEnabled && actionConfig && actionConfig.remote_approval" cols="6">
 							<v-btn block variant="tonal" color="secondary" height="60" @click="pick_remote_manager">
 								<div class="d-flex flex-column align-center">
 									<v-icon size="22">mdi-remote</v-icon>
@@ -240,6 +240,7 @@ export default {
 		modelValue: { type: Boolean, default: false },
 		actionType: { type: String, required: true },
 		actionConfig: { type: Object, default: () => ({}) },
+		remoteApprovalEnabled: { type: Boolean, default: false },
 		managers: { type: Array, default: () => [] },
 		posProfile: { type: String, default: "" },
 		posOpeningShift: { type: String, default: "" },
@@ -309,7 +310,7 @@ export default {
 
 			try {
 				const { pin_approval, remote_approval } = this.actionConfig || {};
-				const both_modes = !!(pin_approval && remote_approval);
+				const both_modes = !!(pin_approval && remote_approval && this.remoteApprovalEnabled);
 
 				const r = await call("pospire.pospire.api.approval.create_approval_request", {
 					pos_profile: this.posProfile,
@@ -336,7 +337,8 @@ export default {
 
 		_set_initial_step() {
 			const { pin_approval, remote_approval } = this.actionConfig || {};
-			if (pin_approval && remote_approval) {
+			const remote_available = !!(remote_approval && this.remoteApprovalEnabled);
+			if (pin_approval && remote_available) {
 				this.step = "choose";
 			} else if (pin_approval) {
 				this.step = "pin";
