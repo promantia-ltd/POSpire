@@ -28,9 +28,16 @@ def get_approval_config(pos_profile: str) -> dict:
 	Includes pin_hash and condition_js so the frontend can seed
 	IndexedDB for offline use.
 	"""
-	enabled = frappe.db.get_value("POS Profile", pos_profile, "posa_enable_approval_workflow")
-	if not enabled:
-		return {"enabled": False, "actions": [], "managers": []}
+	profile_values = frappe.db.get_value(
+		"POS Profile",
+		pos_profile,
+		["posa_enable_approval_workflow", "posa_enable_remote_approval"],
+		as_dict=True,
+	)
+	if not profile_values or not profile_values.posa_enable_approval_workflow:
+		return {"enabled": False, "remote_approval_enabled": False, "actions": [], "managers": []}
+
+	remote_approval_enabled = bool(profile_values.posa_enable_remote_approval)
 
 	actions = frappe.get_all(
 		"POS Approval Action",
@@ -50,7 +57,12 @@ def get_approval_config(pos_profile: str) -> dict:
 
 	managers = _get_managers_with_pins(pos_profile)
 
-	return {"enabled": True, "actions": actions, "managers": managers}
+	return {
+		"enabled": True,
+		"remote_approval_enabled": remote_approval_enabled,
+		"actions": actions,
+		"managers": managers,
+	}
 
 
 # ---------------------------------------------------------------------------
@@ -527,6 +539,90 @@ def regenerate_pin(user: str) -> dict:
 	pin_doc.save(ignore_permissions=True)
 
 	return {"success": True}
+
+
+# ---------------------------------------------------------------------------
+# Bulk operations (frontend lifecycle management)
+# ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def bulk_cancel_approval_requests(request_names: str) -> dict:
+	"""Cancel multiple approval requests in one call.
+
+	Called by the frontend when a cart is cleared without submitting (void,
+	draft discard, row removal, sales-order context switch). Only cancels
+	requests that are still Pending — Approved records are left intact so
+	they can be re-used if the cashier reloads the same draft.
+	"""
+	names: list[str] = frappe.parse_json(request_names or "[]")
+	cancelled = []
+	skipped = []
+	for name in names:
+		if not name:
+			continue
+		try:
+			doc = frappe.get_doc("POS Approval Request", name)
+			if doc.requested_by != frappe.session.user:
+				skipped.append(name)
+				continue
+			if doc.status != "Pending":
+				skipped.append(name)
+				continue
+			frappe.db.set_value(
+				"POS Approval Request",
+				name,
+				{
+					"status": "Cancelled",
+					"resolved_by": frappe.session.user,
+					"resolved_at": now_datetime(),
+					"resolution_method": "Remote",
+					"resolution_note": _("Cancelled by cashier"),
+				},
+			)
+			cancelled.append(name)
+		except frappe.DoesNotExistError:
+			skipped.append(name)
+
+	if cancelled:
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- bulk set_value outside request lifecycle requires explicit commit
+
+	return {"cancelled": cancelled, "skipped": skipped}
+
+
+@frappe.whitelist()
+def link_requests_to_invoice(request_names: str, invoice: str) -> dict:
+	"""Backfill the invoice field on approval requests after a sale is submitted.
+
+	Called by the frontend immediately after Payments.vue receives the submit
+	confirmation and before clear_invoice() is triggered.
+	"""
+	names: list[str] = frappe.parse_json(request_names or "[]")
+	if not names:
+		return {"linked": []}
+
+	if not frappe.db.exists("Sales Invoice", invoice):
+		frappe.throw(_("Invoice {0} does not exist.").format(invoice))
+
+	linked = []
+	for name in names:
+		if not name:
+			continue
+		try:
+			doc = frappe.get_doc("POS Approval Request", name)
+			if doc.requested_by != frappe.session.user:
+				continue
+			if doc.status != "Approved":
+				continue
+			frappe.db.set_value("POS Approval Request", name, "invoice", invoice)
+			linked.append(name)
+		except frappe.DoesNotExistError:
+			continue
+
+	if linked:
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- set_value outside request lifecycle requires explicit commit
+
+	return {"linked": linked}
 
 
 # ---------------------------------------------------------------------------

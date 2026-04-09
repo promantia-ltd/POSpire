@@ -282,6 +282,7 @@ fixtures = [
 					"POS Profile-posa_hardware_manager",
 					"POS Profile-posa_approval_workflow_tab",
 					"POS Profile-posa_enable_approval_workflow",
+					"POS Profile-posa_enable_remote_approval",
 					"POS Profile-posa_approval_actions",
 					"Sales Invoice-posa_submit_data",
 					"POS Profile-custom_enable_cash_denominations",

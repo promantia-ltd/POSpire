@@ -1,6 +1,27 @@
 // Copyright (c) 20201 Youssef Restom and contributors
 // For license information, please see license.txt
 
+frappe.ui.form.on("POS Approval Action", {
+	remote_approval: function (frm, cdt, cdn) {
+		const row = locals[cdt][cdn];
+		if (
+			row.remote_approval &&
+			row.approval_mode === "Required" &&
+			!frm.doc.posa_enable_remote_approval
+		) {
+			frappe.show_alert(
+				{
+					message: __(
+						"Remote Approval is enabled on this action but <strong>Enable Remote Approval</strong> is turned off at the profile level. Turn it on above to activate remote approval in the POS."
+					),
+					indicator: "orange",
+				},
+				8
+			);
+		}
+	},
+});
+
 frappe.ui.form.on("POS Profile", {
 	setup: function (frm) {
 		frm.set_query("posa_cash_mode_of_payment", function (doc) {

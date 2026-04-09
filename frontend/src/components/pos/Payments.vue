@@ -891,7 +891,19 @@ export default {
 			//s
 			playSound("submit");
 			vm.addresses = [];
-			vm.eventBus.emit("clear_invoice");
+
+			// Backfill invoice reference on all approval requests, then signal
+			// clear_invoice with submitted=true so Pending cancellation is skipped.
+			const saved_data = frappe.parse_json(vm.invoice_doc.posa_submit_data || "{}");
+			const approved_names = saved_data.approved_requests || [];
+			if (approved_names.length) {
+				call("pospire.pospire.api.approval.link_requests_to_invoice", {
+					request_names: JSON.stringify(approved_names),
+					invoice: r.name,
+				}).catch(() => {});
+			}
+
+			vm.eventBus.emit("clear_invoice", { submitted: true });
 			vm.back_to_invoice();
 			return;
 		},
