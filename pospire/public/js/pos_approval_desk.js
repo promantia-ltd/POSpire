@@ -4,15 +4,9 @@
 // Desk-side approval notification handler.
 // Shows actionable Approve/Reject dialog to managers when a cashier requests remote approval.
 
-(function register_pos_approval_listener() {
-	if (frappe.realtime && frappe.realtime.socket) {
-		frappe.realtime.socket.on("pos_approval_request", function (data) {
-			_show_approval_dialog(data);
-		});
-	} else {
-		setTimeout(register_pos_approval_listener, 500);
-	}
-})();
+frappe.realtime.on("pos_approval_request", function (data) {
+	_show_approval_dialog(data);
+});
 
 function _show_approval_dialog(data) {
 	var cashier = data.requested_by_full_name || data.requested_by || __("A cashier");
