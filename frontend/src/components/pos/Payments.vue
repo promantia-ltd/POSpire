@@ -567,34 +567,18 @@
 						</v-switch>
 					</v-col>
 					<v-col cols="6" v-if="is_credit_sale">
-						<v-menu
-							ref="date_menu"
-							v-model="date_menu"
-							:close-on-content-click="false"
-							transition="scale-transition"
-						>
-							<template v-slot:activator="{ props }">
-								<v-text-field
-									v-model="invoice_doc.due_date"
-									:label="__('Due Date')"
-									readonly
-									variant="outlined"
-									density="compact"
-									hide-details
-									v-bind="props"
-									color="primary"
-								></v-text-field>
-							</template>
-							<v-date-picker
-								v-model="credit_sales_due_date"
-								no-title
-								scrollable
-								color="primary"
-								:min="datetime.now_date()"
-								@input="date_menu = false"
-							>
-							</v-date-picker>
-						</v-menu>
+						<v-text-field
+							v-model="invoice_doc.due_date"
+							:label="__('Due Date')"
+							variant="outlined"
+							density="compact"
+							hide-details
+							color="primary"
+							type="date"
+							:min="today_date"
+							@blur="validate_due_date"
+							@update:model-value="normalize_due_date_input"
+						></v-text-field>
 					</v-col>
 					<v-col
 						cols="6"
@@ -671,7 +655,8 @@
 							block
 							class="btn-primary-action gradient-teal-animate hover-glow ripple-effect"
 							@click="submit"
-							:disabled="vaildatPayment"
+							:loading="submittingPayment"
+							:disabled="vaildatPayment || submittingPayment"
 						>
 							<v-icon start size="18">mdi-check-circle</v-icon>
 							{{ __("Submit") }}
@@ -683,7 +668,8 @@
 							block
 							class="btn-primary-action gradient-teal-animate hover-glow ripple-effect"
 							@click="submit(undefined, false, true)"
-							:disabled="vaildatPayment"
+							:loading="submittingPayment"
+							:disabled="vaildatPayment || submittingPayment"
 						>
 							<v-icon start size="18">mdi-printer</v-icon>
 							{{ __("Submit & Print") }}
@@ -746,13 +732,13 @@ export default {
 	mixins: [format, hardwareUtils],
 	data: () => ({
 		loading: false,
+		submittingPayment: false,
 		pos_profile: "",
 		invoice_doc: "",
 		loyalty_amount: 0,
-		credit_sales_due_date: new Date(datetime.now_date()),
+		today_date: datetime.now_date(),
 		is_credit_sale: 0,
 		is_write_off_change: 0,
-		date_menu: false,
 		po_date_menu: false,
 		addresses: [],
 		sales_persons: [],
@@ -777,6 +763,7 @@ export default {
 			this.eventBus.emit("set_customer_readonly", false);
 		},
 		submit(event, payment_received = false, print = false) {
+			if (this.submittingPayment) return;
 			if (!this.invoice_doc.is_return && this.total_payments < 0) {
 				toast.error(`Payments not correct`);
 				playSound("error");
@@ -861,7 +848,10 @@ export default {
 				return;
 			}
 
-			this.is_sucessful_invoice = this.submit_invoice(print);
+			this.submittingPayment = true;
+			this.submit_invoice(print).finally(() => {
+				this.submittingPayment = false;
+			});
 		},
 		async submit_invoice(print) {
 			let totalPayedAmount = 0;
@@ -980,6 +970,14 @@ export default {
 					this.invoice_doc.due_date = today;
 				}, 0);
 			}
+		},
+		normalize_due_date_input(value) {
+			if (!value) {
+				this.invoice_doc.due_date = this.today_date;
+				return;
+			}
+			this.invoice_doc.due_date = String(value).slice(0, 10);
+			this.validate_due_date();
 		},
 		shortPay(e) {
 			if (e.key === "x" && (e.ctrlKey || e.metaKey)) {
@@ -1410,9 +1408,6 @@ export default {
 					payment.base_amount = 0;
 				});
 			}
-		},
-		credit_sales_due_date(value) {
-			this.invoice_doc.due_date = datetime.get_datetime_as_string(value);
 		},
 		is_write_off_change(value) {
 			if (value == 1) {

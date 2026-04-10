@@ -23,7 +23,7 @@
 						<v-icon start size="18">mdi-arrow-left</v-icon>
 						{{ __("Go Back") }}
 					</v-btn>
-					<v-btn class="btn-danger" @click="cancel_invoice">
+					<v-btn class="btn-danger" :loading="cancellingInvoice" :disabled="cancellingInvoice" @click="cancel_invoice">
 						<v-icon start size="18">mdi-close-circle-outline</v-icon>
 						{{ __("Cancel Sale") }}
 					</v-btn>
@@ -246,7 +246,12 @@
 								:prefix="invoice_doc.is_return ? '-' : ''"
 								@change="
 									[
-										this.setReturnQty(item, $event.srcElement._value),
+										this.setReturnQty(
+											item,
+											typeof $event === 'object'
+												? $event.target.value
+												: $event
+										),
 										this.resetDiscountOnQtyChange(item),
 									]
 								"
@@ -300,9 +305,9 @@
 										'rate',
 										null,
 										false,
-										$event.srcElement._value
+										typeof $event === 'object' ? $event.target.value : $event
 									),
-									calc_prices(item, $event.srcElement._value),
+									calc_prices(item, typeof $event === 'object' ? $event.target.value : $event),
 								]
 							"
 							:rules="[isNumber]"
@@ -446,7 +451,12 @@
 										@change="
 											[
 												setFormatedFloat(item, 'qty', null, false, $event),
-												calc_stock_qty(item, $event.srcElement._value),
+												calc_stock_qty(
+													item,
+													typeof $event === 'object'
+														? $event.target.value
+														: $event
+												),
 												resetDiscountOnQtyChange(item),
 											]
 										"
@@ -1066,6 +1076,8 @@
 									block
 									class="pa-0 enhanced-action-btn"
 									@click="print_draft_invoice"
+									:loading="printingDraft"
+									:disabled="printingDraft"
 									theme="dark"
 									>{{ __("Print Draft") }}</v-btn
 								>
@@ -1143,6 +1155,8 @@ export default {
 			posting_date: datetime.now_date(),
 			savingDraft: false,
 			processingPayment: false,
+			cancellingInvoice: false,
+			printingDraft: false,
 			items_headers: [
 				{
 					title: __("Name"),
@@ -1569,19 +1583,24 @@ export default {
 		},
 
 		async cancel_invoice() {
-			const doc = this.get_invoice_doc();
-			this.invoiceType = this.pos_profile.posa_default_sales_order ? "Order" : "Invoice";
-			this.invoiceTypes = ["Invoice", "Order"];
-			this.posting_date = datetime.nowdate();
-			var vm = this;
-			if (doc.name && this.pos_profile.posa_allow_delete) {
-				const r = await call("pospire.pospire.api.posapp.delete_invoice", { invoice: doc.name });
-				if (r) {
-					toast.warn(r);
+			if (this.cancellingInvoice) return;
+			this.cancellingInvoice = true;
+			try {
+				const doc = this.get_invoice_doc();
+				this.invoiceType = this.pos_profile.posa_default_sales_order ? "Order" : "Invoice";
+				this.invoiceTypes = ["Invoice", "Order"];
+				this.posting_date = datetime.nowdate();
+				if (doc.name && this.pos_profile.posa_allow_delete) {
+					const r = await call("pospire.pospire.api.posapp.delete_invoice", { invoice: doc.name });
+					if (r) {
+						toast.warn(r);
+					}
 				}
+				this.clear_invoice();
+				this.cancel_dialog = false;
+			} finally {
+				this.cancellingInvoice = false;
 			}
-			this.clear_invoice();
-			this.cancel_dialog = false;
 		},
 
 		async load_invoice(data = {}) {
@@ -1716,7 +1735,7 @@ export default {
 
 		get_invoice_doc() {
 			let doc = {};
-			if (this.invoice_doc.name) {
+			if (this.invoice_doc?.name) {
 				doc = { ...this.invoice_doc };
 			}
 			doc.doctype = "Sales Invoice";
@@ -1726,6 +1745,7 @@ export default {
 			doc.pos_profile = doc.pos_profile || this.pos_profile.name;
 			doc.campaign = doc.campaign || this.pos_profile.campaign;
 			doc.currency = doc.currency || this.pos_profile.currency;
+			doc.update_stock = this.pos_profile.update_stock ? 1 : 0;
 			doc.naming_series = doc.naming_series || this.pos_profile.naming_series;
 			doc.customer = this.customer;
 			doc.items = this.get_invoice_items();
@@ -1953,48 +1973,49 @@ export default {
 				let invoice_doc = null;
 
 				if (this.invoice_doc.doctype == "Sales Order") {
-					this.eventBus.emit("show_payment", "true");
 					invoice_doc = await this.process_invoice_from_order();
-					this.eventBus.emit("send_invoice_doc_payment", {
-						invoice_doc,
-						inclusive_tax: this.inclusive_tax,
-						is_return: invoice_doc.is_return,
-					});
 				} else if (this.invoice_doc.doctype == "Sales Invoice") {
 					const sales_invoice_item = this.invoice_doc.items[0];
-					var sales_invoice_item_doc = {};
-					const siChildResult = await call("pospire.pospire.api.posapp.get_sales_invoice_child_table", {
-						sales_invoice: this.invoice_doc.name,
-						sales_invoice_item: sales_invoice_item.name,
-					});
+					let sales_invoice_item_doc = {};
+					const siChildResult = await call(
+						"pospire.pospire.api.posapp.get_sales_invoice_child_table",
+						{
+							sales_invoice: this.invoice_doc.name,
+							sales_invoice_item: sales_invoice_item.name,
+						}
+					);
 					if (siChildResult) {
 						sales_invoice_item_doc = siChildResult;
 					}
 					if (sales_invoice_item_doc.sales_order) {
-						this.eventBus.emit("show_payment", "true");
 						invoice_doc = await this.process_invoice_from_order();
-						this.eventBus.emit("send_invoice_doc_payment", {
-							invoice_doc,
-							inclusive_tax: this.inclusive_tax,
-							is_return: invoice_doc.is_return,
-						});
 					} else {
-						this.eventBus.emit("show_payment", "true");
 						invoice_doc = await this.process_invoice();
-						this.eventBus.emit("send_invoice_doc_payment", {
-							invoice_doc,
-							inclusive_tax: this.inclusive_tax,
-							is_return: invoice_doc.is_return,
-						});
 					}
 				} else {
-					this.eventBus.emit("show_payment", "true");
 					invoice_doc = await this.process_invoice();
-					this.eventBus.emit("send_invoice_doc_payment", {
-						invoice_doc,
-						inclusive_tax: this.inclusive_tax,
-						is_return: invoice_doc.is_return,
-					});
+				}
+
+				if (!invoice_doc) {
+					return;
+				}
+
+				this.eventBus.emit("show_payment", "true");
+				this.eventBus.emit("send_invoice_doc_payment", {
+					invoice_doc,
+					inclusive_tax: this.inclusive_tax,
+					is_return: invoice_doc.is_return,
+				});
+			} catch (error) {
+				const errorMessage = String(error?.message || "");
+				if (errorMessage.includes("TimestampMismatchError")) {
+					toast.error(
+						__(
+							"Payment is already being prepared for this return. Please wait and try again."
+						)
+					);
+				} else {
+					toast.error(__("Unable to prepare payment. Please try again."));
 				}
 			} finally {
 				this.processingPayment = false;
@@ -3351,17 +3372,23 @@ export default {
 		},
 
 		async print_draft_invoice() {
+			if (this.printingDraft) return;
 			if (!this.pos_profile.posa_allow_print_draft_invoices) {
 				toast.error(__(`You are not allowed to print draft invoices`));
 				return;
 			}
-			let invoice_name = this.get_current_invoice_name();
-			const invoice_doc = await this.save_and_clear_invoice();
-			if (!invoice_doc) {
-				return;
+			this.printingDraft = true;
+			try {
+				let invoice_name = this.get_current_invoice_name();
+				const invoice_doc = await this.save_and_clear_invoice();
+				if (!invoice_doc) {
+					return;
+				}
+				invoice_name = invoice_doc.name ? invoice_doc.name : invoice_name;
+				await this.handlePrint(invoice_name);
+			} finally {
+				this.printingDraft = false;
 			}
-			invoice_name = invoice_doc.name ? invoice_doc.name : invoice_name;
-			await this.handlePrint(invoice_name);
 		},
 		async handlePrint(invoice_name) {
 			try {

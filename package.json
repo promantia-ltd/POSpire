@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "scripts": {
     "build": "cd frontend && yarn install --frozen-lockfile && yarn build"
   },

@@ -1,7 +1,0 @@
-# Jinja template files (contain {% %} syntax)
-pospire/pospire/page/posapp/posapp.js
-
-# Build output
-dist/
-node_modules/
-*.min.js

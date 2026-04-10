@@ -170,7 +170,7 @@
 					<v-btn variant="text" color="grey-darken-1" class="me-2" @click="close_dialog">
 						{{ __("Close") }}
 					</v-btn>
-					<v-btn variant="elevated" color="primary" @click="submit_dialog">
+					<v-btn variant="elevated" color="primary" :loading="submittingCustomer" :disabled="submittingCustomer" @click="submit_dialog">
 						{{ __("Submit") }}
 					</v-btn>
 				</v-card-actions>
@@ -188,6 +188,7 @@ import { toast } from "vue3-toastify";
 export default {
 	data: () => ({
 		customerDialog: false,
+		submittingCustomer: false,
 		pos_profile: "",
 		customer_id: "",
 		customer_name: "",
@@ -300,6 +301,7 @@ export default {
 			}
 		},
 		async submit_dialog() {
+			if (this.submittingCustomer) return;
 			if (!this.customer_name) {
 				toast.error(__("Customer name is required."));
 				return;
@@ -312,6 +314,7 @@ export default {
 				toast.error(__("Customer territory is required."));
 				return;
 			}
+			this.submittingCustomer = true;
 			const args = {
 				customer_id: this.customer_id,
 				customer_name: this.customer_name,
@@ -351,6 +354,8 @@ export default {
 				playSound("error");
 				const serverMessage = this.extractServerMessage(error);
 				toast.error(serverMessage || __("Customer creation failed."));
+			} finally {
+				this.submittingCustomer = false;
 			}
 		},
 		extractServerMessage(error) {

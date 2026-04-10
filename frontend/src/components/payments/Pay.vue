@@ -495,7 +495,7 @@
 						</div>
 					</div>
 					<div class="pb-6 pr-6" style="position: absolute; bottom: 0; width: 100%">
-						<v-btn block color="#00BCD4" class="text-white" @click="submit">
+						<v-btn block color="#00BCD4" class="text-white" :loading="submittingPayment" :disabled="submittingPayment" @click="submit">
 							{{ __("Submit") }}
 						</v-btn>
 					</div>
@@ -533,6 +533,7 @@ export default {
 			customer_info: "",
 			company: "",
 			singleSelect: false,
+			submittingPayment: false,
 			invoices_loading: false,
 			unallocated_payments_loading: false,
 			mpesa_payments_loading: false,
@@ -835,6 +836,7 @@ export default {
 			this.set_payment_methods();
 		},
 		async submit() {
+			if (this.submittingPayment) return;
 			const customer = this.customer_name;
 			const vm = this;
 			if (!customer) {
@@ -854,35 +856,40 @@ export default {
 				return;
 			}
 
-			this.payment_methods.forEach((payment) => {
-				payment.amount = flt(payment.amount);
-			});
+			this.submittingPayment = true;
+			try {
+				this.payment_methods.forEach((payment) => {
+					payment.amount = flt(payment.amount);
+				});
 
-			const payload = {};
-			payload.customer = customer;
-			payload.company = this.company;
-			payload.currency = this.pos_profile.currency;
-			payload.pos_opening_shift_name = this.pos_opening_shift.name;
-			payload.pos_profile_name = this.pos_profile.name;
-			payload.pos_profile = this.pos_profile;
-			payload.payment_methods = this.payment_methods;
-			payload.selected_invoices = this.selected_invoices;
-			payload.selected_payments = this.selected_payments;
-			payload.total_selected_invoices = flt(this.total_selected_invoices);
-			payload.selected_mpesa_payments = this.selected_mpesa_payments;
-			payload.total_selected_payments = flt(this.total_selected_payments);
-			payload.total_payment_methods = flt(this.total_payment_methods);
-			payload.total_selected_mpesa_payments = flt(this.total_selected_mpesa_payments);
+				const payload = {};
+				payload.customer = customer;
+				payload.company = this.company;
+				payload.currency = this.pos_profile.currency;
+				payload.pos_opening_shift_name = this.pos_opening_shift.name;
+				payload.pos_profile_name = this.pos_profile.name;
+				payload.pos_profile = this.pos_profile;
+				payload.payment_methods = this.payment_methods;
+				payload.selected_invoices = this.selected_invoices;
+				payload.selected_payments = this.selected_payments;
+				payload.total_selected_invoices = flt(this.total_selected_invoices);
+				payload.selected_mpesa_payments = this.selected_mpesa_payments;
+				payload.total_selected_payments = flt(this.total_selected_payments);
+				payload.total_payment_methods = flt(this.total_payment_methods);
+				payload.total_selected_mpesa_payments = flt(this.total_selected_mpesa_payments);
 
-			const r = await call("pospire.pospire.api.payment_entry.process_pos_payment", { payload });
-			if (r) {
-				playSound("submit");
-				vm.clear_all(false);
-				vm.customer_name = customer;
-				vm.get_outstanding_invoices();
-				vm.get_unallocated_payments();
-				vm.set_mpesa_search_params();
-				vm.get_draft_mpesa_payments_register();
+				const r = await call("pospire.pospire.api.payment_entry.process_pos_payment", { payload });
+				if (r) {
+					playSound("submit");
+					vm.clear_all(false);
+					vm.customer_name = customer;
+					vm.get_outstanding_invoices();
+					vm.get_unallocated_payments();
+					vm.set_mpesa_search_params();
+					vm.get_draft_mpesa_payments_register();
+				}
+			} finally {
+				this.submittingPayment = false;
 			}
 		},
 	},
