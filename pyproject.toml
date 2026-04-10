@@ -1,7 +1,7 @@
 [project]
 name = "pospire"
 authors = [
-    { name = "Rajit", email = "rajit@example.com"}
+    { name = "Rajit", email = "rajit.k@promantia.com"}
 ]
 description = "POSpire POS Application"
 requires-python = ">=3.14"
