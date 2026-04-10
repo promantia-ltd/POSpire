@@ -1474,7 +1474,7 @@ export default {
 		// ─── Approval-guarded action handlers ────────────────────────────────────
 
 		async on_rate_change(item, event) {
-			const raw = event?.srcElement?._value ?? event?.target?.value ?? "0";
+			const raw = typeof event === "object" ? (event?.target?.value ?? "0") : (event ?? "0");
 			const newRate = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
 			const approved = await this.approvalGuard("Edit Rate", {
 				item,
@@ -1483,12 +1483,16 @@ export default {
 				valueFieldLabel: __("Rate"),
 			});
 			if (!approved) return;
-			this.setFormatedCurrency(item, "rate", null, false, event);
-			this.calc_prices(item, event);
+			this.setFormatedCurrency(item, "rate", null, false, raw);
+			const rateEvent = {
+				target: { id: "rate", value: raw },
+				srcElement: { _value: String(newRate) },
+			};
+			this.calc_prices(item, rateEvent, rateEvent);
 		},
 
 		async on_rate_change_grid(item, event) {
-			const raw = event?.srcElement?._value ?? event?.target?.value ?? "0";
+			const raw = typeof event === "object" ? (event?.target?.value ?? "0") : (event ?? "0");
 			const newRate = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
 			const approved = await this.approvalGuard("Edit Rate", {
 				item,
@@ -1497,8 +1501,12 @@ export default {
 				valueFieldLabel: __("Rate"),
 			});
 			if (!approved) return;
-			this.setFormatedCurrency(item, "rate", null, false, event.srcElement._value);
-			this.calc_prices(item, event.srcElement._value);
+			this.setFormatedCurrency(item, "rate", null, false, raw);
+			const rateEvent = {
+				target: { id: "gridRate", value: raw },
+				srcElement: { _value: String(newRate) },
+			};
+			this.calc_prices(item, rateEvent, rateEvent);
 		},
 
 		async on_discount_percentage_change(item, event) {
@@ -1515,7 +1523,7 @@ export default {
 		},
 
 		async on_discount_amount_change(item, event) {
-			const raw = event?.srcElement?._value ?? event?.target?.value ?? "0";
+			const raw = typeof event === "object" ? (event?.target?.value ?? "0") : (event ?? "0");
 			const newValue = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
 			const approved = await this.approvalGuard("Edit Item Discount", {
 				item,
@@ -1524,16 +1532,20 @@ export default {
 				valueFieldLabel: __("Discount Amount"),
 			});
 			if (!approved) return;
-			this.setFormatedCurrency(item, "discount_amount", null, true, event);
+			this.setFormatedCurrency(item, "discount_amount", null, true, raw);
 			if (this.pos_profile.custom_allow_user_to_edit_item_total) {
-				this.applyCustomDiscount(item, event);
+				this.applyCustomDiscount(item, newValue);
 			} else {
-				this.calc_prices(item, event);
+				const discountEvent = {
+					target: { id: "discount_amount", value: raw },
+					srcElement: { _value: String(newValue) },
+				};
+				this.calc_prices(item, discountEvent, discountEvent);
 			}
 		},
 
 		async on_additional_discount_change(event) {
-			const raw = event?.srcElement?._value ?? event?.target?.value ?? "0";
+			const raw = typeof event === "object" ? (event?.target?.value ?? "0") : (event ?? "0");
 			const newValue = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
 			const approved = await this.approvalGuard("Edit Additional Discount", {
 				originalValue: this.discount_amount,
@@ -1541,7 +1553,7 @@ export default {
 				valueFieldLabel: __("Additional Discount"),
 			});
 			if (!approved) return;
-			this.setFormatedCurrency(this.discount_amount, "discount_amount", null, false, event);
+			this.setFormatedCurrency(this.discount_amount, "discount_amount", null, false, raw);
 		},
 
 		async on_additional_discount_percentage_change() {
