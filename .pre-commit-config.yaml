@@ -48,11 +48,15 @@ repos:
 
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.44.0
+    rev: v9.16.0
     hooks:
       - id: eslint
         types_or: [javascript]
         args: ['--quiet']
+        additional_dependencies:
+          - eslint-plugin-vue@9.32.0
+          - "@eslint/js@9.16.0"
+          - globals@15.13.0
         # Ignore any files that might contain jinja / bundles
         exclude: |
             (?x)^(

@@ -24,6 +24,11 @@ jobs:
           python-version: '3.14'
           allow-prereleases: true
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
       - uses: pre-commit/action@v3.0.0
 
       - name: Download Semgrep rules
