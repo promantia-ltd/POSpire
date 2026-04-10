@@ -112,8 +112,8 @@ jobs:
       - name: Build Vue SPA
         working-directory: /home/runner/frappe-bench/apps/pospire/frontend
         run: |
-          npm ci
-          npm run build
+          yarn install --frozen-lockfile
+          yarn build
 
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
