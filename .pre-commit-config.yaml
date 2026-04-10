@@ -47,13 +47,14 @@ repos:
             )$
 
 
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.44.0
+  - repo: local
     hooks:
-      - id: eslint
-        types_or: [javascript]
+      - id: eslint-pospire
+        name: ESLint (Pospire JS)
+        language: system
+        entry: node_modules/.bin/eslint
         args: ['--quiet']
-        # Ignore any files that might contain jinja / bundles
+        types_or: [javascript]
         exclude: |
             (?x)^(
                 pospire/public/frontend/.*|
@@ -65,8 +66,6 @@ repos:
                 pospire/public/js/lib/.*
             )$
 
-  - repo: local
-    hooks:
       - id: eslint-vue-spa
         name: ESLint (Vue SPA)
         language: system
