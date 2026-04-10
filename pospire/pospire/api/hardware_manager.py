@@ -439,7 +439,7 @@ def check_character_widths(template):
 		if text_elements:
 			total_width = sum(int(w) for w in text_elements)
 			if total_width > 42:
-				warnings.append(f"Line {i+1}: Total width {total_width} exceeds 42 characters")
+				warnings.append(f"Line {i + 1}: Total width {total_width} exceeds 42 characters")
 
 	return warnings
 

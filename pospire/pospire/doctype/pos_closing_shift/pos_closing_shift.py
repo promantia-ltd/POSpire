@@ -10,11 +10,13 @@ import frappe
 
 def _load(value: Any) -> Any:
 	"""Accept either a JSON-encoded string or a native dict/list."""
-	if isinstance(value, (dict, list)):
+	if isinstance(value, dict | list):
 		return value
 	if value is None or value == "":
 		return value
 	return json.loads(value)
+
+
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
@@ -62,10 +64,10 @@ class POSClosingShift(Document):
 		)
 		if self.denomination_details and denominations_enabled:
 			self._validate_denomination_closing_total(precision)
-		
+
 	def _validate_denomination_closing_total(self, precision: int) -> None:
 		"""Validate denomination closing total matches cash closing_amount."""
-		
+
 		cash_mode = (
 			frappe.get_cached_value(
 				"POS Profile",
@@ -75,19 +77,15 @@ class POSClosingShift(Document):
 			or "Cash"
 		)
 
-		denom_total = sum(
-			flt(d.closing_amount, precision)
-			for d in self.denomination_details
-		)
+		denom_total = sum(flt(d.closing_amount, precision) for d in self.denomination_details)
 
 		for row in self.payment_reconciliation:
 			if row.mode_of_payment == cash_mode:
 				if flt(row.closing_amount, precision) != denom_total:
 					frappe.throw(
-						_(
-							"Cash closing amount ({0}) does not match "
-							"denomination total ({1})"
-						).format(row.closing_amount, denom_total)
+						_("Cash closing amount ({0}) does not match denomination total ({1})").format(
+							row.closing_amount, denom_total
+						)
 					)
 				break
 
@@ -104,6 +102,7 @@ class POSClosingShift(Document):
 		for p in self.payment_reconciliation:
 			if p.mode_of_payment == "Cash":
 				p.closing_amount = total
+
 	def on_submit(self):
 		opening_entry = frappe.get_doc("POS Opening Shift", self.pos_opening_shift)
 		opening_entry.pos_closing_shift = self.name
@@ -308,9 +307,7 @@ def make_closing_shift_from_opening(opening_shift: str | dict):
 	closing_shift.set("pos_payments", pos_payments_table)
 
 	# Copy denomination details from opening shift
-	opening_doc = frappe.get_doc(
-		"POS Opening Shift", opening_shift.get("name")
-	)
+	opening_doc = frappe.get_doc("POS Opening Shift", opening_shift.get("name"))
 
 	if opening_doc.denomination_details:
 		denomination_details = []

@@ -220,7 +220,7 @@
 			<div class="invoice-cart-section">
 				<v-data-table
 					:headers="items_headers"
-					:items="items.filter(item => !item.posa_deleted)"
+					:items="items.filter((item) => !item.posa_deleted)"
 					v-model:expanded="expanded"
 					show-expand
 					item-value="posa_row_id"
@@ -1343,9 +1343,7 @@ export default {
 			if (!this.deleted_items) {
 				this.deleted_items = [];
 			}
-			let existing = this.deleted_items.find(
-				d => d.item_code === item.item_code
-			);
+			let existing = this.deleted_items.find((d) => d.item_code === item.item_code);
 			if (existing) {
 				existing.qty += item.qty;
 				existing.amount = existing.qty * existing.rate;
@@ -1355,11 +1353,11 @@ export default {
 					item_name: item.item_name,
 					qty: item.qty,
 					rate: item.rate,
-					amount: item.qty * item.rate
+					amount: item.qty * item.rate,
 				});
 			}
 			// remove item from cart
-			this.items = this.items.filter(el => el.posa_row_id !== item.posa_row_id);
+			this.items = this.items.filter((el) => el.posa_row_id !== item.posa_row_id);
 			this.$forceUpdate();
 		},
 
@@ -1396,7 +1394,7 @@ export default {
 			// remove from deleted list if re-added
 			if (this.deleted_items) {
 				this.deleted_items = this.deleted_items.filter(
-					d => d.item_code !== item.item_code
+					(d) => d.item_code !== item.item_code
 				);
 			}
 			// Restrict adding new items during return flow

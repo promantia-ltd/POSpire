@@ -226,7 +226,8 @@
                 variant="outlined"
                 class="return-qty-input"
                 style="max-width: 100px"
-                @update:model-value="validateReturnQty(item)"
+                @blur="validateReturnQty(item)"
+                @keyup.enter="validateReturnQty(item)"
               ></v-text-field>
               <span v-else-if="!item.can_return" class="text-grey">-</span>
               <span v-else class="text-grey text-caption">{{ __('Select to edit') }}</span>
@@ -485,9 +486,102 @@ export default {
         toast.warning(__('Cannot return more than {0} {1}', [item.remaining_qty, item.uom]));
       }
     },
+    getIncompleteOfferReturnIssues() {
+      const invoiceItems = Array.isArray(this.selectedInvoice?.items)
+        ? this.selectedInvoice.items
+        : [];
+      const invoiceOffers = Array.isArray(this.selectedInvoice?.posa_offers)
+        ? this.selectedInvoice.posa_offers
+        : [];
+
+      if (!invoiceItems.length || !invoiceOffers.length) {
+        return [];
+      }
+
+      const itemsByRowId = new Map(
+        invoiceItems
+          .filter((item) => item.posa_row_id)
+          .map((item) => [item.posa_row_id, item])
+      );
+      const selectedItemIds = new Set(this.selectedItems);
+      const selectedRowIds = new Set(
+        invoiceItems
+          .filter((item) => selectedItemIds.has(item.name) && item.posa_row_id)
+          .map((item) => item.posa_row_id)
+      );
+
+      const issues = [];
+
+      invoiceOffers.forEach((offer) => {
+        if (offer.offer !== "Give Product" || !offer.give_item_row_id) {
+          return;
+        }
+
+        let triggeringRowIds = [];
+        try {
+          triggeringRowIds =
+            typeof offer.items === "string"
+              ? JSON.parse(offer.items)
+              : offer.items || [];
+        } catch (e) {
+          triggeringRowIds = [];
+        }
+
+        if (!triggeringRowIds.length) {
+          return;
+        }
+
+        const triggeringItems = triggeringRowIds
+          .map((rowId) => itemsByRowId.get(rowId))
+          .filter(Boolean);
+        const freeItem = itemsByRowId.get(offer.give_item_row_id);
+
+        if (!freeItem) return;
+
+        const freeSelected = selectedRowIds.has(offer.give_item_row_id);
+        const anyTriggerSelected = triggeringItems.some((item) =>
+          selectedRowIds.has(item.posa_row_id)
+        );
+
+        if (freeSelected && !anyTriggerSelected) {
+          issues.push({
+            type: "missing_trigger_item",
+            free_item_name: freeItem.item_name,
+          });
+        } else if (!freeSelected && anyTriggerSelected) {
+          issues.push({
+            type: "missing_free_item",
+            free_item_name: freeItem.item_name,
+          });
+        }
+      });
+
+      return issues;
+    },
     submit_return() {
       if (this.selectedItems.length === 0) {
         toast.warning(__('Please select at least one item to return'));
+        return;
+      }
+
+      const offerIssues = this.getIncompleteOfferReturnIssues();
+      if (offerIssues.length) {
+        const firstIssue = offerIssues[0];
+        if (firstIssue.type === "missing_free_item") {
+          toast.error(
+            __(
+              'Select the promotional item "{0}" as well before loading this return.',
+              [firstIssue.free_item_name]
+            )
+          );
+        } else {
+          toast.error(
+            __(
+              'Select the main offer item along with promotional item "{0}" before loading this return.',
+              [firstIssue.free_item_name]
+            )
+          );
+        }
         return;
       }
 

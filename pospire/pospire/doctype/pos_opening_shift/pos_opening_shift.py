@@ -27,7 +27,7 @@ class POSOpeningShift(StatusUpdater):
 		self.set_status(update=True)
 
 	def update_cash_total(self):
-    # If denominations not used, do not override manual amount
+		# If denominations not used, do not override manual amount
 		if not self.denomination_details:
 			return
 

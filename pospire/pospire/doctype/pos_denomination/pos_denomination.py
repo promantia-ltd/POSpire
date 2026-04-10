@@ -7,9 +7,6 @@ from frappe.model.document import Document
 from frappe.utils import cstr
 
 
-
-
-
 class POSDenomination(Document):
 	def validate(self):
 		if self.denomination_value <= 0:
@@ -17,4 +14,3 @@ class POSDenomination(Document):
 
 	def autoname(self):
 		self.name = f"{cstr(self.currency)}-{cstr(self.denomination_value)}"
-    	

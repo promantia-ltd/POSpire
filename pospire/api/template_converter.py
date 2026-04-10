@@ -357,7 +357,7 @@ class HTMLToXMLConverter:
 					f'<text align="{align}" length="{col_width}"{bold_attr}>{{{{ truncate({cell_text}, {col_width}) }}}}</text>'
 				)
 
-			lines.append(" " * indent + f'<line>{" ".join(line_parts)}</line>')
+			lines.append(" " * indent + f"<line>{' '.join(line_parts)}</line>")
 
 		# Add separator after table
 		lines.append(" " * indent + '<line><text>{{ separator("-") }}</text></line>')

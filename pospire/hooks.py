@@ -269,11 +269,11 @@ fixtures = [
 					"Sales Invoice-custom_delivery_charge_rate",
 					"POS Profile-posa_hardware_manager_setting",
 					"POS Profile-posa_hardware_manager",
-                    "POS Profile-custom_enable_cash_denominations",
-                    "POS Profile-custom_denominations",
+					"POS Profile-custom_enable_cash_denominations",
+					"POS Profile-custom_denominations",
 					"Sales Invoice-custom_deleted_pos_items",
-                    "POS Profile-custom_assortment",
-                    "POS Profile-custom_denomination"
+					"POS Profile-custom_assortment",
+					"POS Profile-custom_denomination",
 				),
 			]
 		],
@@ -284,11 +284,15 @@ fixtures = [
 			[
 				"name",
 				"in",
-				("Sales Invoice-posa_pos_opening_shift-no_copy", "POS Profile-posa_tax_inclusive-hidden","Sales Invoice-main-field_order","POS Profile-main-field_order"),
+				(
+					"Sales Invoice-posa_pos_opening_shift-no_copy",
+					"POS Profile-posa_tax_inclusive-hidden",
+					"Sales Invoice-main-field_order",
+					"POS Profile-main-field_order",
+				),
 			]
 		],
 	},
-
 ]
 add_to_apps_screen = [
 	{

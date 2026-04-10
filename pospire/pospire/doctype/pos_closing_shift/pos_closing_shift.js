@@ -54,10 +54,10 @@ frappe.ui.form.on("POS Closing Shift", {
 						doctype: "POS Opening Shift",
 						name: frm.doc.pos_opening_shift,
 					},
-					callback: function(r) {
+					callback: function (r) {
 						if (r.message && r.message.denomination_details) {
 							frm.clear_table("denomination_details");
-							r.message.denomination_details.forEach(function(d) {
+							r.message.denomination_details.forEach(function (d) {
 								let row = frm.add_child("denomination_details");
 								row.denomination = d.denomination;
 								row.denomination_name = d.denomination_name;
@@ -68,7 +68,7 @@ frappe.ui.form.on("POS Closing Shift", {
 							});
 							frm.refresh_field("denomination_details");
 						}
-					}
+					},
 				});
 			});
 	},

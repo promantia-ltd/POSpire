@@ -29,9 +29,7 @@ def get_boot() -> dict:
 			"default_route": "/pospire/pos",
 			"sys_defaults": {
 				"float_precision": frappe.db.get_single_value("System Settings", "float_precision") or 2,
-				"currency_precision": frappe.db.get_single_value(
-					"System Settings", "currency_precision"
-				)
+				"currency_precision": frappe.db.get_single_value("System Settings", "currency_precision")
 				or 2,
 			},
 			"user_defaults": frappe.defaults.get_defaults_for(frappe.session.user),

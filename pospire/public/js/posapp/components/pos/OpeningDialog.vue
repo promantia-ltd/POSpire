@@ -10,8 +10,7 @@
 				<v-btn icon="mdi-close" variant="text" @click="go_desk"></v-btn>
 			</v-card-title>
 
-			<v-card-text class="overflow-y-auto"
-  			style="max-height: 65vh;">
+			<v-card-text class="overflow-y-auto" style="max-height: 65vh">
 				<v-container fluid>
 					<v-row dense>
 						<v-col cols="12">
@@ -57,61 +56,67 @@
 										:prefix="currencySymbol(pos_profile.currency)"
 										:readonly="
 											denominations_enabled ||
-											props.item.mode_of_payment !== (denomination_config[pos_profile]?.cash_mode || 'Cash')
+											props.item.mode_of_payment !==
+												(denomination_config[pos_profile]?.cash_mode ||
+													'Cash')
 										"
-										/>
+									/>
 								</template>
 							</v-data-table>
 							<v-expand-transition>
 								<v-card
 									v-if="denominations_enabled"
 									class="rounded-lg elevation-1 mt-6"
-									style="border-top: none !important;"
+									style="border-top: none !important"
 								>
 									<v-card-title class="text-subtitle-2">
-									{{ __("Cash Denomination Breakdown") }}
+										{{ __("Cash Denomination Breakdown") }}
 									</v-card-title>
 
 									<v-data-table
-									:headers="[
-										{ title: 'Denomination', value: 'denomination_name' },
-										{ title: 'Value', value: 'denomination_value' },
-										{ title: 'Quantity', value: 'quantity' },
-										{ title: 'Amount', value: 'amount' }
-									]"
-									:items="denomination_rows"
-									density="compact"
-									hide-default-footer
-									>
-
-									<template v-slot:item.denomination_value="{ item }">
-										{{ formatCurrency(item.denomination_value) }}
-									</template>
-
-									<template v-slot:item.quantity="props">
-										<v-text-field
-										v-model.number="props.item.quantity"
-										type="number"
-										min="0"
+										:headers="[
+											{ title: 'Denomination', value: 'denomination_name' },
+											{ title: 'Value', value: 'denomination_value' },
+											{ title: 'Quantity', value: 'quantity' },
+											{ title: 'Amount', value: 'amount' },
+										]"
+										:items="denomination_rows"
 										density="compact"
-										variant="outlined"
-										:rules="[v => v >= 0 || 'Quantity must be non-negative']"
-										hide-details
-										/>
-									</template>
+										hide-default-footer
+									>
+										<template v-slot:item.denomination_value="{ item }">
+											{{ formatCurrency(item.denomination_value) }}
+										</template>
 
-									<template v-slot:item.amount="{ item }">
-										{{ formatCurrency(item.denomination_value * (item.quantity || 0)) }}
-									</template>
+										<template v-slot:item.quantity="props">
+											<v-text-field
+												v-model.number="props.item.quantity"
+												type="number"
+												min="0"
+												density="compact"
+												variant="outlined"
+												:rules="[
+													(v) =>
+														v >= 0 || 'Quantity must be non-negative',
+												]"
+												hide-details
+											/>
+										</template>
 
+										<template v-slot:item.amount="{ item }">
+											{{
+												formatCurrency(
+													item.denomination_value * (item.quantity || 0)
+												)
+											}}
+										</template>
 									</v-data-table>
 
 									<v-card-text class="text-right font-weight-bold">
-									{{ __("Total") }}: {{ formatCurrency(denominationTotal) }}
+										{{ __("Total") }}: {{ formatCurrency(denominationTotal) }}
 									</v-card-text>
-
 								</v-card>
-								</v-expand-transition>
+							</v-expand-transition>
 						</v-col>
 					</v-row>
 				</v-container>
@@ -175,9 +180,9 @@ export default {
 			snack: false, // TODO : need to remove
 			snackColor: "", // TODO : need to remove
 			snackText: "", // TODO : need to remove
-			denomination_config: {},       
-			denomination_rows: [],         
-			denominations_enabled: false,    
+			denomination_config: {},
+			denomination_rows: [],
+			denominations_enabled: false,
 		};
 	},
 	watch: {
@@ -220,9 +225,14 @@ export default {
 				this.denominations_enabled = false;
 				this.denomination_rows = [];
 				if (config) {
-					toast.warning(__("Cash denominations are enabled for this profile but no denomination rows are configured."), {
-						autoClose: 5000,
-					});
+					toast.warning(
+						__(
+							"Cash denominations are enabled for this profile but no denomination rows are configured."
+						),
+						{
+							autoClose: 5000,
+						}
+					);
 				}
 			}
 		},
@@ -234,24 +244,21 @@ export default {
 
 			const cashMode = config.cash_mode;
 
-			const cashRow = this.payments_methods.find(
-				(p) => p.mode_of_payment === cashMode
-			);
+			const cashRow = this.payments_methods.find((p) => p.mode_of_payment === cashMode);
 
 			if (cashRow) {
 				cashRow.amount = newVal;
 			}
 		},
 	},
-	computed:{
-			denominationTotal() {
-		if (!this.denomination_rows.length) return 0;
+	computed: {
+		denominationTotal() {
+			if (!this.denomination_rows.length) return 0;
 
-		return this.denomination_rows.reduce((sum, row) => {
-			return sum + (row.denomination_value * (row.quantity || 0));
-		}, 0);
-	}
-
+			return this.denomination_rows.reduce((sum, row) => {
+				return sum + row.denomination_value * (row.quantity || 0);
+			}, 0);
+		},
 	},
 	methods: {
 		close_opening_dialog() {
@@ -282,9 +289,10 @@ export default {
 
 			if (this.denominations_enabled) {
 				const invalidQty = this.denomination_rows.some((row) => {
-					const qty = row.quantity === "" || row.quantity === null || row.quantity === undefined
-						? 0
-						: Number(row.quantity);
+					const qty =
+						row.quantity === "" || row.quantity === null || row.quantity === undefined
+							? 0
+							: Number(row.quantity);
 
 					return qty < 0 || !Number.isInteger(qty);
 				});

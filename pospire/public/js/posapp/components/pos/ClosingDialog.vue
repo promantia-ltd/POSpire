@@ -11,7 +11,7 @@
 			</v-card-title>
 
 			<v-divider></v-divider>
-			<v-card-text class="px-6 py-4 overflow-y-auto" style="max-height:65vh;">
+			<v-card-text class="px-6 py-4 overflow-y-auto" style="max-height: 65vh">
 				<v-data-table
 					:headers="headers"
 					:items="dialog_data.payment_reconciliation"
@@ -49,9 +49,10 @@
 							:readonly="
 								has_denominations &&
 								denominations_enabled &&
-								props.item.mode_of_payment === pos_profile.posa_cash_mode_of_payment
+								props.item.mode_of_payment ===
+									pos_profile.posa_cash_mode_of_payment
 							"
-							/>
+						/>
 					</template>
 
 					<template v-slot:item.difference="{ item }">
@@ -67,7 +68,7 @@
 					</template>
 				</v-data-table>
 				<!-- Denomination Grid -->
-				 <div v-if="has_denominations && denominations_enabled" class="mt-4 ">
+				<div v-if="has_denominations && denominations_enabled" class="mt-4">
 					<h4 class="mb-2">{{ __("Denomination Details") }}</h4>
 					<v-data-table
 						:headers="denomination_headers"
@@ -98,7 +99,8 @@
 								<td>Total</td>
 								<td></td>
 								<td class="text-end">
-									{{ currencySymbol(pos_profile.currency) }} {{ formatCurrency(closing_total) }}
+									{{ currencySymbol(pos_profile.currency) }}
+									{{ formatCurrency(closing_total) }}
 								</td>
 							</tr>
 						</template>
@@ -150,18 +152,17 @@ export default {
 			},
 		],
 		denomination_headers: [
-		{ title: __("Denomination"), value: "denomination_name", width: "45%" },
-		{ title: __("Closing Qty"), value: "closing_quantity", align: "start", width: "25%" },
-		{ title: __("Closing Amount"), value: "closing_amount", align: "end", width: "30%" },
+			{ title: __("Denomination"), value: "denomination_name", width: "45%" },
+			{ title: __("Closing Qty"), value: "closing_quantity", align: "start", width: "25%" },
+			{ title: __("Closing Amount"), value: "closing_amount", align: "end", width: "30%" },
 		],
 		amountRules,
 		pagination: {},
 		has_denominations: false,
 		denominations_enabled: false,
-
 	}),
 	watch: {
-			"dialog_data.denomination_details": {
+		"dialog_data.denomination_details": {
 			handler(rows) {
 				if (!rows || !this.has_denominations) return;
 				let total = 0;
@@ -249,35 +250,36 @@ export default {
 				(sum, d) => sum + (d.closing_amount || 0),
 				0
 			);
-		}
+		},
 	},
 
 	created: function () {
-	this.eventBus.on("open_ClosingDialog", (data) => {
-		this.closingDialog = true;
-		this.dialog_data = data;
-		this.has_denominations =
-			data.denomination_details && data.denomination_details.length > 0;
-	});
+		this.eventBus.on("open_ClosingDialog", (data) => {
+			this.closingDialog = true;
+			this.dialog_data = data;
+			this.has_denominations =
+				data.denomination_details && data.denomination_details.length > 0;
+		});
 
-	this.eventBus.on("register_pos_profile", (data) => {
-	this.pos_profile = data.pos_profile;
-	this.denominations_enabled = this.pos_profile.custom_enable_cash_denominations || false;
-	if (!this.pos_profile.hide_expected_amount) {
-		this.headers.push({
-			title: __("Expected Amount"),
-			value: "expected_amount",
-			align: "end",
-			sortable: false,
+		this.eventBus.on("register_pos_profile", (data) => {
+			this.pos_profile = data.pos_profile;
+			this.denominations_enabled =
+				this.pos_profile.custom_enable_cash_denominations || false;
+			if (!this.pos_profile.hide_expected_amount) {
+				this.headers.push({
+					title: __("Expected Amount"),
+					value: "expected_amount",
+					align: "end",
+					sortable: false,
+				});
+				this.headers.push({
+					title: __("Difference"),
+					value: "difference",
+					align: "end",
+					sortable: false,
+				});
+			}
 		});
-		this.headers.push({
-			title: __("Difference"),
-			value: "difference",
-			align: "end",
-			sortable: false,
-		});
-	}
-	});
 	},
 };
 </script>
