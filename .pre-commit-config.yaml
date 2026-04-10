@@ -48,7 +48,7 @@ repos:
 
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.16.0
+    rev: v8.44.0
     hooks:
       - id: eslint
         types_or: [javascript]
