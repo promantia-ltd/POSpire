@@ -226,27 +226,38 @@ export default {
 				this.birthday = null;
 				return;
 			}
+
+			// Parse — accept dd-mm-yyyy or yyyy-mm-dd
+			let d = null;
 			const ddmmyyyy = /^(\d{1,2})-(\d{1,2})-(\d{4})$/;
 			const m = val.match(ddmmyyyy);
 			if (m) {
-				const d = new Date(`${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`);
-				if (!isNaN(d)) {
-					this.birthday = d;
-					this.birthday_input_str = datetime.obj_to_str(d, "dd-mm-yyyy");
-					return;
-				}
+				const parsed = new Date(`${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`);
+				if (!isNaN(parsed)) d = parsed;
 			}
-			const yyyymmdd = /^\d{4}-\d{2}-\d{2}$/;
-			if (yyyymmdd.test(val)) {
-				const d = new Date(val);
-				if (!isNaN(d)) {
-					this.birthday = d;
-					this.birthday_input_str = datetime.obj_to_str(d, "dd-mm-yyyy");
-					return;
-				}
+			if (!d && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+				const parsed = new Date(val);
+				if (!isNaN(parsed)) d = parsed;
 			}
-			// Revert to last valid value
-			this.birthday_input_str = this.birthday ? datetime.obj_to_str(this.birthday, "dd-mm-yyyy") : "";
+
+			if (!d) {
+				// Unrecognised format — revert to last valid value
+				this.birthday_input_str = this.birthday ? datetime.obj_to_str(this.birthday, "dd-mm-yyyy") : "";
+				return;
+			}
+
+			// Validate: birthday cannot be in the future
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			d.setHours(0, 0, 0, 0);
+			if (d > today) {
+				toast.error(__("Birthday cannot be a future date."));
+				this.birthday_input_str = this.birthday ? datetime.obj_to_str(this.birthday, "dd-mm-yyyy") : "";
+				return;
+			}
+
+			this.birthday = d;
+			this.birthday_input_str = datetime.obj_to_str(d, "dd-mm-yyyy");
 		},
 		resetBirthday() {
 			this.birthday = null;
