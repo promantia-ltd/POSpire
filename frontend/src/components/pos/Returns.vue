@@ -217,10 +217,7 @@
             <template v-slot:item.return_qty="{ item }">
               <v-text-field
                 v-if="item.can_return && isItemSelected(item.sales_invoice_item)"
-                v-model.number="returnQuantities[item.sales_invoice_item]"
-                type="number"
-                :min="1"
-                :max="item.remaining_qty"
+                v-model="returnQuantities[item.sales_invoice_item]"
                 density="compact"
                 hide-details
                 variant="outlined"
@@ -477,13 +474,15 @@ export default {
     },
     validateReturnQty(item) {
       const itemId = item.sales_invoice_item;
-      let qty = this.returnQuantities[itemId];
+      let qty = Number(this.returnQuantities[itemId]);
 
-      if (qty < 1) {
+      if (!qty || qty < 1) {
         this.returnQuantities[itemId] = 1;
       } else if (qty > item.remaining_qty) {
         this.returnQuantities[itemId] = item.remaining_qty;
         toast.warning(__('Cannot return more than {0} {1}', [item.remaining_qty, item.uom]));
+      } else {
+        this.returnQuantities[itemId] = qty;
       }
     },
     getIncompleteOfferReturnIssues() {

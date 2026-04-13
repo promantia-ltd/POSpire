@@ -93,12 +93,13 @@
 											variant="outlined"
 											density="comfortable"
 											color="primary"
-											v-model="birthday_string"
+											v-model="birthday_input_str"
 											:label="__('Birthday')"
-											readonly
+											placeholder="dd-mm-yyyy"
 											clearable
 											v-bind="props"
 											@click:clear="resetBirthday"
+											@blur="onBirthdayInput"
 											class="mb-3"
 										/>
 									</template>
@@ -197,6 +198,7 @@ export default {
 		email_id: "",
 		referral_code: "",
 		birthday: null,
+		birthday_input_str: "",
 		birthday_menu: false,
 		group: "",
 		groups: [],
@@ -211,22 +213,44 @@ export default {
 	setup() {
 		return { datetime };
 	},
-	watch: {},
-	computed: {
-		birthday_string: {
-			get() {
-				return this.birthday
-					? datetime.obj_to_str(this.birthday, "dd-mm-yyyy")
-					: "";
-			},
-			set(val) {
-				this.birthday = val ? datetime.str_to_obj(val) : null;
-			},
+	watch: {
+		birthday(val) {
+			this.birthday_input_str = val ? datetime.obj_to_str(val, "dd-mm-yyyy") : "";
 		},
 	},
+	computed: {},
 	methods: {
+		onBirthdayInput() {
+			const val = this.birthday_input_str.trim();
+			if (!val) {
+				this.birthday = null;
+				return;
+			}
+			const ddmmyyyy = /^(\d{1,2})-(\d{1,2})-(\d{4})$/;
+			const m = val.match(ddmmyyyy);
+			if (m) {
+				const d = new Date(`${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`);
+				if (!isNaN(d)) {
+					this.birthday = d;
+					this.birthday_input_str = datetime.obj_to_str(d, "dd-mm-yyyy");
+					return;
+				}
+			}
+			const yyyymmdd = /^\d{4}-\d{2}-\d{2}$/;
+			if (yyyymmdd.test(val)) {
+				const d = new Date(val);
+				if (!isNaN(d)) {
+					this.birthday = d;
+					this.birthday_input_str = datetime.obj_to_str(d, "dd-mm-yyyy");
+					return;
+				}
+			}
+			// Revert to last valid value
+			this.birthday_input_str = this.birthday ? datetime.obj_to_str(this.birthday, "dd-mm-yyyy") : "";
+		},
 		resetBirthday() {
 			this.birthday = null;
+			this.birthday_input_str = "";
 			this.birthday_menu = false;
 		},
 		close_dialog() {
@@ -261,7 +285,7 @@ export default {
 				doctype: "Customer Group",
 				fields: ["name"],
 				filters: { is_group: 0 },
-				limit: 1000,
+				limit: 200,
 				order_by: "name",
 			});
 			if (data && data.length > 0) {
@@ -277,7 +301,7 @@ export default {
 				doctype: "Territory",
 				fields: ["name"],
 				filters: { is_group: 0 },
-				limit: 5000,
+				limit: 200,
 				order_by: "name",
 			});
 			if (data && data.length > 0) {
@@ -368,6 +392,10 @@ export default {
 	created: function () {
 		this.eventBus.on("open_update_customer", (data) => {
 			this.customerDialog = true;
+			// Lazy-load reference data on first open only
+			this.getCustomerGroups();
+			this.getCustomerTerritorys();
+			this.getGenders();
 			if (data) {
 				this.customer_name = data.customer_name;
 				this.customer_id = data.name;
@@ -391,9 +419,6 @@ export default {
 		this.eventBus.on("payments_register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
 		});
-		this.getCustomerGroups();
-		this.getCustomerTerritorys();
-		this.getGenders();
 		// set default values for customer group and territory from user defaults
 		this.group = window.user_defaults?.["Customer Group"] || "";
 		this.territory = window.user_defaults?.["Territory"] || "";
