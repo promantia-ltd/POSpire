@@ -1,6 +1,6 @@
 <template>
 	<v-row justify="center">
-		<v-dialog v-model="customerDialog" max-width="600px" @click:outside="clear_customer">
+		<v-dialog v-model="customerDialog" max-width="600px" persistent>
 			<v-card elevation="8" rounded="xl">
 				<v-card-title
 					class="d-flex justify-center align-center py-4 enhanced-modal-header"
@@ -98,17 +98,17 @@
 											placeholder="dd-mm-yyyy"
 											clearable
 											v-bind="props"
-											@click:clear="resetBirthday"
+											@click:clear="clearBirthday"
 											@blur="onBirthdayInput"
+											@keyup.enter="onBirthdayInput"
 											class="mb-3"
 										/>
 									</template>
 									<v-date-picker
 										v-model="birthday"
 										color="primary"
-										:max="datetime.now_date()"
+										:max="todayAsDate"
 										show-adjacent-months
-										view="date"
 										@update:model-value="birthday_menu = false"
 									/>
 								</v-menu>
@@ -143,7 +143,7 @@
 								/>
 							</v-col>
 
-							<v-col cols="6" v-if="loyalty_program">
+							<v-col cols="6" v-if="loyalty_program != null">
 								<v-text-field
 									v-model="loyalty_program"
 									:label="__('Loyalty Program')"
@@ -153,7 +153,7 @@
 									class="mb-3"
 								/>
 							</v-col>
-							<v-col cols="6" v-if="loyalty_points">
+							<v-col cols="6" v-if="loyalty_points != null">
 								<v-text-field
 									v-model="loyalty_points"
 									:label="__('Loyalty Points')"
@@ -213,13 +213,23 @@ export default {
 	setup() {
 		return { datetime };
 	},
+	computed: {
+		todayAsDate() {
+			return new Date();
+		},
+	},
 	watch: {
+		// When the calendar picker selects a date, sync it into the text field.
 		birthday(val) {
 			this.birthday_input_str = val ? datetime.obj_to_str(val, "dd-mm-yyyy") : "";
 		},
 	},
-	computed: {},
 	methods: {
+		clearBirthday() {
+			this.birthday = null;
+			this.birthday_input_str = "";
+			this.birthday_menu = false;
+		},
 		onBirthdayInput() {
 			const val = this.birthday_input_str.trim();
 			if (!val) {
@@ -227,42 +237,52 @@ export default {
 				return;
 			}
 
-			// Parse — accept dd-mm-yyyy or yyyy-mm-dd
+			// Accept dd-mm-yyyy (with - or /)
 			let d = null;
-			const ddmmyyyy = /^(\d{1,2})-(\d{1,2})-(\d{4})$/;
+			const ddmmyyyy = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
 			const m = val.match(ddmmyyyy);
 			if (m) {
 				const parsed = new Date(`${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`);
 				if (!isNaN(parsed)) d = parsed;
 			}
-			if (!d && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-				const parsed = new Date(val);
+			// Accept yyyy-mm-dd (with - or /)
+			if (!d && /^\d{4}[\/\-]\d{2}[\/\-]\d{2}$/.test(val)) {
+				const parsed = new Date(val.replace(/\//g, "-"));
 				if (!isNaN(parsed)) d = parsed;
 			}
 
 			if (!d) {
-				// Unrecognised format — revert to last valid value
-				this.birthday_input_str = this.birthday ? datetime.obj_to_str(this.birthday, "dd-mm-yyyy") : "";
+				toast.error(__("Invalid date. Use dd-mm-yyyy or yyyy-mm-dd."));
+				// Keep the typed text visible so the user can correct it.
+				this.birthday = null;
 				return;
 			}
 
-			// Validate: birthday cannot be in the future
+			// Future date check
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
 			d.setHours(0, 0, 0, 0);
 			if (d > today) {
 				toast.error(__("Birthday cannot be a future date."));
-				this.birthday_input_str = this.birthday ? datetime.obj_to_str(this.birthday, "dd-mm-yyyy") : "";
+				this.birthday = null;
 				return;
 			}
 
 			this.birthday = d;
+			// Normalise to dd-mm-yyyy display
 			this.birthday_input_str = datetime.obj_to_str(d, "dd-mm-yyyy");
 		},
-		resetBirthday() {
-			this.birthday = null;
-			this.birthday_input_str = "";
-			this.birthday_menu = false;
+		validate_birthday() {
+			if (!this.birthday) return;
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			const b = new Date(this.birthday);
+			b.setHours(0, 0, 0, 0);
+			if (b > today) {
+				toast.error(__("Birthday cannot be a future date."));
+				this.birthday = null;
+				this.birthday_input_str = "";
+			}
 		},
 		close_dialog() {
 			this.customerDialog = false;
@@ -274,13 +294,9 @@ export default {
 			this.mobile_no = "";
 			this.email_id = "";
 			this.referral_code = "";
-			this.birthday = null; // Explicit null instead of empty string
-			this.birthday_menu = false; // Reset menu state
-			this.$nextTick(() => {
-				if (this.$refs.birthday_menu) {
-					this.$refs.birthday_menu.isActive = false; // Force close menu
-				}
-			});
+			this.birthday = null;
+			this.birthday_input_str = "";
+			this.birthday_menu = false;
 			this.group = window.user_defaults?.["Customer Group"] || "";
 			this.territory = window.user_defaults?.["Territory"] || "";
 			this.customer_id = "";
@@ -290,49 +306,56 @@ export default {
 			this.loyalty_program = null;
 		},
 		async getCustomerGroups() {
-			if (this.groups.length > 0) return;
-			const vm = this;
-			const data = await call("frappe.client.get_list", {
-				doctype: "Customer Group",
-				fields: ["name"],
-				filters: { is_group: 0 },
-				limit: 200,
-				order_by: "name",
-			});
-			if (data && data.length > 0) {
-				data.forEach((el) => {
-					vm.groups.push(el.name);
+			if (this.groups.length > 0 || this._fetchingGroups) return;
+			this._fetchingGroups = true;
+			try {
+				const data = await call("frappe.client.get_list", {
+					doctype: "Customer Group",
+					fields: ["name"],
+					filters: { is_group: 0 },
+					limit: 200,
+					order_by: "name",
 				});
+				if (data && data.length > 0) {
+					this.groups = data.map((el) => el.name);
+				}
+			} finally {
+				this._fetchingGroups = false;
 			}
 		},
 		async getCustomerTerritorys() {
-			if (this.territorys.length > 0) return;
-			const vm = this;
-			const data = await call("frappe.client.get_list", {
-				doctype: "Territory",
-				fields: ["name"],
-				filters: { is_group: 0 },
-				limit: 200,
-				order_by: "name",
-			});
-			if (data && data.length > 0) {
-				data.forEach((el) => {
-					vm.territorys.push(el.name);
+			if (this.territorys.length > 0 || this._fetchingTerritories) return;
+			this._fetchingTerritories = true;
+			try {
+				const data = await call("frappe.client.get_list", {
+					doctype: "Territory",
+					fields: ["name"],
+					filters: { is_group: 0 },
+					limit: 200,
+					order_by: "name",
 				});
+				if (data && data.length > 0) {
+					this.territorys = data.map((el) => el.name);
+				}
+			} finally {
+				this._fetchingTerritories = false;
 			}
 		},
 		async getGenders() {
-			const vm = this;
-			const data = await call("frappe.client.get_list", {
-				doctype: "Gender",
-				fields: ["name"],
-				limit: 1000,
-				order_by: "name",
-			});
-			if (data && data.length > 0) {
-				data.forEach((el) => {
-					vm.genders.push(el.name);
+			if (this.genders.length > 0 || this._fetchingGenders) return;
+			this._fetchingGenders = true;
+			try {
+				const data = await call("frappe.client.get_list", {
+					doctype: "Gender",
+					fields: ["name"],
+					limit: 1000,
+					order_by: "name",
 				});
+				if (data && data.length > 0) {
+					this.genders = data.map((el) => el.name);
+				}
+			} finally {
+				this._fetchingGenders = false;
 			}
 		},
 		async submit_dialog() {
@@ -349,6 +372,11 @@ export default {
 				toast.error(__("Customer territory is required."));
 				return;
 			}
+			if (this.birthday_input_str.trim()) {
+				this.onBirthdayInput();
+				// If text is present but onBirthdayInput couldn't produce a valid Date, block.
+				if (!this.birthday) return;
+			}
 			this.submittingCustomer = true;
 			const args = {
 				customer_id: this.customer_id,
@@ -358,9 +386,7 @@ export default {
 				mobile_no: this.mobile_no,
 				email_id: this.email_id,
 				referral_code: this.referral_code,
-				birthday: this.birthday
-					? datetime.obj_to_str(this.birthday, "yyyy-mm-dd")
-					: null,
+				birthday: this.birthday ? datetime.obj_to_str(this.birthday, "yyyy-mm-dd") : null,
 				customer_group: this.group,
 				territory: this.territory,
 				customer_type: this.customer_type,
@@ -401,6 +427,12 @@ export default {
 		},
 	},
 	created: function () {
+		// Non-reactive in-flight flags — prevent duplicate concurrent API calls
+		// if the dialog is opened again before the first fetch resolves.
+		this._fetchingGroups = false;
+		this._fetchingTerritories = false;
+		this._fetchingGenders = false;
+
 		this.eventBus.on("open_update_customer", (data) => {
 			this.customerDialog = true;
 			// Lazy-load reference data on first open only
@@ -408,20 +440,24 @@ export default {
 			this.getCustomerTerritorys();
 			this.getGenders();
 			if (data) {
-				this.customer_name = data.customer_name;
+				// Update mode: populate every field directly from the selected customer
 				this.customer_id = data.name;
-				this.tax_id = data.tax_id;
-				this.mobile_no = data.mobile_no;
-				this.email_id = data.email_id;
-				this.referral_code = data.referral_code;
+				this.customer_name = data.customer_name;
+				this.tax_id = data.tax_id || "";
+				this.mobile_no = data.mobile_no || "";
+				this.email_id = data.email_id || "";
+				this.referral_code = data.referral_code || "";
 				this.birthday = data.birthday ? new Date(data.birthday) : null;
+				this.birthday_input_str = this.birthday ? datetime.obj_to_str(this.birthday, "dd-mm-yyyy") : "";
 				this.group = data.customer_group;
 				this.territory = data.territory;
-				this.loyalty_points = data.loyalty_points;
-				this.loyalty_program = data.loyalty_program;
-				this.gender = data.gender;
+				this.customer_type = data.customer_type || "Individual";
+				this.gender = data.gender || "";
+				this.loyalty_points = data.loyalty_points ?? null;
+				this.loyalty_program = data.loyalty_program ?? null;
 			} else {
-				this.birthday = null; // Explicit null for new customers
+				// Create mode: start from a clean slate with user defaults
+				this.clear_customer();
 			}
 		});
 		this.eventBus.on("register_pos_profile", (data) => {
@@ -433,6 +469,11 @@ export default {
 		// set default values for customer group and territory from user defaults
 		this.group = window.user_defaults?.["Customer Group"] || "";
 		this.territory = window.user_defaults?.["Territory"] || "";
+	},
+	beforeUnmount() {
+		this.eventBus.off("open_update_customer");
+		this.eventBus.off("register_pos_profile");
+		this.eventBus.off("payments_register_pos_profile");
 	},
 };
 </script>
