@@ -686,7 +686,7 @@
 			</v-card-text>
 		</v-card>
 		<div>
-			<v-dialog v-model="phone_dialog" max-width="400px">
+			<v-dialog v-model="phone_dialog" max-width="400px" persistent>
 				<v-card elevation="8" rounded="xl">
 					<v-card-title>
 						<span class="text-h5 text-primary">{{ __("Confirm Mobile Number") }}</span>
