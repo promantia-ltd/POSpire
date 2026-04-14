@@ -110,10 +110,38 @@ doc_events = {
 	},
 	"Customer": {
 		"validate": "pospire.pospire.api.customer.validate",
-		"after_insert": "pospire.pospire.api.customer.after_insert",
+		"after_insert": [
+			"pospire.pospire.api.customer.after_insert",
+			"pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+		],
+		"on_update": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+		"on_trash": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
 	},
 	"POS Profile": {
 		"validate": "pospire.pospire.doctype.pos_profile.pos_profile.validate_pos_profile",
+		"on_update": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+	},
+	"Item": {
+		"on_update": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+		"on_trash": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+	},
+	"Item Price": {
+		"after_insert": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+		"on_update": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+		"on_trash": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+	},
+	"Assortment": {
+		"on_update": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+		"on_trash": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+	},
+	"Item Group": {
+		"on_update": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+	},
+	# ERPNext: barcodes are loaded in get_items but are not always saved via Item (direct row edits).
+	"Item Barcode": {
+		"after_insert": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+		"on_update": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
+		"on_trash": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
 	},
 }
 

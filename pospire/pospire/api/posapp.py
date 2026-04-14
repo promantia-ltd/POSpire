@@ -205,10 +205,14 @@ def get_items(
 	_pos_profile = _load(pos_profile)
 	ttl = _pos_profile.get("posa_server_cache_duration")
 	if ttl:
+		# Shorter window than get_customer_names (n * 60): get_items embeds stock-dependent
+		# quantities; see docs/api-caching-and-stale-data.md.
 		ttl = int(ttl) * 30
 
+	# Redis cache key includes server-side POS Profile `modified` so profile saves do not
+	# reuse entries computed under old settings (belt-and-suspenders with doc_events clear).
 	@redis_cache(ttl=ttl or 1800)
-	def __get_items(pos_profile, price_list, item_group, search_value, customer=None):
+	def __get_items(pos_profile, price_list, item_group, search_value, customer, _profile_modified):
 		return _get_items(pos_profile, price_list, item_group, search_value, customer)
 
 	def _get_items(pos_profile, price_list, item_group, search_value, customer=None):
@@ -399,10 +403,15 @@ def get_items(
 					result.append(row)
 		return result
 
-	if _pos_profile.get("posa_use_server_cache"):
-		return __get_items(pos_profile, price_list, item_group, search_value, customer)
-	else:
-		return _get_items(pos_profile, price_list, item_group, search_value, customer)
+	# When "display items in stock" is on, row membership depends on live qty — never Redis-cache.
+	stock_drives_list = bool(_pos_profile.get("posa_display_items_in_stock"))
+	profile_name = _pos_profile.get("name") if isinstance(_pos_profile, dict) else None
+	profile_modified = frappe.db.get_value("POS Profile", profile_name, "modified") if profile_name else None
+
+	if _pos_profile.get("posa_use_server_cache") and not stock_drives_list:
+		return __get_items(pos_profile, price_list, item_group, search_value, customer, profile_modified)
+
+	return _get_items(pos_profile, price_list, item_group, search_value, customer)
 
 
 def get_item_group_condition(pos_profile):
@@ -487,6 +496,7 @@ def get_customer_names(pos_profile: str | dict) -> list:
 	_pos_profile = _load(pos_profile)
 	ttl = _pos_profile.get("posa_server_cache_duration")
 	if ttl:
+		# n * 60 seconds matches custom field “n minutes” on POS Profile.
 		ttl = int(ttl) * 60
 
 	@redis_cache(ttl=ttl or 1800)
@@ -1147,87 +1157,78 @@ def delete_invoice(invoice: str) -> str:
 
 @frappe.whitelist()
 def get_items_details(pos_profile: str | dict, items_data: str | list) -> list:
-	_pos_profile = _load(pos_profile)
-	ttl = _pos_profile.get("posa_server_cache_duration")
-	if ttl:
-		ttl = int(ttl) * 60
+	"""Per-item stock, serial, batch, and UOM data for the POS grid.
 
-	@redis_cache(ttl=ttl or 1800)
-	def __get_items_details(pos_profile, items_data):
-		return _get_items_details(pos_profile, items_data)
+	Not Redis-cached: responses include live quantities and serial/batch availability.
+	`posa_use_server_cache` affects `get_customer_names` always; `get_items` only when
+	`posa_display_items_in_stock` is off (see docs/api-caching-and-stale-data.md).
+	"""
+	pos_profile = _load(pos_profile)
+	items_data = _load(items_data)
+	today = nowdate()
+	warehouse = pos_profile.get("warehouse")
+	result = []
 
-	def _get_items_details(pos_profile, items_data):
-		today = nowdate()
-		pos_profile = _load(pos_profile)
-		items_data = _load(items_data)
-		warehouse = pos_profile.get("warehouse")
-		result = []
+	if len(items_data) > 0:
+		for item in items_data:
+			item_code = item.get("item_code")
+			item_stock_qty = get_stock_availability(item_code, warehouse)
+			(has_batch_no, has_serial_no) = frappe.db.get_value(
+				"Item", item_code, ["has_batch_no", "has_serial_no"]
+			)
+			uoms = frappe.get_all(
+				"UOM Conversion Detail",
+				filters={"parent": item_code},
+				fields=["uom", "conversion_factor"],
+			)
 
-		if len(items_data) > 0:
-			for item in items_data:
-				item_code = item.get("item_code")
-				item_stock_qty = get_stock_availability(item_code, warehouse)
-				(has_batch_no, has_serial_no) = frappe.db.get_value(
-					"Item", item_code, ["has_batch_no", "has_serial_no"]
-				)
-				uoms = frappe.get_all(
-					"UOM Conversion Detail",
-					filters={"parent": item_code},
-					fields=["uom", "conversion_factor"],
-				)
+			serial_no_data = frappe.get_all(
+				"Serial No",
+				filters={
+					"item_code": item_code,
+					"status": "Active",
+					"warehouse": warehouse,
+				},
+				fields=["name as serial_no"],
+			)
 
-				serial_no_data = frappe.get_all(
-					"Serial No",
-					filters={
-						"item_code": item_code,
-						"status": "Active",
-						"warehouse": warehouse,
-					},
-					fields=["name as serial_no"],
-				)
+			batch_no_data = []
 
-				batch_no_data = []
+			batch_list = get_batch_qty(warehouse=warehouse, item_code=item_code)
 
-				batch_list = get_batch_qty(warehouse=warehouse, item_code=item_code)
+			if batch_list:
+				for batch in batch_list:
+					if batch.qty > 0 and batch.batch_no:
+						batch_doc = frappe.get_cached_doc("Batch", batch.batch_no)
+						if (
+							str(batch_doc.expiry_date) > str(today) or batch_doc.expiry_date in ["", None]
+						) and batch_doc.disabled == 0:
+							batch_no_data.append(
+								{
+									"batch_no": batch.batch_no,
+									"batch_qty": batch.qty,
+									"expiry_date": batch_doc.expiry_date,
+									"batch_price": batch_doc.posa_batch_price,
+									"manufacturing_date": batch_doc.manufacturing_date,
+								}
+							)
 
-				if batch_list:
-					for batch in batch_list:
-						if batch.qty > 0 and batch.batch_no:
-							batch_doc = frappe.get_cached_doc("Batch", batch.batch_no)
-							if (
-								str(batch_doc.expiry_date) > str(today) or batch_doc.expiry_date in ["", None]
-							) and batch_doc.disabled == 0:
-								batch_no_data.append(
-									{
-										"batch_no": batch.batch_no,
-										"batch_qty": batch.qty,
-										"expiry_date": batch_doc.expiry_date,
-										"batch_price": batch_doc.posa_batch_price,
-										"manufacturing_date": batch_doc.manufacturing_date,
-									}
-								)
+			row = {}
+			row.update(item)
+			row.update(
+				{
+					"item_uoms": uoms or [],
+					"serial_no_data": serial_no_data or [],
+					"batch_no_data": batch_no_data or [],
+					"actual_qty": item_stock_qty or 0,
+					"has_batch_no": has_batch_no,
+					"has_serial_no": has_serial_no,
+				}
+			)
 
-				row = {}
-				row.update(item)
-				row.update(
-					{
-						"item_uoms": uoms or [],
-						"serial_no_data": serial_no_data or [],
-						"batch_no_data": batch_no_data or [],
-						"actual_qty": item_stock_qty or 0,
-						"has_batch_no": has_batch_no,
-						"has_serial_no": has_serial_no,
-					}
-				)
+			result.append(row)
 
-				result.append(row)
-
-		return result
-
-	if _pos_profile.get("posa_use_server_cache"):
-		return __get_items_details(pos_profile, items_data)
-	else:
-		return _get_items_details(pos_profile, items_data)
+	return result
 
 
 @frappe.whitelist()
