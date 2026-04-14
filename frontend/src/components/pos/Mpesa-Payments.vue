@@ -1,6 +1,6 @@
 <template>
 	<v-row justify="center">
-		<v-dialog v-model="dialog" max-width="800px" min-width="800px">
+		<v-dialog v-model="dialog" max-width="800px" min-width="800px" persistent>
 			<v-card elevation="8" rounded="xl">
 				<v-card-title>
 					<span class="text-h5 text-primary">{{ __("Select Payment") }}</span>

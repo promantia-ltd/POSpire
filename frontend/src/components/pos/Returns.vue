@@ -1,7 +1,7 @@
 <template>
   <v-row justify="center">
     <!-- Invoice Selection Dialog -->
-    <v-dialog v-model="invoicesDialog" max-width="800px" min-width="800px">
+    <v-dialog v-model="invoicesDialog" max-width="800px" min-width="800px" persistent>
       <v-card class="rounded-xl shadow-lg" variant="flat" color="white" elevation="8" rounded="xl">
         <v-card-title>
           <span class="text-h5 text-primary">
@@ -133,7 +133,7 @@
     </v-dialog>
 
     <!-- Item Selection Dialog -->
-    <v-dialog v-model="itemSelectionDialog" max-width="900px" min-width="900px">
+    <v-dialog v-model="itemSelectionDialog" max-width="900px" min-width="900px" persistent>
       <v-card class="rounded-xl shadow-lg" variant="flat" color="white" elevation="8" rounded="xl">
         <v-card-title>
           <span class="text-h5 text-primary">
@@ -367,7 +367,7 @@ export default {
   }),
   watch: {
     selectedItems: {
-      handler(newVal, oldVal) {
+      handler(newVal) {
         // Initialize return quantities for newly selected items
         newVal.forEach((itemId) => {
           if (!(itemId in this.returnQuantities)) {
@@ -409,6 +409,24 @@ export default {
     },
   },
   methods: {
+    parseReturnQty(raw) {
+      if (raw === null || raw === undefined) {
+        return NaN;
+      }
+      if (typeof raw === 'string') {
+        const t = raw.trim();
+        if (t === '') {
+          return NaN;
+        }
+        const n = Number(t);
+        return Number.isFinite(n) ? n : NaN;
+      }
+      if (typeof raw === 'number') {
+        return Number.isFinite(raw) ? raw : NaN;
+      }
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : NaN;
+    },
     close_dialog() {
       this.invoicesDialog = false;
     },
@@ -474,16 +492,27 @@ export default {
     },
     validateReturnQty(item) {
       const itemId = item.sales_invoice_item;
-      let qty = Number(this.returnQuantities[itemId]);
+      const raw = this.returnQuantities[itemId];
+      // Allow empty while the user is replacing the value (submit enforces before load).
+      if (raw === null || raw === undefined) {
+        return;
+      }
+      if (typeof raw === 'string' && raw.trim() === '') {
+        return;
+      }
 
-      if (!qty || qty < 1) {
-        this.returnQuantities[itemId] = 1;
-      } else if (qty > item.remaining_qty) {
+      const qty = this.parseReturnQty(raw);
+      if (!Number.isFinite(qty) || qty < 1) {
+        toast.error(__('Please enter a return quantity greater than 0 for all selected items'));
+        this.returnQuantities[itemId] = item.remaining_qty;
+        return;
+      }
+      if (qty > item.remaining_qty) {
         this.returnQuantities[itemId] = item.remaining_qty;
         toast.warning(__('Cannot return more than {0} {1}', [item.remaining_qty, item.uom]));
-      } else {
-        this.returnQuantities[itemId] = qty;
+        return;
       }
+      this.returnQuantities[itemId] = qty;
     },
     getIncompleteOfferReturnIssues() {
       const invoiceItems = Array.isArray(this.selectedInvoice?.items)
@@ -563,6 +592,17 @@ export default {
         return;
       }
 
+      // Validate that every selected item has an explicit, positive return qty.
+      // Do not fall back silently — an empty field should be a hard stop.
+      const missingQty = this.selectedItems.filter((itemId) => {
+        const qty = this.parseReturnQty(this.returnQuantities[itemId]);
+        return !Number.isFinite(qty) || qty < 1;
+      });
+      if (missingQty.length > 0) {
+        toast.error(__('Please enter a return quantity greater than 0 for all selected items'));
+        return;
+      }
+
       const offerIssues = this.getIncompleteOfferReturnIssues();
       if (offerIssues.length) {
         const firstIssue = offerIssues[0];
@@ -592,7 +632,7 @@ export default {
       this.selectedItems.forEach((itemId) => {
         const item = this.returnableItems.find(i => i.sales_invoice_item === itemId);
         if (item) {
-          const return_qty = this.returnQuantities[itemId] || item.remaining_qty;
+          const return_qty = this.parseReturnQty(this.returnQuantities[itemId]);
 
           // Find the original item from the invoice for complete data
           const original_item = return_doc.items.find(i => i.name === itemId);

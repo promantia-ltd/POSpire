@@ -1,6 +1,6 @@
 <template>
 	<div class="pos-panel-container">
-		<v-dialog v-model="cancel_dialog" max-width="480px">
+		<v-dialog v-model="cancel_dialog" max-width="480px" persistent>
 			<v-card class="pospire-modal">
 				<v-card-title class="pospire-modal-header">
 					<div class="pospire-modal-icon icon-warning">

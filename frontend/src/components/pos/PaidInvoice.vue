@@ -1,6 +1,6 @@
 <template>
 	<v-row justify="center">
-		<v-dialog v-model="paidDialog" max-width="900px" class="pospire-dialog">
+		<v-dialog v-model="paidDialog" max-width="900px" class="pospire-dialog" persistent>
 			<v-card class="pospire-modal" elevation="8">
 				<v-card-title class="pospire-modal-header">
 					<v-icon class="mr-3" size="28" color="#00BCD4"
