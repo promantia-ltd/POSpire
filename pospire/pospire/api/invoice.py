@@ -278,6 +278,16 @@ def _get_required_approval_checks(doc) -> list[dict]:
 	doc_context = frappe._dict(doc.as_dict())
 	checks: list[dict] = []
 
+	# Build posa_row_id → action_type lookup from frontend context so we can
+	# disambiguate "discount amount typed" vs "rate edited directly" — both produce
+	# discount_percentage=0 with rate != price_list_rate on the saved item row.
+	submit_data = frappe.parse_json(getattr(doc, "posa_submit_data", None) or "{}")
+	row_action_map: dict[str, str] = {
+		entry["posa_row_id"]: entry["action_type"]
+		for entry in (submit_data.get("approved_requests_context") or [])
+		if entry.get("posa_row_id") and entry.get("action_type")
+	}
+
 	if doc.is_return and _approval_required(doc, "Sales Return", {}, doc_context):
 		checks.append({"action_type": "Sales Return", "label": doc.name or _("this return")})
 
@@ -313,16 +323,22 @@ def _get_required_approval_checks(doc) -> list[dict]:
 	for item in doc.items or []:
 		item_dict = item.as_dict() if hasattr(item, "as_dict") else dict(item)
 		item_label = item_dict.get("item_name") or item_dict.get("item_code") or _("an item")
+		posa_row_id = item_dict.get("posa_row_id") or ""
 
-		if _has_item_discount(item_dict):
+		discount_pct = flt(item_dict.get("discount_percentage") or 0)
+		discount_amt = flt(item_dict.get("discount_amount") or 0)
+		price_list_rate = flt(item_dict.get("price_list_rate") or 0)
+		rate = flt(item_dict.get("rate") or 0)
+		price_changed = abs(rate - price_list_rate) > 1e-9
+
+		if abs(discount_pct) > 0:
+			# Explicit percentage discount — unambiguously "Edit Item Discount"
 			action_context = {
 				"item_code": item_dict.get("item_code"),
 				"item_name": item_dict.get("item_name"),
-				"requested_value": flt(
-					item_dict.get("discount_percentage") or item_dict.get("discount_amount") or 0
-				),
-				"discount_percentage": flt(item_dict.get("discount_percentage") or 0),
-				"discount_amount": flt(item_dict.get("discount_amount") or 0),
+				"requested_value": flt(discount_pct or discount_amt or 0),
+				"discount_percentage": discount_pct,
+				"discount_amount": discount_amt,
 				"value_field_label": "Discount",
 			}
 			if _approval_required(doc, "Edit Item Discount", action_context, doc_context):
@@ -333,29 +349,54 @@ def _get_required_approval_checks(doc) -> list[dict]:
 						"label": item_label,
 					}
 				)
+		elif price_changed:
+			# discount_percentage == 0 but rate differs from price_list_rate.
+			# When rate > price_list_rate the cashier raised the price — a discount amount
+			# field can never cause this, so it is unambiguously a direct rate edit.
+			# When rate < price_list_rate both "discount amount typed" and "rate lowered"
+			# produce identical DB state; use the frontend context to disambiguate.
+			if rate > price_list_rate:
+				action_type = "Edit Rate"
+			else:
+				action_type = row_action_map.get(posa_row_id, "Edit Rate")
 
-		if _has_rate_edit(item_dict):
-			original_value = flt(item_dict.get("price_list_rate") or 0)
-			requested_value = flt(item_dict.get("rate") or 0)
-			change_percent = (
-				abs(((requested_value - original_value) / original_value) * 100) if original_value else 0
-			)
-			action_context = {
-				"item_code": item_dict.get("item_code"),
-				"item_name": item_dict.get("item_name"),
-				"original_value": original_value,
-				"requested_value": requested_value,
-				"change_percent": change_percent,
-				"value_field_label": "Rate",
-			}
-			if _approval_required(doc, "Edit Rate", action_context, doc_context):
-				checks.append(
-					{
-						"action_type": "Edit Rate",
-						"item_code": item_dict.get("item_code"),
-						"label": item_label,
-					}
+			if action_type == "Edit Item Discount":
+				action_context = {
+					"item_code": item_dict.get("item_code"),
+					"item_name": item_dict.get("item_name"),
+					"requested_value": flt(discount_amt or 0),
+					"discount_percentage": 0,
+					"discount_amount": discount_amt,
+					"value_field_label": "Discount Amount",
+				}
+				if _approval_required(doc, "Edit Item Discount", action_context, doc_context):
+					checks.append(
+						{
+							"action_type": "Edit Item Discount",
+							"item_code": item_dict.get("item_code"),
+							"label": item_label,
+						}
+					)
+			else:
+				change_percent = (
+					abs(((rate - price_list_rate) / price_list_rate) * 100) if price_list_rate else 0
 				)
+				action_context = {
+					"item_code": item_dict.get("item_code"),
+					"item_name": item_dict.get("item_name"),
+					"original_value": price_list_rate,
+					"requested_value": rate,
+					"change_percent": change_percent,
+					"value_field_label": "Rate",
+				}
+				if _approval_required(doc, "Edit Rate", action_context, doc_context):
+					checks.append(
+						{
+							"action_type": "Edit Rate",
+							"item_code": item_dict.get("item_code"),
+							"label": item_label,
+						}
+					)
 
 	return checks
 
@@ -446,24 +487,6 @@ def _find_matching_approved_request(requests: list, check: dict) -> int | None:
 def _has_additional_discount(doc) -> bool:
 	return abs(flt(doc.discount_amount or 0)) > 0 or abs(flt(doc.additional_discount_percentage or 0)) > 0
 
-
-def _has_item_discount(item_dict: dict) -> bool:
-	# Only treat as an explicit discount action when discount_percentage is set.
-	# A non-zero discount_amount with discount_percentage == 0 means Frappe
-	# back-calculated the amount from a direct rate edit — that is "Edit Rate",
-	# not "Edit Item Discount".
-	return abs(flt(item_dict.get("discount_percentage") or 0)) > 0
-
-
-def _has_rate_edit(item_dict: dict) -> bool:
-	# Explicit percentage discount on the item is an "Edit Item Discount" action,
-	# not a rate edit — skip it here.
-	if abs(flt(item_dict.get("discount_percentage") or 0)) > 0:
-		return False
-
-	price_list_rate = flt(item_dict.get("price_list_rate") or 0)
-	rate = flt(item_dict.get("rate") or 0)
-	return abs(rate - price_list_rate) > 1e-9
 
 
 def validate_shift(doc):
