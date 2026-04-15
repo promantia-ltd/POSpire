@@ -18,9 +18,13 @@ function _show_approval_dialog(data) {
 		value_line =
 			"<div style='margin:8px 0; padding:6px 10px; background:#f5f5f5; border-radius:4px; font-size:13px;'>" +
 			(data.value_field_label ? "<strong>" + data.value_field_label + ":</strong> " : "") +
-			"<span style='text-decoration:line-through;color:#888'>" + data.original_value + "</span>" +
+			"<span style='text-decoration:line-through;color:#888'>" +
+			data.original_value +
+			"</span>" +
 			" → " +
-			"<strong>" + data.requested_value + "</strong>" +
+			"<strong>" +
+			data.requested_value +
+			"</strong>" +
 			"</div>";
 	}
 
@@ -31,8 +35,13 @@ function _show_approval_dialog(data) {
 				fieldtype: "HTML",
 				options:
 					"<div style='padding:4px 0'>" +
-					"<div style='font-weight:600;font-size:14px'>" + cashier + "</div>" +
-					"<div style='color:#555;margin:2px 0'>" + action + item + "</div>" +
+					"<div style='font-weight:600;font-size:14px'>" +
+					cashier +
+					"</div>" +
+					"<div style='color:#555;margin:2px 0'>" +
+					action +
+					item +
+					"</div>" +
 					value_line +
 					"</div>",
 			},
@@ -68,7 +77,9 @@ function _resolve(request_name, action, resolution_note) {
 			if (!r.exc) {
 				frappe.show_alert(
 					{
-						message: __(action === "Approved" ? "Request approved" : "Request rejected"),
+						message: __(
+							action === "Approved" ? "Request approved" : "Request rejected"
+						),
 						indicator: action === "Approved" ? "green" : "red",
 					},
 					5

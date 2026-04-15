@@ -488,7 +488,6 @@ def _has_additional_discount(doc) -> bool:
 	return abs(flt(doc.discount_amount or 0)) > 0 or abs(flt(doc.additional_discount_percentage or 0)) > 0
 
 
-
 def validate_shift(doc):
 	if doc.posa_pos_opening_shift and doc.pos_profile and doc.is_pos:
 		# check if shift is open
