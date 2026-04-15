@@ -1,0 +1,8 @@
+[
+	{
+		"doctype": "Email Template",
+		"name": "POSpire Manager PIN",
+		"subject": "Your POSpire Manager PIN",
+		"response": "<p>Hi {{ full_name }},</p>\n\n<p>A POS Manager PIN has been created for your account by your system administrator.</p>\n\n<p><strong>Your PIN: {{ pin }}</strong></p>\n\n<p>You will need this PIN to authorise manager-level actions at the POS terminal.\nPlease keep it confidential and do not share it with anyone.</p>\n\n<p>If you did not expect this email, contact your system administrator immediately.</p>\n\n<p>— POSpire</p>"
+	}
+]

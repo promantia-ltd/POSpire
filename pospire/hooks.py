@@ -11,6 +11,7 @@ app_license = "GPLv3"
 required_apps = ["erpnext"]
 
 POSPIRE_COLOR = "#2563EB"
+POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE = "POSpire Manager PIN"
 
 # Includes in <head>
 # ------------------
@@ -173,6 +174,10 @@ scheduler_events = {
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
 
 fixtures = [
+	{
+		"doctype": "Email Template",
+		"filters": [["name", "in", ("POSpire Manager PIN",)]],
+	},
 	{
 		"doctype": "Custom Field",
 		"filters": [

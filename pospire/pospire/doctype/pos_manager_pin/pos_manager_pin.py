@@ -9,6 +9,8 @@ from frappe import _
 from frappe.model.document import Document
 from werkzeug.security import generate_password_hash
 
+from pospire.hooks import POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE
+
 
 class POSManagerPIN(Document):
 	def before_insert(self) -> None:
@@ -34,20 +36,7 @@ def _generate_pin(length: int = 6) -> str:
 	return "".join(secrets.choice(string.digits) for _ in range(length))
 
 
-def _send_pin_email(user: str, pin: str) -> None:
-	full_name = frappe.db.get_value("User", user, "full_name") or user
-	frappe.sendmail(
-		recipients=[user],
-		subject=_("Your POSpire Manager PIN"),
-		message=frappe.render_template(
-			_PIN_EMAIL_TEMPLATE,
-			{"full_name": full_name, "pin": pin},
-		),
-		now=True,
-	)
-
-
-_PIN_EMAIL_TEMPLATE = """<p>Hi {{ full_name }},</p>
+_PIN_EMAIL_TEMPLATE_FALLBACK = """<p>Hi {{ full_name }},</p>
 
 <p>A POS Manager PIN has been created for your account by your system administrator.</p>
 
@@ -59,3 +48,23 @@ Please keep it confidential and do not share it with anyone.</p>
 <p>If you did not expect this email, contact your system administrator immediately.</p>
 
 <p>— POSpire</p>"""
+
+
+def _send_pin_email(user: str, pin: str) -> None:
+	full_name = frappe.db.get_value("User", user, "full_name") or user
+	args = {"full_name": full_name, "pin": pin}
+
+	if frappe.db.exists("Email Template", POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE):
+		template = frappe.get_doc("Email Template", POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE)
+		subject = frappe.render_template(template.subject, args)
+		message = frappe.render_template(template.response, args)
+	else:
+		subject = _("Your POSpire Manager PIN")
+		message = frappe.render_template(_PIN_EMAIL_TEMPLATE_FALLBACK, args)
+
+	frappe.sendmail(
+		recipients=[user],
+		subject=subject,
+		message=message,
+		now=True,
+	)
