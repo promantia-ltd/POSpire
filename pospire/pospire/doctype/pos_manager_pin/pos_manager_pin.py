@@ -1,0 +1,74 @@
+# Copyright (c) 2026, POSpire and contributors
+# For license information, please see license.txt
+
+import secrets
+import string
+
+import frappe
+from frappe import _
+from frappe.model.document import Document
+from werkzeug.security import generate_password_hash
+
+from pospire.hooks import POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE
+
+
+class POSManagerPIN(Document):
+	def before_insert(self) -> None:
+		_generate_and_dispatch_pin(self)
+
+	def before_save(self) -> None:
+		if not self.is_new() and self.has_value_changed("user"):
+			_generate_and_dispatch_pin(self)
+
+
+def _generate_and_dispatch_pin(doc: Document) -> None:
+	"""Generate a cryptographically random PIN, hash it, email the manager.
+
+	The plaintext PIN is discarded after sending — it is never stored,
+	logged, or returned in any API response.
+	"""
+	pin = _generate_pin()
+	doc.pin_hash = generate_password_hash(pin)
+	_send_pin_email(doc.user, pin)
+
+
+def _generate_pin(length: int = 6) -> str:
+	return "".join(secrets.choice(string.digits) for _ in range(length))
+
+
+_PIN_EMAIL_TEMPLATE_FALLBACK = """<p>Hi {{ full_name }},</p>
+
+<p>A POS Manager PIN has been created for your account by your system administrator.</p>
+
+<p><strong>Your PIN: {{ pin }}</strong></p>
+
+<p>You will need this PIN to authorise manager-level actions at the POS terminal.
+Please keep it confidential and do not share it with anyone.</p>
+
+<p>If you did not expect this email, contact your system administrator immediately.</p>
+
+<p>— POSpire</p>"""
+
+
+def _send_pin_email(user: str, pin: str) -> None:
+	full_name = frappe.db.get_value("User", user, "full_name") or user
+	args = {"full_name": full_name, "pin": pin}
+
+	if frappe.db.exists("Email Template", POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE):
+		template = frappe.get_doc("Email Template", POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE)
+		# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti
+		# Email Template is a system-manager-only doctype; template content is trusted.
+		subject = frappe.render_template(template.subject, args)  # nosemgrep
+		message = frappe.render_template(template.response, args)  # nosemgrep
+	else:
+		subject = _("Your POSpire Manager PIN")
+		# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti
+		# _PIN_EMAIL_TEMPLATE_FALLBACK is a hardcoded constant defined in this module.
+		message = frappe.render_template(_PIN_EMAIL_TEMPLATE_FALLBACK, args)  # nosemgrep
+
+	frappe.sendmail(
+		recipients=[user],
+		subject=subject,
+		message=message,
+		now=True,
+	)

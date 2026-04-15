@@ -1,0 +1,101 @@
+{
+ "actions": [],
+ "creation": "2026-04-02 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "action_type",
+  "approval_mode",
+  "approver_role",
+  "expiry_minutes",
+  "column_break_1",
+  "pin_approval",
+  "remote_approval",
+  "section_break_condition",
+  "condition",
+  "condition_js"
+ ],
+ "fields": [
+  {
+   "fieldname": "action_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Action Type",
+   "options": "\nDelete Item\nEdit Rate\nEdit Item Discount\nEdit Additional Discount\nVoid Invoice\nSales Return",
+   "reqd": 1
+  },
+  {
+   "fieldname": "approval_mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Approval Mode",
+   "options": "Not Required\nRequired\nBlocked",
+   "reqd": 1,
+   "default": "Not Required"
+  },
+  {
+   "fieldname": "approver_role",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Approver Role",
+   "options": "Role"
+  },
+  {
+   "fieldname": "expiry_minutes",
+   "fieldtype": "Int",
+   "label": "Expiry (Minutes)",
+   "default": "15",
+   "description": "Minutes before an unanswered remote request auto-expires"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pin_approval",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Allow PIN Approval",
+   "default": "1"
+  },
+  {
+   "fieldname": "remote_approval",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Allow Remote Approval"
+  },
+  {
+   "fieldname": "section_break_condition",
+   "fieldtype": "Section Break",
+   "label": "Condition",
+   "collapsible": 1,
+   "description": "Optional Python expression. When set, approval is only required if this evaluates to True. Leave blank to always require approval."
+  },
+  {
+   "fieldname": "condition",
+   "fieldtype": "Small Text",
+   "label": "Condition",
+   "description": "Python expression using doc.* and action.* variables. E.g. action.change_percent > 10"
+  },
+  {
+   "fieldname": "condition_js",
+   "fieldtype": "Small Text",
+   "label": "Condition (JS)",
+   "hidden": 1,
+   "read_only": 1,
+   "description": "Auto-computed JS equivalent of Condition field. Used for offline evaluation."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POS Approval Action",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

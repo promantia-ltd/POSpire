@@ -216,15 +216,14 @@
             <!-- Return Qty Input -->
             <template v-slot:item.return_qty="{ item }">
               <v-text-field
-                v-if="item.can_return && isItemSelected(item.sales_invoice_item)"
+                v-if="item.can_return && selectedItemsSet.has(item.sales_invoice_item)"
                 v-model="returnQuantities[item.sales_invoice_item]"
                 density="compact"
                 hide-details
                 variant="outlined"
                 class="return-qty-input"
                 style="max-width: 100px"
-                @blur="validateReturnQty(item)"
-                @keyup.enter="validateReturnQty(item)"
+                @update:model-value="validateReturnQty(item)"
               ></v-text-field>
               <span v-else-if="!item.can_return" class="text-grey">-</span>
               <span v-else class="text-grey text-caption">{{ __('Select to edit') }}</span>
@@ -367,27 +366,37 @@ export default {
   }),
   watch: {
     selectedItems: {
+      deep: true,
       handler(newVal) {
         // Initialize return quantities for newly selected items
         newVal.forEach((itemId) => {
           if (!(itemId in this.returnQuantities)) {
-            const item = this.returnableItems.find(i => i.sales_invoice_item === itemId);
+            const item = this.returnableItemsMap.get(itemId);
             if (item) {
               this.returnQuantities[itemId] = item.remaining_qty;
             }
           }
         });
         // Clean up deselected items
+        const newSet = new Set(newVal);
         Object.keys(this.returnQuantities).forEach((itemId) => {
-          if (!newVal.includes(itemId)) {
+          if (!newSet.has(itemId)) {
             delete this.returnQuantities[itemId];
           }
         });
       },
-      deep: true,
     },
   },
   computed: {
+    // O(1) lookup map for returnableItems keyed by sales_invoice_item.
+    // Replaces repeated .find() calls across watcher, computed totals, and submit.
+    returnableItemsMap() {
+      return new Map(this.returnableItems.map((i) => [i.sales_invoice_item, i]));
+    },
+    // O(1) membership check for selected items — used in template v-if per row.
+    selectedItemsSet() {
+      return new Set(this.selectedItems);
+    },
     pageCount() {
       return Math.ceil(this.dialog_data.length / this.itemsPerPage);
     },
@@ -399,7 +408,7 @@ export default {
     totalReturnAmount() {
       let total = 0;
       this.selectedItems.forEach((itemId) => {
-        const item = this.returnableItems.find(i => i.sales_invoice_item === itemId);
+        const item = this.returnableItemsMap.get(itemId);
         if (item) {
           const qty = this.returnQuantities[itemId] || 0;
           total += qty * item.rate;
@@ -487,9 +496,6 @@ export default {
     close_item_selection() {
       this.itemSelectionDialog = false;
     },
-    isItemSelected(itemId) {
-      return this.selectedItems.includes(itemId);
-    },
     validateReturnQty(item) {
       const itemId = item.sales_invoice_item;
       const raw = this.returnQuantities[itemId];
@@ -531,10 +537,9 @@ export default {
           .filter((item) => item.posa_row_id)
           .map((item) => [item.posa_row_id, item])
       );
-      const selectedItemIds = new Set(this.selectedItems);
       const selectedRowIds = new Set(
         invoiceItems
-          .filter((item) => selectedItemIds.has(item.name) && item.posa_row_id)
+          .filter((item) => this.selectedItemsSet.has(item.name) && item.posa_row_id)
           .map((item) => item.posa_row_id)
       );
 
@@ -603,6 +608,22 @@ export default {
         return;
       }
 
+      const overQtyItem = this.selectedItems
+        .map((itemId) => ({
+          itemId,
+          item: this.returnableItemsMap.get(itemId),
+          qty: this.parseReturnQty(this.returnQuantities[itemId]),
+        }))
+        .find(({ item, qty }) => item && Number.isFinite(qty) && qty > item.remaining_qty);
+      if (overQtyItem) {
+        this.returnQuantities[overQtyItem.itemId] = overQtyItem.item.remaining_qty;
+        toast.warning(__('Cannot return more than {0} {1}', [
+          overQtyItem.item.remaining_qty,
+          overQtyItem.item.uom,
+        ]));
+        return;
+      }
+
       const offerIssues = this.getIncompleteOfferReturnIssues();
       if (offerIssues.length) {
         const firstIssue = offerIssues[0];
@@ -630,7 +651,7 @@ export default {
 
       // Build items array from selected items with their return quantities
       this.selectedItems.forEach((itemId) => {
-        const item = this.returnableItems.find(i => i.sales_invoice_item === itemId);
+        const item = this.returnableItemsMap.get(itemId);
         if (item) {
           const return_qty = this.parseReturnQty(this.returnQuantities[itemId]);
 

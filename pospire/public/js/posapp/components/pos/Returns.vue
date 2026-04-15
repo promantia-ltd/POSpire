@@ -449,6 +449,24 @@ export default {
 		},
 	},
 	methods: {
+		parseReturnQty(raw) {
+			if (raw === null || raw === undefined) {
+				return NaN;
+			}
+			if (typeof raw === "string") {
+				const t = raw.trim();
+				if (t === "") {
+					return NaN;
+				}
+				const n = Number(t);
+				return Number.isFinite(n) ? n : NaN;
+			}
+			if (typeof raw === "number") {
+				return Number.isFinite(raw) ? raw : NaN;
+			}
+			const n = Number(raw);
+			return Number.isFinite(n) ? n : NaN;
+		},
 		close_dialog() {
 			this.invoicesDialog = false;
 		},
@@ -521,23 +539,69 @@ export default {
 		},
 		validateReturnQty(item) {
 			const itemId = item.sales_invoice_item;
-			let qty = this.returnQuantities[itemId];
+			const raw = this.returnQuantities[itemId];
+			if (raw === null || raw === undefined) {
+				return;
+			}
+			if (typeof raw === "string" && raw.trim() === "") {
+				return;
+			}
 
-			if (qty < 1) {
-				this.returnQuantities[itemId] = 1;
-			} else if (qty > item.remaining_qty) {
+			const qty = this.parseReturnQty(raw);
+			if (!Number.isFinite(qty) || qty < 1) {
+				frappe.show_alert({
+					message: __(
+						"Please enter a return quantity greater than 0 for all selected items"
+					),
+					indicator: "red",
+				});
+				this.returnQuantities[itemId] = item.remaining_qty;
+				return;
+			}
+			if (qty > item.remaining_qty) {
 				this.returnQuantities[itemId] = item.remaining_qty;
 				frappe.show_alert({
 					message: __("Cannot return more than {0} {1}", [item.remaining_qty, item.uom]),
 					indicator: "orange",
 				});
+				return;
 			}
+			this.returnQuantities[itemId] = qty;
 		},
 		submit_return() {
 			if (this.selectedItems.length === 0) {
 				frappe.show_alert({
 					message: __("Please select at least one item to return"),
 					indicator: "orange",
+				});
+				return;
+			}
+
+			const missingQty = this.selectedItems.filter((itemId) => {
+				const qty = this.parseReturnQty(this.returnQuantities[itemId]);
+				return !Number.isFinite(qty) || qty < 1;
+			});
+			if (missingQty.length > 0) {
+				frappe.show_alert({
+					message: __(
+						"Please enter a return quantity greater than 0 for all selected items"
+					),
+					indicator: "red",
+				});
+				return;
+			}
+
+			const overQty = this.selectedItems.filter((itemId) => {
+				const item = this.returnableItems.find((i) => i.sales_invoice_item === itemId);
+				const qty = this.parseReturnQty(this.returnQuantities[itemId]);
+				return item && Number.isFinite(qty) && qty > item.remaining_qty;
+			});
+			if (overQty.length > 0) {
+				frappe.show_alert({
+					message: __(
+						"Return quantity exceeds the available quantity for one or more items."
+					),
+					indicator: "red",
 				});
 				return;
 			}
@@ -550,7 +614,7 @@ export default {
 			this.selectedItems.forEach((itemId) => {
 				const item = this.returnableItems.find((i) => i.sales_invoice_item === itemId);
 				if (item) {
-					const return_qty = this.returnQuantities[itemId] || item.remaining_qty;
+					const return_qty = this.parseReturnQty(this.returnQuantities[itemId]);
 
 					// Find the original item from the invoice for complete data
 					const original_item = return_doc.items.find((i) => i.name === itemId);

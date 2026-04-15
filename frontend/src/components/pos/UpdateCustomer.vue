@@ -239,14 +239,14 @@ export default {
 
 			// Accept dd-mm-yyyy (with - or /)
 			let d = null;
-			const ddmmyyyy = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+			const ddmmyyyy = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/;
 			const m = val.match(ddmmyyyy);
 			if (m) {
 				const parsed = new Date(`${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`);
 				if (!isNaN(parsed)) d = parsed;
 			}
 			// Accept yyyy-mm-dd (with - or /)
-			if (!d && /^\d{4}[\/\-]\d{2}[\/\-]\d{2}$/.test(val)) {
+			if (!d && /^\d{4}[/-]\d{2}[/-]\d{2}$/.test(val)) {
 				const parsed = new Date(val.replace(/\//g, "-"));
 				if (!isNaN(parsed)) d = parsed;
 			}
