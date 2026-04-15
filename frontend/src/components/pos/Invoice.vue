@@ -13,7 +13,7 @@
 				<v-card-text class="pospire-modal-body">
 					{{
 						__(
-							"This will cancel and delete the current sale. To save it as a draft, use 'Save and Clear' instead."
+							"This will cancel and delete the current sale. To save it as a draft, use 'Save and Clear' instead.",
 						)
 					}}
 				</v-card-text>
@@ -23,7 +23,12 @@
 						<v-icon start size="18">mdi-arrow-left</v-icon>
 						{{ __("Go Back") }}
 					</v-btn>
-					<v-btn class="btn-danger" :loading="cancellingInvoice" :disabled="cancellingInvoice" @click="cancel_invoice">
+					<v-btn
+						class="btn-danger"
+						:loading="cancellingInvoice"
+						:disabled="cancellingInvoice"
+						@click="cancel_invoice"
+					>
 						<v-icon start size="18">mdi-close-circle-outline</v-icon>
 						{{ __("Cancel Sale") }}
 					</v-btn>
@@ -36,10 +41,14 @@
 			v-model="approval_dialog.show"
 			:action-type="approval_dialog.action_type"
 			:action-config="approval_dialog.action_config"
-			:remote-approval-enabled="!!(approval_config && approval_config.remote_approval_enabled)"
+			:remote-approval-enabled="
+				!!(approval_config && approval_config.remote_approval_enabled)
+			"
 			:managers="approval_config && approval_config.managers ? approval_config.managers : []"
 			:pos-profile="pos_profile && pos_profile.name ? pos_profile.name : ''"
-			:pos-opening-shift="pos_opening_shift && pos_opening_shift.name ? pos_opening_shift.name : ''"
+			:pos-opening-shift="
+				pos_opening_shift && pos_opening_shift.name ? pos_opening_shift.name : ''
+			"
 			:item-code="approval_dialog.item_code"
 			:item-name="approval_dialog.item_name"
 			:original-value="approval_dialog.original_value"
@@ -61,8 +70,8 @@
 							$vuetify.display.mdAndDown
 								? 12
 								: pos_profile.posa_allow_sales_order
-								? 8
-								: 9
+									? 8
+									: 9
 						"
 						class="pr-2"
 					>
@@ -92,8 +101,8 @@
 							$vuetify.display.mdAndDown
 								? 12
 								: pos_profile.posa_allow_sales_order
-								? 2
-								: 3
+									? 2
+									: 3
 						"
 						class="pl-2 d-flex align-center justify-end"
 					>
@@ -241,7 +250,7 @@
 			<div class="invoice-cart-section">
 				<v-data-table
 					:headers="items_headers"
-					:items="items.filter(item => !item.posa_deleted)"
+					:items="items.filter((item) => !item.posa_deleted)"
 					v-model:expanded="expanded"
 					show-expand
 					item-value="posa_row_id"
@@ -261,21 +270,17 @@
 								hide-details
 								:model-value="
 									formatFloat(
-										invoice_doc.is_return ? Math.abs(item.qty) : item.qty
+										invoice_doc.is_return ? Math.abs(item.qty) : item.qty,
 									)
 								"
 								:prefix="invoice_doc.is_return ? '-' : ''"
-								@change="
-									[
-										this.setReturnQty(
-											item,
-											typeof $event === 'object'
-												? $event.target.value
-												: $event
-										),
-										this.resetDiscountOnQtyChange(item),
-									]
-								"
+								@change="[
+									this.setReturnQty(
+										item,
+										typeof $event === 'object' ? $event.target.value : $event,
+									),
+									this.resetDiscountOnQtyChange(item),
+								]"
 								:rules="[isNumber]"
 								:disabled="!!item.posa_is_offer || !!item.posa_is_replace"
 							>
@@ -349,9 +354,10 @@
 									: currencySymbol(pos_profile.currency)
 							"
 							:model-value="formatCurrency(Math.abs(item.qty * item.rate) || 0.0)"
-							@change="
-								[updateItemTotal(item, $event), resetDiscountOnQtyChange(item)]
-							"
+							@change="[
+								updateItemTotal(item, $event),
+								resetDiscountOnQtyChange(item),
+							]"
 							:disabled="
 								!pos_profile.custom_allow_user_to_edit_item_total ||
 								invoice_doc.is_return
@@ -459,18 +465,16 @@
 										bg-color="white"
 										hide-details
 										:model-value="formatFloat(item.qty)"
-										@change="
-											[
-												setFormatedFloat(item, 'qty', null, false, $event),
-												calc_stock_qty(
-													item,
-													typeof $event === 'object'
-														? $event.target.value
-														: $event
-												),
-												resetDiscountOnQtyChange(item),
-											]
-										"
+										@change="[
+											setFormatedFloat(item, 'qty', null, false, $event),
+											calc_stock_qty(
+												item,
+												typeof $event === 'object'
+													? $event.target.value
+													: $event,
+											),
+											resetDiscountOnQtyChange(item),
+										]"
 										:rules="[isNumber]"
 										:disabled="!!item.posa_is_offer || !!item.posa_is_replace"
 									></v-text-field>
@@ -497,7 +501,9 @@
 								</v-col>
 								<v-col cols="4">
 									<v-text-field
-										:key="'rate-' + item.item_code + '-' + approval_rejection_key"
+										:key="
+											'rate-' + item.item_code + '-' + approval_rejection_key
+										"
 										density="compact"
 										variant="outlined"
 										color="primary"
@@ -531,12 +537,10 @@
 										hide-details
 										:prefix="currencySymbol(pos_profile.currency)"
 										:model-value="formatCurrency(item.qty * item.rate || 0.0)"
-										@change="
-											[
-												updateItemTotal(item, $event),
-												resetDiscountOnQtyChange(item),
-											]
-										"
+										@change="[
+											updateItemTotal(item, $event),
+											resetDiscountOnQtyChange(item),
+										]"
 										id="total"
 										:disabled="
 											!pos_profile.custom_allow_user_to_edit_item_total
@@ -545,9 +549,16 @@
 								</v-col>
 								<v-col cols="4">
 									<v-text-field
-										:key="'disc-pct-' + item.item_code + '-' + approval_rejection_key"
+										:key="
+											'disc-pct-' +
+											item.item_code +
+											'-' +
+											approval_rejection_key
+										"
 										:model-value="formatFloat(item.discount_percentage)"
-										@change="(event) => on_discount_percentage_change(item, event)"
+										@change="
+											(event) => on_discount_percentage_change(item, event)
+										"
 										density="compact"
 										variant="outlined"
 										color="primary"
@@ -568,7 +579,12 @@
 								</v-col>
 								<v-col cols="4">
 									<v-text-field
-										:key="'disc-amt-' + item.item_code + '-' + approval_rejection_key"
+										:key="
+											'disc-amt-' +
+											item.item_code +
+											'-' +
+											approval_rejection_key
+										"
 										density="compact"
 										variant="outlined"
 										color="primary"
@@ -785,14 +801,12 @@
 											<v-btn
 												variant="text"
 												color="primary"
-												@click="
-													[
-														$refs.item_delivery_date.save(
-															item.posa_delivery_date
-														),
-														validate_due_date(item),
-													]
-												"
+												@click="[
+													$refs.item_delivery_date.save(
+														item.posa_delivery_date,
+													),
+													validate_due_date(item),
+												]"
 											>
 												OK
 											</v-btn>
@@ -930,7 +944,9 @@
 						>
 							<v-text-field
 								v-model="additional_discount_percentage"
-								@focus="prev_additional_discount_pct = additional_discount_percentage"
+								@focus="
+									prev_additional_discount_pct = additional_discount_percentage
+								"
 								@change="on_additional_discount_percentage_change"
 								@blur="format_discount_input"
 								:rules="[isNumber]"
@@ -1233,7 +1249,7 @@ export default {
 			}
 			const parsedTotal = this.flt(
 				this.parseFormattedCurrency(newTotal),
-				this.currency_precision
+				this.currency_precision,
 			);
 			item.rate = this.flt(parsedTotal / item.qty, this.currency_precision);
 
@@ -1261,7 +1277,7 @@ export default {
 			if (!isNaN(this.additional_discount_percentage)) {
 				this.additional_discount_percentage = this.formatFloat(
 					this.additional_discount_percentage,
-					2
+					2,
 				);
 			}
 		},
@@ -1317,10 +1333,7 @@ export default {
 				vm.sales_persons = r;
 				if (vm.pos_profile.posa_local_storage) {
 					localStorage.setItem("sales_persons_storage", "");
-					localStorage.setItem(
-						"sales_persons_storage",
-						JSON.stringify(r)
-					);
+					localStorage.setItem("sales_persons_storage", JSON.stringify(r));
 				}
 			}
 		},
@@ -1365,9 +1378,7 @@ export default {
 			if (!this.deleted_items) {
 				this.deleted_items = [];
 			}
-			let existing = this.deleted_items.find(
-				d => d.item_code === item.item_code
-			);
+			let existing = this.deleted_items.find((d) => d.item_code === item.item_code);
 			if (existing) {
 				existing.qty += item.qty;
 				existing.amount = existing.qty * existing.rate;
@@ -1377,11 +1388,11 @@ export default {
 					item_name: item.item_name,
 					qty: item.qty,
 					rate: item.rate,
-					amount: item.qty * item.rate
+					amount: item.qty * item.rate,
 				});
 			}
 			// remove item from cart
-			this.items = this.items.filter(el => el.posa_row_id !== item.posa_row_id);
+			this.items = this.items.filter((el) => el.posa_row_id !== item.posa_row_id);
 			this.$forceUpdate();
 		},
 
@@ -1399,9 +1410,19 @@ export default {
 			}
 		},
 
-		async approvalGuard(action_type, { item = null, originalValue = null, requestedValue = null, valueFieldLabel = null } = {}) {
+		async approvalGuard(
+			action_type,
+			{
+				item = null,
+				originalValue = null,
+				requestedValue = null,
+				valueFieldLabel = null,
+			} = {},
+		) {
 			if (!this.approval_config?.enabled) return true;
-			const action = this.approval_config.actions?.find((a) => a.action_type === action_type);
+			const action = this.approval_config.actions?.find(
+				(a) => a.action_type === action_type,
+			);
 			if (!action) return true;
 			if (action.approval_mode === "Not Required") return true;
 			if (action.approval_mode === "Blocked") {
@@ -1412,9 +1433,13 @@ export default {
 
 			if (action.condition_js) {
 				try {
-					const required = new Function("doc", "action_ctx", `return (${action.condition_js})`)(
+					const required = new Function(
+						"doc",
+						"action_ctx",
+						`return (${action.condition_js})`,
+					)(
 						{ ...this.invoice_doc, items: this.items },
-						{ item, original_value: originalValue, requested_value: requestedValue }
+						{ item, original_value: originalValue, requested_value: requestedValue },
 					);
 					if (!required) return true;
 				} catch {
@@ -1475,7 +1500,10 @@ export default {
 
 		async on_rate_change(item, event) {
 			const raw = typeof event === "object" ? (event?.target?.value ?? "0") : (event ?? "0");
-			const newRate = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
+			const newRate = this.flt(
+				this.parseFormattedCurrency(String(raw)),
+				this.currency_precision,
+			);
 			const approved = await this.approvalGuard("Edit Rate", {
 				item,
 				originalValue: item.rate,
@@ -1493,7 +1521,10 @@ export default {
 
 		async on_rate_change_grid(item, event) {
 			const raw = typeof event === "object" ? (event?.target?.value ?? "0") : (event ?? "0");
-			const newRate = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
+			const newRate = this.flt(
+				this.parseFormattedCurrency(String(raw)),
+				this.currency_precision,
+			);
 			const approved = await this.approvalGuard("Edit Rate", {
 				item,
 				originalValue: item.rate,
@@ -1511,7 +1542,8 @@ export default {
 
 		async on_discount_percentage_change(item, event) {
 			const value = event?.target?.value || "0";
-			const newValue = this.flt(this.parseFormattedCurrency(value), this.currency_precision) || 0;
+			const newValue =
+				this.flt(this.parseFormattedCurrency(value), this.currency_precision) || 0;
 			const approved = await this.approvalGuard("Edit Item Discount", {
 				item,
 				originalValue: item.discount_percentage,
@@ -1524,7 +1556,10 @@ export default {
 
 		async on_discount_amount_change(item, event) {
 			const raw = typeof event === "object" ? (event?.target?.value ?? "0") : (event ?? "0");
-			const newValue = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
+			const newValue = this.flt(
+				this.parseFormattedCurrency(String(raw)),
+				this.currency_precision,
+			);
 			const approved = await this.approvalGuard("Edit Item Discount", {
 				item,
 				originalValue: item.discount_amount,
@@ -1546,7 +1581,10 @@ export default {
 
 		async on_additional_discount_change(event) {
 			const raw = typeof event === "object" ? (event?.target?.value ?? "0") : (event ?? "0");
-			const newValue = this.flt(this.parseFormattedCurrency(String(raw)), this.currency_precision);
+			const newValue = this.flt(
+				this.parseFormattedCurrency(String(raw)),
+				this.currency_precision,
+			);
 			const approved = await this.approvalGuard("Edit Additional Discount", {
 				originalValue: this.discount_amount,
 				requestedValue: newValue,
@@ -1601,12 +1639,14 @@ export default {
 		async evict_row_approvals(posa_row_id, action_type = null) {
 			if (!posa_row_id) return;
 			const stale = this.approved_requests_context.filter(
-				(r) => r.posa_row_id === posa_row_id && (!action_type || r.action_type === action_type)
+				(r) =>
+					r.posa_row_id === posa_row_id &&
+					(!action_type || r.action_type === action_type),
 			);
 			if (!stale.length) return;
 
 			this.approved_requests_context = this.approved_requests_context.filter(
-				(r) => !stale.includes(r)
+				(r) => !stale.includes(r),
 			);
 
 			const pending_names = stale.map((r) => r.request_name);
@@ -1655,7 +1695,7 @@ export default {
 			// remove from deleted list if re-added
 			if (this.deleted_items) {
 				this.deleted_items = this.deleted_items.filter(
-					d => d.item_code !== item.item_code
+					(d) => d.item_code !== item.item_code,
 				);
 			}
 			// Restrict adding new items during return flow
@@ -1677,7 +1717,7 @@ export default {
 						!el.posa_is_offer &&
 						!el.posa_is_replace &&
 						el.batch_no === item.batch_no &&
-						!el.posa_deleted
+						!el.posa_deleted,
 				);
 				deletedIndex = this.items.findIndex(
 					(el) =>
@@ -1686,7 +1726,7 @@ export default {
 						!el.posa_is_offer &&
 						!el.posa_is_replace &&
 						el.batch_no === item.batch_no &&
-						el.posa_deleted
+						el.posa_deleted,
 				);
 			}
 			// If the item was previously deleted, restore it
@@ -1723,7 +1763,7 @@ export default {
 						toast.warn(
 							__(`This Serial Number {0} has already been added!`, [
 								item.to_set_serial_no,
-							])
+							]),
 						);
 						item.to_set_serial_no = null;
 						return;
@@ -1842,7 +1882,9 @@ export default {
 				this.invoiceTypes = ["Invoice", "Order"];
 				this.posting_date = datetime.nowdate();
 				if (doc.name && this.pos_profile.posa_allow_delete) {
-					const r = await call("pospire.pospire.api.posapp.delete_invoice", { invoice: doc.name });
+					const r = await call("pospire.pospire.api.posapp.delete_invoice", {
+						invoice: doc.name,
+					});
 					if (r) {
 						toast.warn(r);
 					}
@@ -1904,19 +1946,19 @@ export default {
 			const saved_data = this.parseSubmitData(data.posa_submit_data);
 			this.approved_requests_context = saved_data.approved_requests_context || [];
 		},
-			parseSubmitData(raw) {
-				if (!raw) return {};
-				if (typeof raw === "object") return raw;
-				if (typeof raw !== "string") return {};
-				try {
-					return JSON.parse(raw);
-				} catch {
-					return {};
-				}
-			},
-			async save_and_clear_invoice() {
-				if (this.savingDraft) {
-					return null;
+		parseSubmitData(raw) {
+			if (!raw) return {};
+			if (typeof raw === "object") return raw;
+			if (typeof raw !== "string") return {};
+			try {
+				return JSON.parse(raw);
+			} catch {
+				return {};
+			}
+		},
+		async save_and_clear_invoice() {
+			if (this.savingDraft) {
+				return null;
 			}
 
 			const doc = this.get_invoice_doc();
@@ -2059,9 +2101,12 @@ export default {
 		async get_invoice_from_order_doc() {
 			let doc = {};
 			if (this.invoice_doc.doctype == "Sales Order") {
-				const r = await call("pospire.pospire.api.posapp.create_sales_invoice_from_order", {
-					sales_order: this.invoice_doc.name,
-				});
+				const r = await call(
+					"pospire.pospire.api.posapp.create_sales_invoice_from_order",
+					{
+						sales_order: this.invoice_doc.name,
+					},
+				);
 				if (r) {
 					doc = r;
 				}
@@ -2072,7 +2117,7 @@ export default {
 			const updatedItemsData = this.get_invoice_items();
 			doc.items.forEach((item) => {
 				const updatedData = updatedItemsData.find(
-					(updatedItem) => updatedItem.item_code === item.item_code
+					(updatedItem) => updatedItem.item_code === item.item_code,
 				);
 				if (updatedData) {
 					item.item_code = updatedData.item_code;
@@ -2266,7 +2311,7 @@ export default {
 						{
 							sales_invoice: this.invoice_doc.name,
 							sales_invoice_item: sales_invoice_item.name,
-						}
+						},
 					);
 					if (siChildResult) {
 						sales_invoice_item_doc = siChildResult;
@@ -2288,7 +2333,9 @@ export default {
 				// Overwrite any draft-persisted posa_submit_data with the definitive list.
 				if (this.approved_requests_context.length) {
 					invoice_doc.posa_submit_data = JSON.stringify({
-						approved_requests: this.approved_requests_context.map((r) => r.request_name),
+						approved_requests: this.approved_requests_context.map(
+							(r) => r.request_name,
+						),
 						approved_requests_context: this.approved_requests_context,
 					});
 				}
@@ -2304,8 +2351,8 @@ export default {
 				if (errorMessage.includes("TimestampMismatchError")) {
 					toast.error(
 						__(
-							"Payment is already being prepared for this return. Please wait and try again."
-						)
+							"Payment is already being prepared for this return. Please wait and try again.",
+						),
 					);
 				} else {
 					toast.error(__("Unable to prepare payment. Please try again."));
@@ -2329,8 +2376,8 @@ export default {
 							toast.error(
 								__(
 									`Discount percentage for item '{0}' cannot be greater than {1}%`,
-									[item.item_name, this.pos_profile.posa_max_discount_allowed]
-								)
+									[item.item_name, this.pos_profile.posa_max_discount_allowed],
+								),
 							);
 							value = false;
 						}
@@ -2346,14 +2393,14 @@ export default {
 							__(`The existing quantity '{0}' for item '{1}' is not enough`, [
 								item.actual_qty,
 								item.item_name,
-							])
+							]),
 						);
 						value = false;
 					}
 				}
 				if (item.qty == 0 && !item.posa_deleted) {
 					toast.error(
-						__(`Quantity for item '{0}' cannot be Zero (0)`, [item.item_name])
+						__(`Quantity for item '{0}' cannot be Zero (0)`, [item.item_name]),
 					);
 					value = false;
 				}
@@ -2362,7 +2409,7 @@ export default {
 						__(`Maximum discount for Item {0} is {1}%`, [
 							item.item_name,
 							item.max_discount,
-						])
+						]),
 					);
 					value = false;
 				}
@@ -2375,7 +2422,7 @@ export default {
 						toast.error(
 							__(`Selected serial numbers of item {0} is incorrect`, [
 								item.item_name,
-							])
+							]),
 						);
 						value = false;
 					}
@@ -2385,7 +2432,7 @@ export default {
 						toast.error(
 							__(`The existing batch quantity of item {0} is not enough`, [
 								item.item_name,
-							])
+							]),
 						);
 						value = false;
 					}
@@ -2396,7 +2443,7 @@ export default {
 						toast.error(
 							__(`The discount should not be higher than {0}%`, [
 								this.pos_profile.posa_max_discount_allowed,
-							])
+							]),
 						);
 						value = false;
 					}
@@ -2412,15 +2459,15 @@ export default {
 					this.items.forEach((item) => {
 						// Use String() to avoid type mismatch between string and int item_code
 						const return_item = this.return_doc.items.find(
-							(element) => String(element.item_code) === String(item.item_code)
+							(element) => String(element.item_code) === String(item.item_code),
 						);
 
 						if (!return_item) {
 							toast.error(
 								__(
 									`The item {0} cannot be returned because it is not in the invoice {1}`,
-									[item.item_name, this.return_doc.name]
-								)
+									[item.item_name, this.return_doc.name],
+								),
 							);
 							value = false;
 							return value;
@@ -2430,7 +2477,9 @@ export default {
 
 						if (return_qty === 0) {
 							toast.error(
-								__(`Return quantity for item {0} cannot be zero`, [item.item_name])
+								__(`Return quantity for item {0} cannot be zero`, [
+									item.item_name,
+								]),
 							);
 							value = false;
 							return value;
@@ -2441,7 +2490,7 @@ export default {
 								__(`The QTY of item {0} cannot be greater than {1}`, [
 									item.item_name,
 									Math.abs(return_item.qty),
-								])
+								]),
 							);
 							value = false;
 							return value;
@@ -2501,7 +2550,7 @@ export default {
 			if (r) {
 				items.forEach((item) => {
 					const updated_item = r.find(
-						(element) => element.posa_row_id == item.posa_row_id
+						(element) => element.posa_row_id == item.posa_row_id,
 					);
 					item.actual_qty = updated_item.actual_qty;
 					item.serial_no_data = updated_item.serial_no_data;
@@ -2594,11 +2643,7 @@ export default {
 						}
 					}
 					if (!item.batch_price) {
-						if (
-							!item.is_free_item &&
-							!item.posa_is_offer &&
-							!item.posa_is_replace
-						) {
+						if (!item.is_free_item && !item.posa_is_offer && !item.posa_is_replace) {
 							item.price_list_rate = data.price_list_rate;
 						}
 					}
@@ -2609,9 +2654,9 @@ export default {
 					item.stock_qty = data.stock_qty;
 					item.actual_qty = data.actual_qty;
 					item.stock_uom = data.stock_uom;
-					(item.has_serial_no = data.has_serial_no),
+					((item.has_serial_no = data.has_serial_no),
 						(item.has_batch_no = data.has_batch_no),
-						vm.calc_item_price(item);
+						vm.calc_item_price(item));
 				}
 			});
 		},
@@ -2683,7 +2728,7 @@ export default {
 			} else {
 				// Get item total from the field
 				const itemTotal = this.parseFormattedCurrency(
-					document.getElementById("total").value
+					document.getElementById("total").value,
 				);
 
 				// Subtract discount amount from item total and update RATE
@@ -2713,7 +2758,7 @@ export default {
 					item.rate = newValue;
 					item.discount_amount = this.flt(
 						this.flt(item.price_list_rate) - this.flt(newValue),
-						this.currency_precision
+						this.currency_precision,
 					);
 				} else if (newValue < 0) {
 					item.rate = item.price_list_rate;
@@ -2729,7 +2774,7 @@ export default {
 				} else {
 					item.rate = this.flt(
 						flt(item.price_list_rate) - flt(newValue),
-						this.currency_precision
+						this.currency_precision,
 					);
 					item.discount_percentage = 0;
 				}
@@ -2741,11 +2786,11 @@ export default {
 					item.rate = this.flt(
 						flt(item.price_list_rate) -
 							(flt(item.price_list_rate) * flt(newValue)) / 100,
-						this.currency_precision
+						this.currency_precision,
 					);
 					item.discount_amount = this.flt(
 						flt(item.price_list_rate) - flt(item.rate),
-						this.currency_precision
+						this.currency_precision,
 					);
 				}
 			}
@@ -2765,12 +2810,12 @@ export default {
 					(flt(item.price_list_rate) * flt(item.discount_percentage)) / 100;
 				item.discount_amount = this.flt(
 					flt(item.price_list_rate) - flt(item.rate),
-					this.currency_precision
+					this.currency_precision,
 				);
 			} else if (item.discount_amount) {
 				item.rate = this.flt(
 					flt(item.price_list_rate) - flt(item.discount_amount),
-					this.currency_precision
+					this.currency_precision,
 				);
 			}
 		},
@@ -2815,7 +2860,7 @@ export default {
 							item.max_returnable_qty,
 							item.uom || "",
 							item.already_returned_qty || 0,
-						])
+						]),
 					);
 					newQty = item.max_returnable_qty;
 				}
@@ -2854,7 +2899,7 @@ export default {
 			console.log(item, value);
 			const existing_items = this.items.filter(
 				(element) =>
-					element.item_code == item.item_code && element.posa_row_id != item.posa_row_id
+					element.item_code == item.item_code && element.posa_row_id != item.posa_row_id,
 			);
 			const used_batches = {};
 			item.batch_no_data.forEach((batch) => {
@@ -3134,7 +3179,7 @@ export default {
 								const res = this.checkQtyAnountOffer(
 									offer,
 									item.stock_qty,
-									item.stock_qty * item.price_list_rate
+									item.stock_qty * item.price_list_rate,
 								);
 								if (res.apply) {
 									items.push(item.posa_row_id);
@@ -3255,7 +3300,7 @@ export default {
 			});
 			offers.forEach((offer) => {
 				const existOffer = this.posa_offers.find(
-					(invoiceOffer) => invoiceOffer.row_id == offer.row_id
+					(invoiceOffer) => invoiceOffer.row_id == offer.row_id,
 				);
 				if (existOffer) {
 					existOffer.items = JSON.stringify(offer.items);
@@ -3265,11 +3310,11 @@ export default {
 						existOffer.give_item != offer.give_item
 					) {
 						const item_to_remove = this.items.find(
-							(item) => item.posa_row_id == existOffer.give_item_row_id
+							(item) => item.posa_row_id == existOffer.give_item_row_id,
 						);
 						if (item_to_remove) {
 							const updated_item_offers = offer.items.filter(
-								(row_id) => row_id != item_to_remove.posa_row_id
+								(row_id) => row_id != item_to_remove.posa_row_id,
 							);
 							offer.items = updated_item_offers;
 							this.remove_item(item_to_remove);
@@ -3280,7 +3325,7 @@ export default {
 						if (offer.replace_cheapest_item) {
 							const cheapestItem = this.getCheapestItem(offer);
 							const oldBaseItem = this.items.find(
-								(el) => el.posa_row_id == item_to_remove.posa_is_replace
+								(el) => el.posa_row_id == item_to_remove.posa_is_replace,
 							);
 							newItemOffer.qty = item_to_remove.qty;
 							if (oldBaseItem && !oldBaseItem.posa_is_replace) {
@@ -3290,7 +3335,7 @@ export default {
 									{
 										given_qty: item_to_remove.qty,
 									},
-									item_to_remove.item_code
+									item_to_remove.item_code,
 								);
 								restoredItem.posa_is_offer = 0;
 								this.items.unshift(restoredItem);
@@ -3328,7 +3373,7 @@ export default {
 								const existItem = itemsList.find(
 									(el) =>
 										el.item_code == offerItem.item_code &&
-										el.posa_is_replace != offerItem.posa_row_id
+										el.posa_is_replace != offerItem.posa_row_id,
 								);
 								if (existItem) {
 									const diffExistQty = existItem.qty - diff;
@@ -3358,16 +3403,16 @@ export default {
 			if (invoiceOffer.offer === "Item Price") {
 				this.RemoveOnPrice(invoiceOffer);
 				const index = this.posa_offers.findIndex(
-					(el) => el.row_id === invoiceOffer.row_id
+					(el) => el.row_id === invoiceOffer.row_id,
 				);
 				this.posa_offers.splice(index, 1);
 			}
 			if (invoiceOffer.offer === "Give Product") {
 				const item_to_remove = this.items.find(
-					(item) => item.posa_row_id == invoiceOffer.give_item_row_id
+					(item) => item.posa_row_id == invoiceOffer.give_item_row_id,
 				);
 				const index = this.posa_offers.findIndex(
-					(el) => el.row_id === invoiceOffer.row_id
+					(el) => el.row_id === invoiceOffer.row_id,
 				);
 				this.posa_offers.splice(index, 1);
 				this.remove_item(item_to_remove);
@@ -3375,13 +3420,13 @@ export default {
 			if (invoiceOffer.offer === "Grand Total") {
 				this.RemoveOnTotal(invoiceOffer);
 				const index = this.posa_offers.findIndex(
-					(el) => el.row_id === invoiceOffer.row_id
+					(el) => el.row_id === invoiceOffer.row_id,
 				);
 				this.posa_offers.splice(index, 1);
 			}
 			if (invoiceOffer.offer === "Loyalty Point") {
 				const index = this.posa_offers.findIndex(
-					(el) => el.row_id === invoiceOffer.row_id
+					(el) => el.row_id === invoiceOffer.row_id,
 				);
 				this.posa_offers.splice(index, 1);
 			}
@@ -3407,7 +3452,7 @@ export default {
 					const item = this.ApplyOnGiveProduct(offer, offer.item);
 					item.posa_is_replace = itemsRowID[0];
 					const baseItem = this.items.find(
-						(el) => el.posa_row_id == item.posa_is_replace
+						(el) => el.posa_row_id == item.posa_is_replace,
 					);
 					const diffQty = baseItem.qty - offer.given_qty;
 					item.posa_is_offer = 0;
@@ -3577,7 +3622,7 @@ export default {
 			) {
 				this.discount_amount = this.flt(
 					(flt(this.Total) * flt(offer.discount_percentage)) / 100,
-					this.currency_precision
+					this.currency_precision,
 				);
 				this.discount_percentage_offer_name = offer.name;
 			}
@@ -3618,7 +3663,7 @@ export default {
 					if (exist_item.posa_row_id == el) {
 						const item_offers = JSON.parse(exist_item.posa_offers);
 						const updated_item_offers = item_offers.filter(
-							(row_id) => row_id != offer.row_id
+							(row_id) => row_id != offer.row_id,
 						);
 						if (offer.offer === "Item Price") {
 							exist_item.posa_offer_applied = 0;
@@ -3660,7 +3705,7 @@ export default {
 					// printWindow.close();
 					// NOTE : uncomoent this to auto closing printing window
 				},
-				true
+				true,
 			);
 		},
 
@@ -3856,7 +3901,7 @@ export default {
 			if (data_value.length > 0) {
 				// Only update if item does not already have modified values
 				let expandedItem = this.items.find(
-					(i) => i.posa_row_id === data_value[0].posa_row_id
+					(i) => i.posa_row_id === data_value[0].posa_row_id,
 				);
 
 				if (expandedItem && !expandedItem.modified) {
