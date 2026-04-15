@@ -757,11 +757,21 @@ export default {
 		mpesa_modes: [],
 	}),
 
-	methods: {
-		back_to_invoice() {
-			this.eventBus.emit("show_payment", "false");
-			this.eventBus.emit("set_customer_readonly", false);
-		},
+		methods: {
+			parseSubmitData(raw) {
+				if (!raw) return {};
+				if (typeof raw === "object") return raw;
+				if (typeof raw !== "string") return {};
+				try {
+					return JSON.parse(raw);
+				} catch {
+					return {};
+				}
+			},
+			back_to_invoice() {
+				this.eventBus.emit("show_payment", "false");
+				this.eventBus.emit("set_customer_readonly", false);
+			},
 		submit(event, payment_received = false, print = false) {
 			if (this.submittingPayment) return;
 			if (!this.invoice_doc.is_return && this.total_payments < 0) {
@@ -902,7 +912,7 @@ export default {
 
 			// Backfill invoice reference on all approval requests, then signal
 			// clear_invoice with submitted=true so Pending cancellation is skipped.
-			const saved_data = frappe.parse_json(vm.invoice_doc.posa_submit_data || "{}");
+			const saved_data = this.parseSubmitData(vm.invoice_doc.posa_submit_data);
 			const approved_names = saved_data.approved_requests || [];
 			if (approved_names.length) {
 				call("pospire.pospire.api.approval.link_requests_to_invoice", {
@@ -911,6 +921,7 @@ export default {
 				}).catch(() => {});
 			}
 
+			vm.invoice_doc = "";
 			vm.eventBus.emit("clear_invoice", { submitted: true });
 			vm.back_to_invoice();
 			return;
@@ -921,7 +932,7 @@ export default {
 					if (res === true) {
 						this.custom_print(invoice_name);
 					} else {
-						vm.load_print_page();
+						this.load_print_page(invoice_name);
 					}
 				});
 			} catch (err) {
@@ -949,14 +960,15 @@ export default {
 				payment.amount = 0;
 			});
 		},
-		load_print_page() {
+		load_print_page(invoice_name) {
+			const name = invoice_name || this.invoice_doc?.name;
 			const print_format =
 				this.pos_profile.print_format_for_online || this.pos_profile.print_format;
 			const letter_head = this.pos_profile.letter_head || 0;
 			const url =
 				window.location.origin +
 				"/printview?doctype=Sales%20Invoice&name=" +
-				this.invoice_doc.name +
+				name +
 				"&trigger_print=1" +
 				"&format=" +
 				print_format +

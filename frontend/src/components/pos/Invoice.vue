@@ -1618,7 +1618,7 @@ export default {
 
 		// ─────────────────────────────────────────────────────────────────────────
 
-		add_one(item) {
+		async add_one(item) {
 			if (this.invoice_doc.is_return) {
 				// For returns: "+" increases return qty (more negative)
 				item.qty--;
@@ -1626,13 +1626,15 @@ export default {
 				item.qty++;
 			}
 			if (item.qty == 0) {
-				this.remove_item(item);
+				item.qty = this.invoice_doc.is_return ? 1 : -1; // restore before approval check
+				await this.on_remove_item(item);
+				return;
 			}
 			this.calc_stock_qty(item, item.qty);
 			item.amount = item.qty * item.rate;
 			this.$forceUpdate();
 		},
-		subtract_one(item) {
+		async subtract_one(item) {
 			if (this.invoice_doc.is_return) {
 				// For returns: "-" decreases return qty (less negative, closer to 0)
 				item.qty++;
@@ -1640,7 +1642,9 @@ export default {
 				item.qty--;
 			}
 			if (item.qty == 0) {
-				this.remove_item(item);
+				item.qty = this.invoice_doc.is_return ? -1 : 1; // restore before approval check
+				await this.on_remove_item(item);
+				return;
 			}
 			this.calc_stock_qty(item, item.qty);
 			item.amount = item.qty * item.rate;
@@ -1897,12 +1901,22 @@ export default {
 
 			// Restore approval context persisted when the draft was saved.
 			// This allows already-Approved requests to carry forward to final submit.
-			const saved_data = frappe.parse_json(data.posa_submit_data || "{}");
+			const saved_data = this.parseSubmitData(data.posa_submit_data);
 			this.approved_requests_context = saved_data.approved_requests_context || [];
 		},
-		async save_and_clear_invoice() {
-			if (this.savingDraft) {
-				return null;
+			parseSubmitData(raw) {
+				if (!raw) return {};
+				if (typeof raw === "object") return raw;
+				if (typeof raw !== "string") return {};
+				try {
+					return JSON.parse(raw);
+				} catch {
+					return {};
+				}
+			},
+			async save_and_clear_invoice() {
+				if (this.savingDraft) {
+					return null;
 			}
 
 			const doc = this.get_invoice_doc();

@@ -66,5 +66,4 @@ def _send_pin_email(user: str, pin: str) -> None:
 		recipients=[user],
 		subject=subject,
 		message=message,
-		now=True,
 	)
