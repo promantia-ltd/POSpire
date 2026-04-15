@@ -242,7 +242,9 @@ def validate_approval_requests(doc) -> None:
 
 	required_checks = _get_required_approval_checks(doc)
 	submit_data = frappe.parse_json(getattr(doc, "posa_submit_data", None) or "{}")
-	approved_requests = [request_name for request_name in submit_data.get("approved_requests", []) if request_name]
+	approved_requests = [
+		request_name for request_name in submit_data.get("approved_requests", []) if request_name
+	]
 
 	if not required_checks:
 		return
@@ -316,7 +318,9 @@ def _get_required_approval_checks(doc) -> list[dict]:
 			action_context = {
 				"item_code": item_dict.get("item_code"),
 				"item_name": item_dict.get("item_name"),
-				"requested_value": flt(item_dict.get("discount_percentage") or item_dict.get("discount_amount") or 0),
+				"requested_value": flt(
+					item_dict.get("discount_percentage") or item_dict.get("discount_amount") or 0
+				),
 				"discount_percentage": flt(item_dict.get("discount_percentage") or 0),
 				"discount_amount": flt(item_dict.get("discount_amount") or 0),
 				"value_field_label": "Discount",
@@ -333,7 +337,9 @@ def _get_required_approval_checks(doc) -> list[dict]:
 		if _has_rate_edit(item_dict):
 			original_value = flt(item_dict.get("price_list_rate") or 0)
 			requested_value = flt(item_dict.get("rate") or 0)
-			change_percent = abs(((requested_value - original_value) / original_value) * 100) if original_value else 0
+			change_percent = (
+				abs(((requested_value - original_value) / original_value) * 100) if original_value else 0
+			)
 			action_context = {
 				"item_code": item_dict.get("item_code"),
 				"item_name": item_dict.get("item_name"),
@@ -382,7 +388,9 @@ def _approval_required(doc, action_type: str, action_context: dict, doc_context=
 	try:
 		return bool(frappe.safe_eval(condition, eval_globals=context))
 	except Exception:
-		frappe.log_error(frappe.get_traceback(), f"POS Approval: submit-time condition eval error ({action_type})")
+		frappe.log_error(
+			frappe.get_traceback(), f"POS Approval: submit-time condition eval error ({action_type})"
+		)
 		return True
 
 
@@ -440,11 +448,17 @@ def _has_additional_discount(doc) -> bool:
 
 
 def _has_item_discount(item_dict: dict) -> bool:
-	return abs(flt(item_dict.get("discount_amount") or 0)) > 0 or abs(flt(item_dict.get("discount_percentage") or 0)) > 0
+	# Only treat as an explicit discount action when discount_percentage is set.
+	# A non-zero discount_amount with discount_percentage == 0 means Frappe
+	# back-calculated the amount from a direct rate edit — that is "Edit Rate",
+	# not "Edit Item Discount".
+	return abs(flt(item_dict.get("discount_percentage") or 0)) > 0
 
 
 def _has_rate_edit(item_dict: dict) -> bool:
-	if _has_item_discount(item_dict):
+	# Explicit percentage discount on the item is an "Edit Item Discount" action,
+	# not a rate edit — skip it here.
+	if abs(flt(item_dict.get("discount_percentage") or 0)) > 0:
 		return False
 
 	price_list_rate = flt(item_dict.get("price_list_rate") or 0)
