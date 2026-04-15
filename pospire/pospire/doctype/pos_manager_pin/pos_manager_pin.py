@@ -56,11 +56,15 @@ def _send_pin_email(user: str, pin: str) -> None:
 
 	if frappe.db.exists("Email Template", POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE):
 		template = frappe.get_doc("Email Template", POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE)
-		subject = frappe.render_template(template.subject, args)
-		message = frappe.render_template(template.response, args)
+		# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti
+		# Email Template is a system-manager-only doctype; template content is trusted.
+		subject = frappe.render_template(template.subject, args)  # nosemgrep
+		message = frappe.render_template(template.response, args)  # nosemgrep
 	else:
 		subject = _("Your POSpire Manager PIN")
-		message = frappe.render_template(_PIN_EMAIL_TEMPLATE_FALLBACK, args)
+		# nosemgrep: frappe-semgrep-rules.rules.security.frappe-ssti
+		# _PIN_EMAIL_TEMPLATE_FALLBACK is a hardcoded constant defined in this module.
+		message = frappe.render_template(_PIN_EMAIL_TEMPLATE_FALLBACK, args)  # nosemgrep
 
 	frappe.sendmail(
 		recipients=[user],

@@ -5,8 +5,7 @@ frappe.ui.form.on("POS Manager PIN", {
 	refresh(frm) {
 		frm.set_intro(
 			__(
-				"The PIN is auto-generated and emailed directly to the manager. " +
-					"It is never visible here. Use Regenerate PIN to issue a new one."
+				"The PIN is auto-generated and emailed directly to the manager. It is never visible here. Use Regenerate PIN to issue a new one."
 			),
 			"blue"
 		);
