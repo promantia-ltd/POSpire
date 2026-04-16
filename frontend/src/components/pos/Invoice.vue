@@ -2383,7 +2383,7 @@ export default {
 						}
 					}
 				}
-				if (this.stock_settings.allow_negative_stock != 1) {
+				if (this.stock_settings.allow_negative_stock != 1 && !this.pos_profile.custom_allow_negative_stock) {
 					if (
 						this.invoiceType == "Invoice" &&
 						((item.is_stock_item && item.stock_qty && !item.actual_qty) ||
@@ -2394,6 +2394,19 @@ export default {
 								item.actual_qty,
 								item.item_name,
 							]),
+						);
+						value = false;
+					}
+				}
+				if (this.pos_profile.custom_allow_negative_stock) {
+					if (
+						(item.has_serial_no || item.has_batch_no) &&
+						(item.actual_qty == null || item.actual_qty < item.qty)
+					) {
+						toast.error(
+							__(`Negative stock not allowed for Batch/Serial item: {0}`, [
+								item.item_name,
+							])
 						);
 						value = false;
 					}

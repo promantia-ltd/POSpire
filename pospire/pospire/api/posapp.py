@@ -917,7 +917,42 @@ def submit_invoice(invoice: str | dict, data: str | dict) -> dict:
 				},
 			)
 	else:
-		invoice_doc.submit()
+		allow_negative = frappe.get_cached_value(
+			"POS Profile", invoice_doc.pos_profile, "custom_allow_negative_stock"
+		)
+
+		item_codes_to_restore = []
+
+		try:
+			if allow_negative:
+				for item in invoice_doc.items:
+					has_batch = frappe.get_cached_value("Item", item.item_code, "has_batch_no")
+					has_serial = frappe.get_cached_value("Item", item.item_code, "has_serial_no")
+
+					if has_batch or has_serial:
+						if item.actual_qty is None or item.actual_qty < item.qty:
+							frappe.throw(
+								f"Negative stock not allowed for Batch/Serial item: {item.item_code}"
+							)
+						continue
+
+					current = frappe.get_cached_value("Item", item.item_code, "allow_negative_stock")
+					if not current:
+						frappe.db.set_value(
+							"Item", item.item_code, "allow_negative_stock", 1, update_modified=False
+						)
+						frappe.clear_document_cache("Item", item.item_code)
+						item_codes_to_restore.append(item.item_code)
+
+					if not item.incoming_rate:
+						item.allow_zero_valuation_rate = 1
+
+			invoice_doc.submit()
+
+		finally:
+			for item_code in item_codes_to_restore:
+				frappe.db.set_value("Item", item_code, "allow_negative_stock", 0, update_modified=False)
+				frappe.clear_document_cache("Item", item_code)
 		if invoice_doc.is_return and invoice_doc.return_against and not is_cashback:
 			original_invoice = frappe.get_doc("Sales Invoice", invoice_doc.return_against)
 			custom_delivery_charge = flt(original_invoice.get("custom_delivery_charge_rate") or 0)
