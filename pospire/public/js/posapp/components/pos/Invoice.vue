@@ -1358,6 +1358,9 @@ export default {
 			}
 			// remove item from cart
 			this.items = this.items.filter((el) => el.posa_row_id !== item.posa_row_id);
+			if (this.items.length === 0) {
+				this.eventBus.emit("cart_emptied");
+			}
 			this.$forceUpdate();
 		},
 
@@ -1540,6 +1543,15 @@ export default {
 			return new_item;
 		},
 
+		// Resets all invoice state. Used both as a final clear (cart stays empty)
+		// and as a reset helper before loading new invoice data (load_invoice).
+		//
+		// CONVENTION: if this is a final clear (cart stays empty after this call),
+		// emit "cart_emptied" on the eventBus immediately after calling this method
+		// so Pos.vue can update cartHasItems and apply any pending profile refresh.
+		// Do NOT emit "cart_emptied" when calling this as a reset before load_invoice,
+		// as items will be populated immediately after and Pos.vue tracks load via
+		// the "load_invoice" / "load_order" / "load_return_invoice" events instead.
 		clear_invoice() {
 			this.items = [];
 			this.deleted_items = [];
@@ -1579,6 +1591,7 @@ export default {
 				});
 			}
 			this.clear_invoice();
+			this.eventBus.emit("cart_emptied");
 			this.cancel_dialog = false;
 		},
 
@@ -1640,6 +1653,7 @@ export default {
 				toast.error("Error saving the current invoice");
 			} else {
 				this.clear_invoice();
+				this.eventBus.emit("cart_emptied");
 				return old_invoice;
 			}
 		},

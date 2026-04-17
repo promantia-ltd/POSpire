@@ -69,6 +69,9 @@ export default {
 			payment: false,
 			showCouponsModal: false,
 			showOffersModal: false,
+			pendingProfileData: null,
+			pendingMasterDataRefresh: { items: false, customers: false },
+			cartHasItems: false,
 		};
 	},
 
@@ -191,6 +194,105 @@ export default {
 			this.eventBus.on("submit_closing_pos", (data) => {
 				this.submit_closing_pos(data);
 			});
+
+			// Track whether the cart has items so the profile refresh
+			// can decide to apply immediately or defer.
+			// add_item covers individual item taps; load_invoice / load_order /
+			// load_return_invoice populate the cart without going through add_item.
+			this.eventBus.on("add_item", () => {
+				this.cartHasItems = true;
+			});
+			this.eventBus.on("load_invoice", () => {
+				this.cartHasItems = true;
+			});
+			this.eventBus.on("load_order", () => {
+				this.cartHasItems = true;
+			});
+			this.eventBus.on("load_return_invoice", () => {
+				this.cartHasItems = true;
+			});
+
+			// Shared handler: reset cart flag and apply any pending refreshes.
+			// Priority: pendingProfileData (register_pos_profile already cascades
+			// get_items + get_customer_names downstream, so standalone refresh
+			// events are skipped to avoid redundant fetches).
+			const onCartEmpty = () => {
+				this.cartHasItems = false;
+				if (this.pendingProfileData) {
+					this.get_offers(this.pendingProfileData.pos_profile.name);
+					this.eventBus.emit("register_pos_profile", this.pendingProfileData);
+				} else {
+					if (this.pendingMasterDataRefresh.items) {
+						this.eventBus.emit("refresh_items");
+					}
+					if (this.pendingMasterDataRefresh.customers) {
+						this.eventBus.emit("refresh_customers");
+					}
+				}
+				// Unconditionally reset all pending state.
+				this.pendingProfileData = null;
+				this.pendingMasterDataRefresh = { items: false, customers: false };
+				this._deferredRefreshToastShown = false;
+			};
+
+			// Cart cleared via payment or Save-and-Clear.
+			this.eventBus.on("clear_invoice", onCartEmpty);
+			// Cart emptied by manually removing the last item (remove_item in Invoice.vue
+			// mutates this.items directly without calling clear_invoice).
+			this.eventBus.on("cart_emptied", onCartEmpty);
+
+			// Shared deferred-refresh toast guard.
+			this._deferredRefreshToastShown = false;
+
+			// When the POS Profile is saved from the desk mid-shift, re-fetch it and:
+			// - If cart is empty  → apply immediately (no transaction in progress).
+			// - If cart has items → hold as pending, notify cashier; applies after
+			//   the current invoice is cleared so the session is never interrupted.
+			frappe.realtime.on("pos_profile_updated", (data) => {
+				if (this.pos_profile && data.pos_profile === this.pos_profile.name) {
+					frappe
+						.call("pospire.pospire.api.posapp.check_opening_shift", {
+							user: frappe.session.user,
+						})
+						.then((r) => {
+							if (!r.message) return;
+							this.pos_profile = r.message.pos_profile;
+							if (!this.cartHasItems) {
+								this.get_offers(r.message.pos_profile.name);
+								this.eventBus.emit("register_pos_profile", r.message);
+							} else {
+								this.pendingProfileData = r.message;
+								if (!this._deferredRefreshToastShown) {
+									this._deferredRefreshToastShown = true;
+									toast.info(
+										__("Updates detected. Catalog will refresh after this transaction."),
+										{ autoClose: 4000 }
+									);
+								}
+							}
+						});
+				}
+			});
+
+			// When master data (Item, Customer, etc.) changes, the backend
+			// publishes pos_master_data_invalidated with scoped flags.
+			frappe.realtime.on("pos_master_data_invalidated", (data) => {
+				if (!data || typeof data !== "object") return;
+				if (!this.cartHasItems) {
+					if (data.items) this.eventBus.emit("refresh_items");
+					if (data.customers) this.eventBus.emit("refresh_customers");
+				} else {
+					if (data.items) this.pendingMasterDataRefresh.items = true;
+					if (data.customers) this.pendingMasterDataRefresh.customers = true;
+					if (!this._deferredRefreshToastShown) {
+						this._deferredRefreshToastShown = true;
+						toast.info(
+							__("Updates detected. Catalog will refresh after this transaction."),
+							{ autoClose: 4000 }
+						);
+					}
+				}
+			});
 		});
 	},
 	beforeUnmount() {
@@ -202,6 +304,14 @@ export default {
 		this.eventBus.off("show_payment");
 		this.eventBus.off("open_closing_dialog");
 		this.eventBus.off("submit_closing_pos");
+		this.eventBus.off("add_item");
+		this.eventBus.off("load_invoice");
+		this.eventBus.off("load_order");
+		this.eventBus.off("load_return_invoice");
+		this.eventBus.off("clear_invoice");
+		this.eventBus.off("cart_emptied");
+		frappe.realtime.off("pos_profile_updated");
+		frappe.realtime.off("pos_master_data_invalidated");
 	},
 };
 </script>

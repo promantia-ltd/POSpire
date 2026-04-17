@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 
+import hashlib
 import json
 from typing import Any
 
@@ -47,12 +48,24 @@ from frappe.query_builder import Field
 from frappe.query_builder.functions import IfNull
 from frappe.utils import cstr, flt, getdate, nowdate
 from frappe.utils.background_jobs import enqueue
-from frappe.utils.caching import redis_cache
+
+from pospire.pospire.utils.pos_server_cache import CUSTOMERS_KEY_PREFIX, ITEMS_KEY_PREFIX
 
 from pospire.pospire.doctype.delivery_charges.delivery_charges import (
 	get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
 from pospire.pospire.doctype.pos_coupon.pos_coupon import check_coupon_code
+
+
+def _make_pos_cache_key(prefix: str, *args) -> str:
+	"""Build a stable Redis key for POS server caches.
+
+	The prefix contains the literal profile namespace. Remaining args are JSON
+	serialised canonically, then hashed to keep the final key compact.
+	"""
+	payload = json.dumps(args, separators=(",", ":"), sort_keys=True, default=str)
+	args_hash = hashlib.sha256(payload.encode()).hexdigest()[:24]
+	return f"{prefix}::{args_hash}"
 
 
 @frappe.whitelist()
@@ -208,12 +221,6 @@ def get_items(
 		# Shorter window than get_customer_names (n * 60): get_items embeds stock-dependent
 		# quantities; see docs/api-caching-and-stale-data.md.
 		ttl = int(ttl) * 30
-
-	# Redis cache key includes server-side POS Profile `modified` so profile saves do not
-	# reuse entries computed under old settings (belt-and-suspenders with doc_events clear).
-	@redis_cache(ttl=ttl or 1800)
-	def __get_items(pos_profile, price_list, item_group, search_value, customer, _profile_modified):
-		return _get_items(pos_profile, price_list, item_group, search_value, customer)
 
 	def _get_items(pos_profile, price_list, item_group, search_value, customer=None):
 		pos_profile = _load(pos_profile)
@@ -406,10 +413,30 @@ def get_items(
 	# When "display items in stock" is on, row membership depends on live qty — never Redis-cache.
 	stock_drives_list = bool(_pos_profile.get("posa_display_items_in_stock"))
 	profile_name = _pos_profile.get("name") if isinstance(_pos_profile, dict) else None
-	profile_modified = frappe.db.get_value("POS Profile", profile_name, "modified") if profile_name else None
 
 	if _pos_profile.get("posa_use_server_cache") and not stock_drives_list:
-		return __get_items(pos_profile, price_list, item_group, search_value, customer, profile_modified)
+		if not profile_name:
+			return _get_items(pos_profile, price_list, item_group, search_value, customer)
+
+		# Fetched here, not at the top of get_items, so the DB round-trip is skipped
+		# entirely when caching is disabled or the stock-display bypass is active.
+		profile_modified = frappe.db.get_value("POS Profile", profile_name, "modified")
+		cache_key = _make_pos_cache_key(
+			f"{ITEMS_KEY_PREFIX}{profile_name}",
+			price_list,
+			item_group,
+			search_value,
+			customer,
+			profile_modified,
+		)
+		cached_items = frappe.cache.get_value(cache_key, expires=True)
+		if cached_items is not None:
+			return cached_items
+
+		full_profile = frappe.get_cached_doc("POS Profile", profile_name).as_dict()
+		items = _get_items(full_profile, price_list, item_group, search_value, customer)
+		frappe.cache.set_value(cache_key, items, expires_in_sec=ttl or 1800)
+		return items
 
 	return _get_items(pos_profile, price_list, item_group, search_value, customer)
 
@@ -499,10 +526,6 @@ def get_customer_names(pos_profile: str | dict) -> list:
 		# n * 60 seconds matches custom field “n minutes” on POS Profile.
 		ttl = int(ttl) * 60
 
-	@redis_cache(ttl=ttl or 1800)
-	def __get_customer_names(pos_profile):
-		return _get_customer_names(pos_profile)
-
 	def _get_customer_names(pos_profile):
 		pos_profile = _load(pos_profile)
 		condition = ""
@@ -522,7 +545,20 @@ def get_customer_names(pos_profile: str | dict) -> list:
 		return customers
 
 	if _pos_profile.get("posa_use_server_cache"):
-		return __get_customer_names(pos_profile)
+		profile_name = _pos_profile.get("name") if isinstance(_pos_profile, dict) else None
+		if not profile_name:
+			return _get_customer_names(pos_profile)
+
+		profile_modified = frappe.db.get_value("POS Profile", profile_name, "modified")
+		cache_key = _make_pos_cache_key(f"{CUSTOMERS_KEY_PREFIX}{profile_name}", profile_modified)
+		cached_customers = frappe.cache.get_value(cache_key, expires=True)
+		if cached_customers is not None:
+			return cached_customers
+
+		full_profile = frappe.get_cached_doc("POS Profile", profile_name).as_dict()
+		customers = _get_customer_names(full_profile)
+		frappe.cache.set_value(cache_key, customers, expires_in_sec=ttl or 1800)
+		return customers
 	else:
 		return _get_customer_names(pos_profile)
 
