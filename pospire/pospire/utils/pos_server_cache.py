@@ -87,7 +87,11 @@ def invalidate_pos_server_cache_from_doc(doc, method=None) -> None:
 	"""
 	if doc.doctype == "POS Profile":
 		invalidate_pos_profile_cache(doc.name)
-		frappe.publish_realtime(
+		# Broadcast to all connected clients intentionally — no server-side
+		# tracking of which users run POS sessions for which profiles.
+		# The frontend guards on `data.pos_profile === this.pos_profile.name`
+		# so only the matching session acts on the event.
+		frappe.publish_realtime(  # nosemgrep: frappe-semgrep-rules.rules.frappe-realtime-pick-room
 			"pos_profile_updated",
 			{"pos_profile": doc.name},
 			after_commit=True,
@@ -103,7 +107,11 @@ def invalidate_pos_server_cache_from_doc(doc, method=None) -> None:
 		clear_posapp_customers_cache()
 
 	if affects_items or affects_customers:
-		frappe.publish_realtime(
+		# Broadcast to all POS sessions — item/customer master data can
+		# affect every profile.  No user-scoping is possible without session
+		# tracking infrastructure; the frontend decides which catalogs to refresh
+		# based on the payload flags.
+		frappe.publish_realtime(  # nosemgrep: frappe-semgrep-rules.rules.frappe-realtime-pick-room
 			"pos_master_data_invalidated",
 			{
 				"doctype": doc.doctype,
