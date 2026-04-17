@@ -40,6 +40,7 @@ _CUSTOMER_DOCTYPES = frozenset(["Customer"])
 
 # ── Scoped helpers ────────────────────────────────────────────────────────────
 
+
 def clear_posapp_items_cache() -> None:
 	"""Drop ALL item-catalog Redis cache entries across every POS Profile."""
 	frappe.cache.delete_keys(ITEMS_KEY_PREFIX)
@@ -62,6 +63,7 @@ def clear_posapp_master_redis_cache() -> None:
 
 # ── Profile-targeted ──────────────────────────────────────────────────────────
 
+
 def invalidate_pos_profile_cache(profile_name: str) -> None:
 	"""Drop Redis cache entries for a single POS Profile only.
 
@@ -74,6 +76,7 @@ def invalidate_pos_profile_cache(profile_name: str) -> None:
 
 
 # ── doc_events entry-point ────────────────────────────────────────────────────
+
 
 def invalidate_pos_server_cache_from_doc(doc, method=None) -> None:
 	"""doc_events target: bust catalog caches after master data changes.

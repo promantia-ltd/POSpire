@@ -265,7 +265,9 @@ export default {
 								if (!this._deferredRefreshToastShown) {
 									this._deferredRefreshToastShown = true;
 									toast.info(
-										__("Updates detected. Catalog will refresh after this transaction."),
+										__(
+											"Updates detected. Catalog will refresh after this transaction."
+										),
 										{ autoClose: 4000 }
 									);
 								}

@@ -954,7 +954,11 @@ export default {
 			if (!profile) return;
 			// Clear stale localStorage so hydration does not serve old data.
 			if (profile.posa_local_storage) {
-				try { localStorage.removeItem("items_storage"); } catch (_e) { /* noop */ }
+				try {
+					localStorage.removeItem("items_storage");
+				} catch (_e) {
+					/* noop */
+				}
 			}
 			if (!profile.pose_use_limit_search) {
 				// Resident-catalog mode: force a full re-fetch immediately.

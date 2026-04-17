@@ -155,7 +155,11 @@ export default {
 				// this.pos_profile is the wrapper from register_pos_profile;
 				// the actual profile doc with flags is at .pos_profile.
 				if (this.pos_profile?.pos_profile?.posa_local_storage) {
-					try { localStorage.removeItem("customer_storage"); } catch (_e) { /* noop */ }
+					try {
+						localStorage.removeItem("customer_storage");
+					} catch (_e) {
+						/* noop */
+					}
 				}
 				this.customers = [];
 				this.get_customer_names();

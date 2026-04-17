@@ -49,12 +49,11 @@ from frappe.query_builder.functions import IfNull
 from frappe.utils import cstr, flt, getdate, nowdate
 from frappe.utils.background_jobs import enqueue
 
-from pospire.pospire.utils.pos_server_cache import CUSTOMERS_KEY_PREFIX, ITEMS_KEY_PREFIX
-
 from pospire.pospire.doctype.delivery_charges.delivery_charges import (
 	get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
 from pospire.pospire.doctype.pos_coupon.pos_coupon import check_coupon_code
+from pospire.pospire.utils.pos_server_cache import CUSTOMERS_KEY_PREFIX, ITEMS_KEY_PREFIX
 
 
 def _make_pos_cache_key(prefix: str, *args) -> str:
