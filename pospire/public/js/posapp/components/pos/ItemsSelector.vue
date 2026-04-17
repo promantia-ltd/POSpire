@@ -436,6 +436,11 @@ export default {
 			) {
 				try {
 					vm.items = JSON.parse(localStorage.getItem("items_storage"));
+					// Strip zero-stock items from the hydrated cache immediately so they
+					// are never shown, even before update_items_details returns.
+					if (vm.pos_profile.posa_display_items_in_stock) {
+						vm.items = vm.items.filter((item) => item.actual_qty > 0);
+					}
 					this.eventBus.emit("set_all_items", vm.items);
 					vm.loading = false;
 
@@ -500,6 +505,10 @@ export default {
 			if (!this.pos_profile) {
 				return;
 			}
+			// Reset before populating so repeated calls (e.g. mid-shift profile
+			// reload) don't accumulate duplicate entries. Derive the reset value
+			// from data() rather than hardcoding so the two stay in sync.
+			this.items_group = this.$options.data.call(this).items_group;
 			if (this.pos_profile.item_groups.length > 0) {
 				this.pos_profile.item_groups.forEach((element) => {
 					if (element.item_group !== "All Item Groups") {
@@ -701,11 +710,28 @@ export default {
 							const updated_item = r.message.find(
 								(element) => element.item_code == item.item_code
 							);
+							// Item physically deleted/missing since get_items ran — evict it.
+							// Note: this covers deleted items only.  Disabled items are still
+							// returned by get_items_details (it does not filter on Item.disabled);
+							// those are handled by the refresh_items invalidation path instead.
+							if (!updated_item) {
+								vm.items = vm.items.filter((i) => i.item_code !== item.item_code);
+								vm.eventBus.emit("set_all_items", vm.items);
+								return;
+							}
 							item.actual_qty = updated_item.actual_qty;
 							item.serial_no_data = updated_item.serial_no_data;
 							item.batch_no_data = updated_item.batch_no_data;
 							item.item_uoms = updated_item.item_uoms;
 						});
+						// Re-apply the stock filter after live quantities arrive.
+						// get_items excludes zero-stock items server-side, but stock can
+						// deplete between the get_items call and this get_items_details
+						// response, leaving items in the list with actual_qty = 0.
+						if (vm.pos_profile.posa_display_items_in_stock) {
+							vm.items = vm.items.filter((item) => item.actual_qty > 0);
+							vm.eventBus.emit("set_all_items", vm.items);
+						}
 					}
 				},
 			});
@@ -919,10 +945,48 @@ export default {
 		this.eventBus.on("update_customer", (data) => {
 			this.customer = data;
 		});
+
+		// Master-data invalidation: Pos.vue emits refresh_items when a
+		// backend change (Item disabled, price updated, etc.) requires the
+		// item catalog to be re-fetched.  Behavior respects pose_use_limit_search.
+		this.eventBus.on("refresh_items", () => {
+			const profile = this.pos_profile;
+			if (!profile) return;
+			// Clear stale localStorage so hydration does not serve old data.
+			if (profile.posa_local_storage) {
+				try {
+					localStorage.removeItem("items_storage");
+				} catch (_e) {
+					/* noop */
+				}
+			}
+			if (!profile.pose_use_limit_search) {
+				// Resident-catalog mode: force a full re-fetch immediately.
+				this.get_items();
+			} else if (this.first_search) {
+				// Limit-search mode with active query: re-run the current search.
+				this.get_items();
+			}
+			// Limit-search mode, no active query: leave vm.items as-is.
+			// localStorage is already cleared; the next user input naturally
+			// triggers a fresh get_items() against the now-invalidated cache.
+			// Stale rows may remain visible until the cashier types — this is an
+			// accepted UX tradeoff to avoid an abrupt empty-state.
+		});
 	},
 
 	mounted() {
 		this.scan_barcoud();
+	},
+
+	beforeUnmount() {
+		this.eventBus.off("register_pos_profile");
+		this.eventBus.off("update_cur_items_details");
+		this.eventBus.off("update_offers_counters");
+		this.eventBus.off("update_coupons_counters");
+		this.eventBus.off("update_customer_price_list");
+		this.eventBus.off("update_customer");
+		this.eventBus.off("refresh_items");
 	},
 };
 </script>

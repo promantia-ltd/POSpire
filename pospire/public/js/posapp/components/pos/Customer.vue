@@ -123,6 +123,9 @@ export default {
 		this.$nextTick(function () {
 			this.eventBus.on("register_pos_profile", (pos_profile) => {
 				this.pos_profile = pos_profile;
+				// Reset the list so get_customer_names re-fetches even if customers
+				// were already loaded — profile changes can alter customer group filters.
+				this.customers = [];
 				this.get_customer_names();
 			});
 			this.eventBus.on("payments_register_pos_profile", (pos_profile) => {
@@ -144,7 +147,35 @@ export default {
 			this.eventBus.on("fetch_customer_details", () => {
 				this.get_customer_names();
 			});
+
+			// Master-data invalidation: Pos.vue emits refresh_customers when
+			// a Customer doc is saved/deleted from the desk.
+			this.eventBus.on("refresh_customers", () => {
+				// Clear stale localStorage so hydration does not serve old data.
+				// this.pos_profile is the wrapper from register_pos_profile;
+				// the actual profile doc with flags is at .pos_profile.
+				if (this.pos_profile?.pos_profile?.posa_local_storage) {
+					try {
+						localStorage.removeItem("customer_storage");
+					} catch (_e) {
+						/* noop */
+					}
+				}
+				this.customers = [];
+				this.get_customer_names();
+			});
 		});
+	},
+
+	beforeUnmount() {
+		this.eventBus.off("register_pos_profile");
+		this.eventBus.off("payments_register_pos_profile");
+		this.eventBus.off("set_customer");
+		this.eventBus.off("add_customer_to_list");
+		this.eventBus.off("set_customer_readonly");
+		this.eventBus.off("set_customer_info_to_edit");
+		this.eventBus.off("fetch_customer_details");
+		this.eventBus.off("refresh_customers");
 	},
 
 	watch: {

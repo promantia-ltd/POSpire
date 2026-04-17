@@ -1393,6 +1393,9 @@ export default {
 			}
 			// remove item from cart
 			this.items = this.items.filter((el) => el.posa_row_id !== item.posa_row_id);
+			if (this.items.length === 0) {
+				this.eventBus.emit("cart_emptied");
+			}
 			this.$forceUpdate();
 		},
 
@@ -1679,6 +1682,12 @@ export default {
 				// For returns: "-" decreases return qty (less negative, closer to 0)
 				item.qty++;
 			} else {
+				// Guard: if qty is already 0 or negative (manually typed), treat as removal
+				if (item.qty <= 0) {
+					item.qty = 1; // restore before approval check
+					await this.on_remove_item(item);
+					return;
+				}
 				item.qty--;
 			}
 			if (item.qty == 0) {
@@ -1890,6 +1899,7 @@ export default {
 					}
 				}
 				this.clear_invoice();
+				this.eventBus.emit("cart_emptied");
 				this.cancel_dialog = false;
 			} finally {
 				this.cancellingInvoice = false;
@@ -1985,6 +1995,7 @@ export default {
 				return null;
 			}
 			this.clear_invoice();
+			this.eventBus.emit("cart_emptied");
 			return old_invoice;
 		},
 
