@@ -6,8 +6,13 @@ no_cache = 1
 
 def get_context(context: dict) -> dict:
 	if frappe.session.user == "Guest":
-		frappe.local.flags.redirect_location = "/login?redirect-to=/pospire"
-		raise frappe.Redirect
+		kiosk_user = frappe.conf.get("pospire_kiosk_user")
+
+		if kiosk_user and frappe.db.exists("User", kiosk_user) and frappe.get_doc("User", kiosk_user).enabled:
+			frappe.local.login_manager.login_as(kiosk_user)
+		else:
+			frappe.local.flags.redirect_location = "/login?redirect-to=/pospire"
+			raise frappe.Redirect
 
 	roles = set(frappe.get_roles())
 	allowed = {"Sales User", "Sales Manager", "System Manager", "Accounts Manager", "Accounts User"}
