@@ -93,32 +93,10 @@
 
 							<div class="d-flex align-center justify-center mb-4 store-logo-wrap">
 								<img
-									v-if="selectedCompanyLogo"
-									:src="selectedCompanyLogo"
-									:alt="company"
+									:src="selectedCompanyLogo || '/assets/pospire/images/app-128x128-rounded.png'"
+									:alt="company || 'POSpire'"
 									class="store-logo-img"
 								/>
-								<svg
-									v-else
-									viewBox="0 0 36 36"
-									fill="none"
-									xmlns="http://www.w3.org/2000/svg"
-									class="store-logo-img store-logo-fallback"
-								>
-									<rect x="4" y="8" width="20" height="14" rx="3" fill="#34495E" />
-									<rect x="7" y="11" width="10" height="3" rx="1.5" fill="#00BCD4" />
-									<circle cx="8.5" cy="17.5" r="1" fill="#E2E8F0" />
-									<circle cx="12" cy="17.5" r="1" fill="#E2E8F0" />
-									<circle cx="15.5" cy="17.5" r="1" fill="#E2E8F0" />
-									<circle cx="28" cy="12" r="5" fill="url(#storeLogoAccent)" />
-									<path d="M26 12L27.5 13.5L30.5 10.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-									<defs>
-										<linearGradient id="storeLogoAccent" x1="23" y1="7" x2="33" y2="17" gradientUnits="userSpaceOnUse">
-											<stop stop-color="#00BCD4" />
-											<stop offset="1" stop-color="#0097A7" />
-										</linearGradient>
-									</defs>
-								</svg>
 							</div>
 
 							<div class="d-flex align-center mb-2">
@@ -235,7 +213,7 @@
 											<v-icon icon="mdi-credit-card-outline" color="primary" />
 										</v-avatar>
 										<div>
-											<div class="text-caption text-medium-emphasis">{{ __("Total Cash Total") }}</div>
+											<div class="text-caption text-medium-emphasis">{{ __("Counted Cash Total") }}</div>
 											<div class="text-h6 font-weight-bold text-primary">
 												{{ currencySymbol(pos_profile.currency) }}{{ formatCurrency(denominationTotal) }}
 											</div>
