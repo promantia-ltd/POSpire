@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - main
+      - version-16
 
 jobs:
   release:
@@ -21,12 +21,21 @@ jobs:
       - name: Extract version from __init__.py
         id: version
         run: |
-          VERSION=$(python3 -c "
+          VERSION=$(python3 - <<'PY'
           import re
-          with open('pospire/__init__.py') as f:
-              match = re.search(r'__version__\s*=\s*[\"'\''](.*?)[\"'\'']', f.read())
-              print(match.group(1) if match else '')
-          ")
+          from pathlib import Path
+
+          m = re.search(
+              r"""__version__\s*=\s*["'](.*?)["']""",
+              Path("pospire/__init__.py").read_text(),
+          )
+          print(m.group(1) if m else "")
+          PY
+          )
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not read __version__ from pospire/__init__.py"
+            exit 1
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "Detected version: $VERSION"
@@ -49,11 +58,29 @@ jobs:
           git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
+      - name: Locate release notes
+        id: notes
+        run: |
+          FILE=".github/releases/${{ steps.version.outputs.tag }}.md"
+          : > "$RUNNER_TEMP/body.md"
+          if [ -f "$FILE" ]; then
+            TITLE=$(sed -n '1s/^#*[[:space:]]*//p' "$FILE")
+            tail -n +2 "$FILE" | sed '/./,$!d' > "$RUNNER_TEMP/body.md"
+            echo "generate=false" >> "$GITHUB_OUTPUT"
+            echo "Using curated notes from $FILE"
+          else
+            TITLE="${{ steps.version.outputs.tag }}"
+            echo "generate=true" >> "$GITHUB_OUTPUT"
+            echo "No notes at $FILE, falling back to generated notes"
+          fi
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: ${{ steps.version.outputs.tag }}
-          generate_release_notes: true
+          name: ${{ steps.notes.outputs.title }}
+          body_path: ${{ runner.temp }}/body.md
+          generate_release_notes: ${{ steps.notes.outputs.generate }}
           make_latest: true
