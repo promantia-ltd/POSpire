@@ -64,14 +64,16 @@
 			<!-- Fixed Customer Selector Section (Fixed at Top) -->
 			<div class="invoice-header-section">
 				<v-row align="center" no-gutters class="px-3 py-2">
-					<!-- Customer: 10 cols with sales order, 12 cols without -->
+					<!-- Customer: 10 cols with sales order, 12 (or 10 in return mode) without -->
 					<v-col
 						:cols="
 							$vuetify.display.mdAndDown
 								? 12
 								: pos_profile.posa_allow_sales_order
 									? 10
-									: 12
+									: invoice_doc.is_return
+										? 10
+										: 12
 						"
 						class="pr-2"
 					>
@@ -1137,7 +1139,8 @@ export default {
 	data() {
 		return {
 			//
-			inclusive_tax: true,
+			// Transient until register_pos_profile lands and sets the real value.
+			inclusive_tax: false,
 			// Cached tax config + last offline tax estimate (see @/offline/tax).
 			offline_tax_config: null,
 			offline_tax_supported: true,
