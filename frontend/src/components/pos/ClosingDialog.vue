@@ -5,13 +5,13 @@
 		width="95vw"
 		persistent
 		scrollable
-		:fullscreen="isMobile"
+		:fullscreen="isFullscreen"
 	>
 		<v-card
-			:rounded="isMobile ? 0 : 'xl'"
+			:rounded="isFullscreen ? 0 : 'xl'"
 			elevation="8"
 			class="closing-dialog-card d-flex flex-column"
-			:class="{ 'closing-dialog-card--fullscreen': isMobile }"
+			:class="{ 'closing-dialog-card--fullscreen': isFullscreen }"
 		>
 			<v-card-title
 				class="d-flex align-center px-4 px-sm-6 py-4 enhanced-modal-header"
@@ -136,7 +136,7 @@
 						item-key="mode_of_payment"
 						class="rounded-lg elevation-1"
 						:items-per-page="-1"
-						:mobile="isMobile"
+						:mobile="isNarrow"
 						density="comfortable"
 						hide-default-footer
 					>
@@ -181,7 +181,11 @@
 						</template>
 
 						<template v-slot:item.difference="{ item }">
-							<span class="font-mono text-no-wrap d-inline-flex align-center" :class="differenceClass(item)">
+							<span
+								class="font-mono text-no-wrap d-inline-flex align-center"
+								:class="differenceClass(item)"
+								:style="differenceStyle(item)"
+							>
 								<v-icon v-if="differenceIcon(item)" :icon="differenceIcon(item)" size="14" class="mr-1" />
 								{{ currencySymbol(pos_profile.currency) }}
 								{{ formatCurrency(Math.abs(differenceValue(item))) }}
@@ -204,55 +208,63 @@
 						{{ __("Enter quantity for each denomination. Total will be calculated automatically.") }}
 					</div>
 
-					<v-row dense>
-						<v-col
+					<!--
+						CSS grid, not v-row/v-col — same reasoning as the payment
+						chip grid above: a stepper row (two 44px buttons + the
+						qty field) needs ~160px, which cols="6" doesn't reliably
+						give at xs (a 360px phone works out closer to 120px per
+						card there), squashing the buttons back under the touch
+						minimum. auto-fill/minmax sizes off the actual container
+						width instead of a viewport breakpoint.
+					-->
+					<div class="denom-grid">
+						<v-card
 							v-for="row in dialog_data.denomination_details"
 							:key="row.denomination"
-							cols="6"
-							sm="4"
-							md="3"
-							lg="2"
+							variant="outlined"
+							rounded="lg"
+							class="pa-3 denom-card"
 						>
-							<v-card variant="outlined" rounded="lg" class="pa-3 denom-card">
-								<div class="d-flex align-center justify-space-between mb-2">
-									<span class="text-body-2 font-weight-bold text-truncate">
-										{{ row.denomination_name }}
-									</span>
-									<v-icon icon="mdi-cash" size="16" color="success" />
-								</div>
-								<div class="d-flex align-center justify-center mb-2">
-									<v-btn
-										icon="mdi-minus"
-										size="44"
-										variant="tonal"
-										:disabled="!row.closing_quantity"
-										:aria-label="__('Decrease quantity for ') + row.denomination_name"
-										@click="decrementDenom(row)"
-									/>
-									<v-text-field
-										v-model.number="row.closing_quantity"
-										type="number"
-										min="0"
-										density="compact"
-										variant="plain"
-										hide-details
-										:aria-label="__('Quantity')"
-										class="denom-qty-input mx-2"
-									/>
-									<v-btn
-										icon="mdi-plus"
-										size="44"
-										variant="tonal"
-										:aria-label="__('Increase quantity for ') + row.denomination_name"
-										@click="incrementDenom(row)"
-									/>
-								</div>
-								<div class="text-body-2 text-medium-emphasis text-center">
-									{{ currencySymbol(pos_profile.currency) }}{{ formatCurrency(row.closing_amount) }}
-								</div>
-							</v-card>
-						</v-col>
-					</v-row>
+							<div class="d-flex align-center justify-space-between mb-2">
+								<span class="text-body-2 font-weight-bold text-truncate">
+									{{ row.denomination_name }}
+								</span>
+								<v-icon icon="mdi-cash" size="16" color="success" />
+							</div>
+							<div class="d-flex align-center justify-center mb-2">
+								<v-btn
+									icon="mdi-minus"
+									size="44"
+									variant="tonal"
+									:disabled="!row.closing_quantity"
+									:aria-label="__('Decrease quantity for ') + row.denomination_name"
+									class="denom-stepper-btn"
+									@click="decrementDenom(row)"
+								/>
+								<v-text-field
+									v-model.number="row.closing_quantity"
+									type="number"
+									min="0"
+									density="compact"
+									variant="plain"
+									hide-details
+									:aria-label="__('Quantity')"
+									class="denom-qty-input mx-2"
+								/>
+								<v-btn
+									icon="mdi-plus"
+									size="44"
+									variant="tonal"
+									:aria-label="__('Increase quantity for ') + row.denomination_name"
+									class="denom-stepper-btn"
+									@click="incrementDenom(row)"
+								/>
+							</div>
+							<div class="text-body-2 text-medium-emphasis text-center">
+								{{ currencySymbol(pos_profile.currency) }}{{ formatCurrency(row.closing_amount) }}
+							</div>
+						</v-card>
+					</div>
 
 					<v-divider class="my-4" />
 
@@ -290,7 +302,11 @@
 						</v-col>
 						<v-col cols="12" sm="4">
 							<div class="text-caption text-medium-emphasis">{{ __("Total Difference") }}</div>
-							<div class="text-h6 font-weight-bold d-flex align-center" :class="totalDifferenceClass">
+							<div
+								class="text-h6 font-weight-bold d-flex align-center"
+								:class="totalDifferenceClass"
+								:style="totalDifferenceStyle"
+							>
 								<v-icon v-if="totalDifferenceIcon" :icon="totalDifferenceIcon" size="16" class="mr-1" />
 								{{ currencySymbol(pos_profile.currency) }}{{ formatCurrency(Math.abs(totalDifferenceValue)) }}
 							</div>
@@ -302,21 +318,21 @@
 			<v-divider />
 			<v-card-actions
 				class="px-4 px-sm-6 py-4"
-				:class="isMobile ? 'flex-column ga-2' : ''"
+				:class="isNarrow ? 'flex-column ga-2' : ''"
 			>
 				<v-btn
 					variant="text"
 					color="grey-darken-1"
-					:block="isMobile"
+					:block="isNarrow"
 					@click="show_reset_confirm = true"
 				>
 					{{ __("Reset") }}
 				</v-btn>
-				<v-spacer v-if="!isMobile" />
+				<v-spacer v-if="!isNarrow" />
 				<v-btn
 					variant="outlined"
 					color="grey-darken-1"
-					:block="isMobile"
+					:block="isNarrow"
 					@click="close_dialog"
 				>
 					{{ __("Cancel") }}
@@ -325,7 +341,7 @@
 					variant="elevated"
 					color="primary"
 					append-icon="mdi-lock-outline"
-					:block="isMobile"
+					:block="isNarrow"
 					@click="submit_dialog"
 				>
 					{{ __("Close Shift") }}
@@ -424,10 +440,28 @@ export default {
 		differenceValue(item) {
 			return this.numberAmount(item.expected_amount) - this.numberAmount(item.closing_amount);
 		},
+		/**
+		 * Vuetify's `text-error`/`text-warning` theme fills are 3.19:1 and
+		 * 2.16:1 against a white card background — both fail WCAG AA's 4.5:1
+		 * for body text. These are cash-variance figures on a till, meant to
+		 * be read under bad lighting, so contrast matters more than reusing
+		 * the theme palette. `#C0392B`/`#B26500` are ~4.6:1 on light; the
+		 * existing dark-theme error/warning tokens are already light enough
+		 * against the app's near-black dark background to clear AA there.
+		 */
+		varianceColor(diff) {
+			const dark = this.$vuetify.theme.global.name.value === "dark";
+			if (diff > 0) return dark ? "#EF5350" : "#C0392B"; // shortage
+			return dark ? "#FFB74D" : "#B26500"; // excess
+		},
 		differenceClass(item) {
 			const diff = this.differenceValue(item);
-			if (Math.abs(diff) < 0.01) return "text-success";
-			return diff > 0 ? "text-error" : "text-warning";
+			return Math.abs(diff) < 0.01 ? "text-success" : "";
+		},
+		differenceStyle(item) {
+			const diff = this.differenceValue(item);
+			if (Math.abs(diff) < 0.01) return {};
+			return { color: this.varianceColor(diff) };
 		},
 		/** Non-color signal for the same shortage/excess distinction, for colorblind users. */
 		differenceIcon(item) {
@@ -497,9 +531,14 @@ export default {
 		},
 	},
 	computed: {
-		/** Phone-width viewport — drives the fullscreen dialog + stacked footer. */
-		isMobile() {
-			return this.$vuetify.display.smAndDown || this.$vuetify.display.height < 700;
+		/** Narrow viewport. Drives anything that stacks or reflows for width. */
+		isNarrow() {
+			return this.$vuetify.display.smAndDown;
+		},
+		/** Narrow OR short. Drives fullscreen only — a short-but-wide laptop
+		 *  window shouldn't lose the two-column layout just to fit vertically. */
+		isFullscreen() {
+			return this.isNarrow || this.$vuetify.display.height < 700;
 		},
 
 		closing_total() {
@@ -564,8 +603,11 @@ export default {
 			return this.totalExpected - this.totalClosing;
 		},
 		totalDifferenceClass() {
-			if (Math.abs(this.totalDifferenceValue) < 0.01) return "text-success";
-			return this.totalDifferenceValue > 0 ? "text-error" : "text-warning";
+			return Math.abs(this.totalDifferenceValue) < 0.01 ? "text-success" : "";
+		},
+		totalDifferenceStyle() {
+			if (Math.abs(this.totalDifferenceValue) < 0.01) return {};
+			return { color: this.varianceColor(this.totalDifferenceValue) };
 		},
 		totalDifferenceIcon() {
 			if (Math.abs(this.totalDifferenceValue) < 0.01) return null;
@@ -661,8 +703,18 @@ export default {
 	flex: 1 1 auto;
 }
 
+.denom-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 8px;
+}
+
 .denom-card {
 	height: 100%;
+}
+
+.denom-stepper-btn {
+	flex: 0 0 auto;
 }
 
 .denom-qty-input {
@@ -689,11 +741,17 @@ export default {
 	 * cancelling the `px-4`/`pa-4` mobile-reduced padding classes on the
 	 * header, footer, and body below `sm`. These overrides restore that
 	 * reduction — same padding value the utility classes were already trying
-	 * to set — with enough selector specificity (4-5 classes vs. the global
-	 * rule's 3) to actually win.
+	 * to set.
+	 *
+	 * The `.v-card-actions` rule needs `.v-card` in the chain specifically:
+	 * the winning global selector is `body:has(.pos-page) .v-dialog .v-card >
+	 * .v-card-actions` (pos-enhancements.css), which is 4 classes + 1 element
+	 * (body) — a bare `.closing-dialog-card.d-flex .v-card-actions` ties on
+	 * classes (4) and loses on the element tiebreak. Adding `.v-card` here
+	 * brings it to 5 classes, which wins outright before types are compared.
 	 */
 	.closing-dialog-card.d-flex .v-card-title.enhanced-modal-header,
-	.closing-dialog-card.d-flex .v-card-actions {
+	.closing-dialog-card.v-card.d-flex .v-card-actions {
 		padding: 16px !important;
 	}
 

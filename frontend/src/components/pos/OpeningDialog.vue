@@ -4,13 +4,13 @@
 		persistent
 		max-width="1100"
 		scrollable
-		:fullscreen="isMobile"
+		:fullscreen="isFullscreen"
 	>
 		<v-card
-			:rounded="isMobile ? 0 : 'xl'"
+			:rounded="isFullscreen ? 0 : 'xl'"
 			elevation="8"
 			class="opening-shift-card d-flex flex-column"
-			:class="{ 'opening-shift-card--fullscreen': isMobile }"
+			:class="{ 'opening-shift-card--fullscreen': isFullscreen }"
 		>
 			<v-card-title
 				class="d-flex align-center px-4 px-sm-6 py-4 enhanced-modal-header"
@@ -172,55 +172,66 @@
 										{{ __("Enter quantity for each denomination in cash drawer.") }}
 									</div>
 
-									<v-row dense>
-										<v-col
+									<!--
+										CSS grid, not v-row/v-col — same reasoning as
+										the payment chip grid above: a stepper row
+										(two 44px buttons + the qty field) needs
+										~160px, which cols="6" doesn't reliably give
+										at xs (this column's extra padding makes it
+										worse than ClosingDialog's), squashing the
+										buttons back under the touch minimum.
+										auto-fill/minmax sizes off the actual
+										container width instead of a viewport
+										breakpoint.
+									-->
+									<div class="denom-grid">
+										<v-card
 											v-for="row in denomination_rows"
 											:key="row.denomination"
-											cols="6"
-											sm="4"
-											md="3"
-											lg="2"
+											variant="outlined"
+											rounded="lg"
+											class="pa-3 denom-card"
 										>
-											<v-card variant="outlined" rounded="lg" class="pa-3 denom-card">
-												<div class="d-flex align-center justify-space-between mb-2">
-													<span class="text-body-2 font-weight-bold text-truncate">
-														{{ formatCurrency(row.denomination_value) }} {{ __("Note") }}
-													</span>
-													<v-icon icon="mdi-cash" size="16" color="success" />
-												</div>
-												<div class="d-flex align-center justify-center mb-2">
-													<v-btn
-														icon="mdi-minus"
-														size="44"
-														variant="tonal"
-														:disabled="!row.quantity"
-														:aria-label="__('Decrease quantity for ') + row.denomination_name"
-														@click="decrementDenom(row)"
-													/>
-													<v-text-field
-														v-model.number="row.quantity"
-														type="number"
-														min="0"
-														density="compact"
-														variant="plain"
-														hide-details
-														:aria-label="__('Quantity')"
-														class="denom-qty-input mx-2"
-													/>
-													<v-btn
-														icon="mdi-plus"
-														size="44"
-														variant="tonal"
-														:aria-label="__('Increase quantity for ') + row.denomination_name"
-														@click="incrementDenom(row)"
-													/>
-												</div>
-												<div class="text-body-2 text-medium-emphasis text-center">
-													{{ currencySymbol(row.currency) }}{{ formatCurrency(row.denomination_value * (row.quantity || 0)) }}
-												</div>
-											</v-card>
-										</v-col>
-									</v-row>
+											<div class="d-flex align-center justify-space-between mb-2">
+												<span class="text-body-2 font-weight-bold text-truncate">
+													{{ formatCurrency(row.denomination_value) }} {{ __("Note") }}
+												</span>
+												<v-icon icon="mdi-cash" size="16" color="success" />
+											</div>
+											<div class="d-flex align-center justify-center mb-2">
+												<v-btn
+													icon="mdi-minus"
+													size="44"
+													variant="tonal"
+													:disabled="!row.quantity"
+													:aria-label="__('Decrease quantity for ') + row.denomination_name"
+													class="denom-stepper-btn"
+													@click="decrementDenom(row)"
+												/>
+												<v-text-field
+													v-model.number="row.quantity"
+													type="number"
+													min="0"
+													density="compact"
+													variant="plain"
+													hide-details
+													:aria-label="__('Quantity')"
+													class="denom-qty-input mx-2"
+												/>
+												<v-btn
+													icon="mdi-plus"
+													size="44"
+													variant="tonal"
+													:aria-label="__('Increase quantity for ') + row.denomination_name"
+													class="denom-stepper-btn"
+													@click="incrementDenom(row)"
+												/>
+											</div>
+											<div class="text-body-2 text-medium-emphasis text-center">
+												{{ currencySymbol(row.currency) }}{{ formatCurrency(row.denomination_value * (row.quantity || 0)) }}
+											</div>
+										</v-card>
+									</div>
 
 									<v-divider class="my-4" />
 
@@ -270,24 +281,24 @@
 			<v-divider />
 			<v-card-actions
 				class="px-4 px-sm-6 py-4"
-				:class="isMobile ? 'flex-column ga-2' : ''"
+				:class="isNarrow ? 'flex-column ga-2' : ''"
 			>
 				<v-btn
 					variant="text"
 					color="grey-darken-1"
-					:block="isMobile"
+					:block="isNarrow"
 					@click="show_reset_confirm = true"
 				>
 					{{ __("Reset") }}
 				</v-btn>
-				<v-spacer v-if="!isMobile" />
+				<v-spacer v-if="!isNarrow" />
 				<!-- Same exit, same reason, same invariant — hiding only the
 					 header X would leave the escape hatch wide open. -->
 				<v-btn
 					v-if="can_exit_dialog"
 					variant="outlined"
 					color="grey-darken-1"
-					:block="isMobile"
+					:block="isNarrow"
 					@click="go_desk"
 				>
 					{{ __("Cancel") }}
@@ -298,7 +309,7 @@
 					append-icon="mdi-arrow-right"
 					:loading="is_loading"
 					:disabled="is_loading || config_unavailable"
-					:block="isMobile"
+					:block="isNarrow"
 					@click="submit_dialog"
 				>
 					{{ __("Create Opening Shift") }}
@@ -370,9 +381,14 @@ export default {
 		};
 	},
 	computed:{
-			/** Phone-width viewport — drives the fullscreen dialog + stacked footer. */
-			isMobile() {
-				return this.$vuetify.display.smAndDown || this.$vuetify.display.height < 700;
+			/** Narrow viewport. Drives anything that stacks or reflows for width. */
+			isNarrow() {
+				return this.$vuetify.display.smAndDown;
+			},
+			/** Narrow OR short. Drives fullscreen only — a short-but-wide laptop
+			 *  window shouldn't lose the two-column layout just to fit vertically. */
+			isFullscreen() {
+				return this.isNarrow || this.$vuetify.display.height < 700;
 			},
 
 			denominationTotal() {
@@ -1101,8 +1117,18 @@ export default {
 	transition: border-color 0.15s ease;
 }
 
+.denom-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 8px;
+}
+
 .denom-card {
 	height: 100%;
+}
+
+.denom-stepper-btn {
+	flex: 0 0 auto;
 }
 
 .denom-qty-input {
@@ -1128,12 +1154,17 @@ export default {
 	 * padding with `!important` and no media query, silently cancelling the
 	 * `px-4`/`pa-4` mobile-reduced padding classes on the header, footer,
 	 * and body below `sm`. These overrides restore that reduction — same
-	 * padding value the utility classes were already trying to set — with
-	 * enough selector specificity (4-5 classes vs. the global rule's 3) to
-	 * actually win.
+	 * padding value the utility classes were already trying to set.
+	 *
+	 * The `.v-card-actions` rule needs `.v-card` in the chain specifically:
+	 * the winning global selector is `body:has(.pos-page) .v-dialog .v-card >
+	 * .v-card-actions` (pos-enhancements.css), which is 4 classes + 1 element
+	 * (body) — a bare `.opening-shift-card.d-flex .v-card-actions` ties on
+	 * classes (4) and loses on the element tiebreak. Adding `.v-card` here
+	 * brings it to 5 classes, which wins outright before types are compared.
 	 */
 	.opening-shift-card.d-flex .v-card-title.enhanced-modal-header,
-	.opening-shift-card.d-flex .v-card-actions {
+	.opening-shift-card.v-card.d-flex .v-card-actions {
 		padding: 16px !important;
 	}
 
