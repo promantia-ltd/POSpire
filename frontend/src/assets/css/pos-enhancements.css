@@ -4944,7 +4944,7 @@ body:has(.pos-page) .page-body {
 .pos-page .invoice-cart-section .v-data-table .v-table__wrapper {
 	flex: 1 1 auto;
 	overflow-y: auto;
-	overflow-x: hidden;
+	overflow-x: auto;
 	scrollbar-width: thin;
 }
 
