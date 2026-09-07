@@ -91,7 +91,7 @@
 				<v-divider class="my-4"></v-divider>
 
 				<!-- Payment Methods Section -->
-				<div class="mb-4" v-if="is_cashback">
+				<div class="mb-4" v-if="show_payment_methods">
 					<v-card variant="flat" class="mb-3 section-header">
 						<v-card-title class="section-header-title font-weight-bold">
 							<v-icon start size="20" color="#00BCD4">mdi-credit-card</v-icon>
@@ -830,7 +830,7 @@ export default {
 				this.flt(this.paid_change) + this.flt(-this.credit_change)
 			);
 
-			if (this.is_cashback && total_change != -this.diff_payment) {
+			if (this.show_payment_methods && total_change != -this.diff_payment) {
 				toast.error(`Error in change calculations!`);
 				playSound("error");
 				return;
@@ -1235,6 +1235,12 @@ export default {
 	},
 
 	computed: {
+		// Cashback applies to returns only: a return either refunds cash or
+		// leaves store credit. Normal sales always take payment, so the payment
+		// methods must not depend on the POS Profile cashback setting.
+		show_payment_methods() {
+			return !this.invoice_doc.is_return || this.is_cashback;
+		},
 		total_payments() {
 			let total = parseFloat(this.invoice_doc.loyalty_amount);
 			if (this.invoice_doc && this.invoice_doc.payments) {
@@ -1245,7 +1251,7 @@ export default {
 
 			total += this.flt(this.redeemed_customer_credit);
 
-			if (!this.is_cashback) total = 0;
+			if (!this.show_payment_methods) total = 0;
 
 			return this.flt(total, this.currency_precision);
 		},
