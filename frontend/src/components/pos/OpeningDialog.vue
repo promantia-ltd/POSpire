@@ -41,10 +41,7 @@
 
 			<v-divider />
 
-			<v-card-text
-				class="overflow-y-auto pa-4 pa-sm-6 flex-grow-1"
-				:style="{ maxHeight: isMobile ? 'none' : '70vh' }"
-			>
+			<v-card-text class="overflow-y-auto pa-4 pa-sm-6 flex-grow-1">
 				<v-alert
 					v-if="config_unavailable"
 					type="warning"
@@ -173,6 +170,8 @@
 											:key="row.denomination"
 											cols="6"
 											sm="4"
+											md="3"
+											lg="2"
 										>
 											<v-card variant="outlined" rounded="lg" class="pa-3 denom-card">
 												<div class="d-flex align-center justify-space-between mb-2">
@@ -184,18 +183,27 @@
 												<div class="d-flex align-center justify-center mb-2">
 													<v-btn
 														icon="mdi-minus"
-														size="small"
+														size="44"
 														variant="tonal"
-														density="comfortable"
 														:disabled="!row.quantity"
+														:aria-label="__('Decrease quantity')"
 														@click="decrementDenom(row)"
 													/>
-													<span class="text-h6 font-weight-bold mx-4">{{ row.quantity || 0 }}</span>
+													<v-text-field
+														v-model.number="row.quantity"
+														type="number"
+														min="0"
+														density="compact"
+														variant="plain"
+														hide-details
+														:aria-label="__('Quantity')"
+														class="denom-qty-input mx-2"
+													/>
 													<v-btn
 														icon="mdi-plus"
-														size="small"
+														size="44"
 														variant="tonal"
-														density="comfortable"
+														:aria-label="__('Increase quantity')"
 														@click="incrementDenom(row)"
 													/>
 												</div>
@@ -356,7 +364,7 @@ export default {
 	computed:{
 			/** Phone-width viewport — drives the fullscreen dialog + stacked footer. */
 			isMobile() {
-				return this.$vuetify.display.smAndDown;
+				return this.$vuetify.display.smAndDown || this.$vuetify.display.height < 700;
 			},
 
 			denominationTotal() {
@@ -1054,10 +1062,6 @@ export default {
 </script>
 
 <style scoped>
-.opening-shift-card {
-	width: min(1100px, 95vw);
-}
-
 .store-logo-wrap {
 	min-height: clamp(48px, 8vw, 72px);
 }
@@ -1085,6 +1089,15 @@ export default {
 
 .denom-card {
 	height: 100%;
+}
+
+.denom-qty-input {
+	width: 56px;
+	flex: 0 0 auto;
+}
+
+.denom-qty-input :deep(input) {
+	text-align: center;
 }
 
 .denom-summary > div {

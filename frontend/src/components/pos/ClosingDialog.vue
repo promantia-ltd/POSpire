@@ -30,10 +30,7 @@
 
 			<v-divider></v-divider>
 
-			<v-card-text
-				class="overflow-y-auto pa-4 pa-sm-6 flex-grow-1"
-				:style="{ maxHeight: isMobile ? 'none' : '75vh' }"
-			>
+			<v-card-text class="overflow-y-auto pa-4 pa-sm-6 flex-grow-1">
 				<!--
 					Two wordings, never both. The contribution ledger records
 					every sale, online and offline, so its figure is merely
@@ -96,7 +93,7 @@
 						/>
 					</v-col>
 					<v-col cols="12" md="6">
-						<v-card variant="outlined" rounded="lg" class="pa-3 h-100 d-flex flex-nowrap shift-meta-card">
+						<v-card variant="outlined" rounded="lg" class="pa-3 h-100 d-flex flex-wrap shift-meta-card">
 							<div class="shift-meta-item d-flex align-center">
 								<v-icon icon="mdi-clock-outline" size="18" class="mr-2 text-medium-emphasis" />
 								<div>
@@ -138,7 +135,8 @@
 						:items="dialog_data.payment_reconciliation"
 						item-key="mode_of_payment"
 						class="rounded-lg elevation-1"
-						:items-per-page="itemsPerPage"
+						:items-per-page="-1"
+						:mobile="isMobile"
 						density="comfortable"
 						hide-default-footer
 					>
@@ -216,7 +214,8 @@
 							:key="row.denomination"
 							cols="6"
 							sm="4"
-							md="2"
+							md="3"
+							lg="2"
 						>
 							<v-card variant="outlined" rounded="lg" class="pa-3 denom-card">
 								<div class="d-flex align-center justify-space-between mb-2">
@@ -228,18 +227,27 @@
 								<div class="d-flex align-center justify-center mb-2">
 									<v-btn
 										icon="mdi-minus"
-										size="small"
+										size="44"
 										variant="tonal"
-										density="comfortable"
 										:disabled="!row.closing_quantity"
+										:aria-label="__('Decrease quantity')"
 										@click="decrementDenom(row)"
 									/>
-									<span class="text-h6 font-weight-bold mx-4">{{ row.closing_quantity || 0 }}</span>
+									<v-text-field
+										v-model.number="row.closing_quantity"
+										type="number"
+										min="0"
+										density="compact"
+										variant="plain"
+										hide-details
+										:aria-label="__('Quantity')"
+										class="denom-qty-input mx-2"
+									/>
 									<v-btn
 										icon="mdi-plus"
-										size="small"
+										size="44"
 										variant="tonal"
-										density="comfortable"
+										:aria-label="__('Increase quantity')"
 										@click="incrementDenom(row)"
 									/>
 								</div>
@@ -350,7 +358,6 @@ export default {
 	data: () => ({
 		closingDialog: false,
 		show_reset_confirm: false,
-		itemsPerPage: 20,
 		dialog_data: {},
 		pos_profile: "",
 		headers: [
@@ -486,7 +493,7 @@ export default {
 	computed: {
 		/** Phone-width viewport — drives the fullscreen dialog + stacked footer. */
 		isMobile() {
-			return this.$vuetify.display.smAndDown;
+			return this.$vuetify.display.smAndDown || this.$vuetify.display.height < 700;
 		},
 
 		closing_total() {
@@ -620,10 +627,6 @@ export default {
 	white-space: nowrap;
 }
 
-.closing-dialog-card {
-	width: min(1300px, 95vw);
-}
-
 .closing-dialog-card--fullscreen {
 	width: 100%;
 	height: 100%;
@@ -640,7 +643,6 @@ export default {
 .shift-meta-card {
 	gap: 12px;
 	align-items: center;
-	overflow-x: auto;
 }
 
 .shift-meta-item {
@@ -650,6 +652,15 @@ export default {
 
 .denom-card {
 	height: 100%;
+}
+
+.denom-qty-input {
+	width: 56px;
+	flex: 0 0 auto;
+}
+
+.denom-qty-input :deep(input) {
+	text-align: center;
 }
 
 .denom-summary > div {
