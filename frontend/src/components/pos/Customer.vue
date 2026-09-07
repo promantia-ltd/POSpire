@@ -1,66 +1,67 @@
 <template>
 	<div>
-		<v-autocomplete
-			density="compact"
-			clearable
-			auto-select-first
-			variant="outlined"
-			color="primary"
-			:label="__('Customer')"
-			v-model="customer"
-			:items="customers"
-			item-title="customer_name"
-			item-value="name"
-			:no-data-text="__('Customers not found')"
-			hide-details
-			:customFilter="customFilter"
-			:disabled="readonly"
-		>
-			<template #prepend-inner>
+		<div class="d-flex align-center customer-search-row">
+			<div v-if="showActions" class="customer-actions d-flex align-center mr-2">
 				<v-icon
-					v-if="showActions"
 					class="customer-action-icon mr-2"
 					color="primary"
 					@click.stop="edit_customer"
 				>mdi-account-edit</v-icon>
 				<v-icon
-					v-if="showActions"
-					class="customer-action-icon mr-1"
+					class="customer-action-icon"
 					color="primary"
 					@click.stop="new_customer"
 				>mdi-account-plus</v-icon>
-			</template>
-			<template v-slot:item="{ props, item }">
-				<v-list-item v-bind="props">
-					<template v-slot:append v-if="isPendingSync(item.raw)">
-						<v-chip
-							size="x-small"
-							color="warning"
-							variant="tonal"
-							:title="__('This customer was created offline and has not yet synced to the server.')"
-						>
-							<v-icon start size="x-small">mdi-cloud-sync-outline</v-icon>
-							{{ __('pending sync') }}
-						</v-chip>
-					</template>
-					<v-list-item-subtitle v-if="item.raw.customer_name != item.raw.name">
-						<div>ID: {{ item.raw.name }}</div>
-					</v-list-item-subtitle>
-					<v-list-item-subtitle v-if="item.raw.tax_id">
-						<div>TAX ID: {{ item.raw.tax_id }}</div>
-					</v-list-item-subtitle>
-					<v-list-item-subtitle v-if="item.raw.email_id">
-						<div>Email: {{ item.raw.email_id }}</div>
-					</v-list-item-subtitle>
-					<v-list-item-subtitle v-if="item.raw.mobile_no">
-						<div>Mobile No: {{ item.raw.mobile_no }}</div>
-					</v-list-item-subtitle>
-					<v-list-item-subtitle v-if="item.raw.primary_address">
-						<div>Primary Address: {{ item.raw.primary_address }}</div>
-					</v-list-item-subtitle>
-				</v-list-item>
-			</template>
-		</v-autocomplete>
+			</div>
+			<v-autocomplete
+				class="flex-grow-1"
+				density="compact"
+				clearable
+				auto-select-first
+				variant="outlined"
+				color="primary"
+				:label="__('Customer')"
+				v-model="customer"
+				:items="customers"
+				item-title="customer_name"
+				item-value="name"
+				:no-data-text="__('Customers not found')"
+				hide-details
+				:customFilter="customFilter"
+				:disabled="readonly"
+			>
+				<template v-slot:item="{ props, item }">
+					<v-list-item v-bind="props">
+						<template v-slot:append v-if="isPendingSync(item.raw)">
+							<v-chip
+								size="x-small"
+								color="warning"
+								variant="tonal"
+								:title="__('This customer was created offline and has not yet synced to the server.')"
+							>
+								<v-icon start size="x-small">mdi-cloud-sync-outline</v-icon>
+								{{ __('pending sync') }}
+							</v-chip>
+						</template>
+						<v-list-item-subtitle v-if="item.raw.customer_name != item.raw.name">
+							<div>ID: {{ item.raw.name }}</div>
+						</v-list-item-subtitle>
+						<v-list-item-subtitle v-if="item.raw.tax_id">
+							<div>TAX ID: {{ item.raw.tax_id }}</div>
+						</v-list-item-subtitle>
+						<v-list-item-subtitle v-if="item.raw.email_id">
+							<div>Email: {{ item.raw.email_id }}</div>
+						</v-list-item-subtitle>
+						<v-list-item-subtitle v-if="item.raw.mobile_no">
+							<div>Mobile No: {{ item.raw.mobile_no }}</div>
+						</v-list-item-subtitle>
+						<v-list-item-subtitle v-if="item.raw.primary_address">
+							<div>Primary Address: {{ item.raw.primary_address }}</div>
+						</v-list-item-subtitle>
+					</v-list-item>
+				</template>
+			</v-autocomplete>
+		</div>
 
 		<UpdateCustomer />
 	</div>

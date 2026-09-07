@@ -64,14 +64,14 @@
 			<!-- Fixed Customer Selector Section (Fixed at Top) -->
 			<div class="invoice-header-section">
 				<v-row align="center" no-gutters class="px-3 py-2">
-					<!-- Customer: 8 cols with sales order, 9 cols without -->
+					<!-- Customer: 10 cols with sales order, 12 cols without -->
 					<v-col
 						:cols="
 							$vuetify.display.mdAndDown
 								? 12
 								: pos_profile.posa_allow_sales_order
-									? 8
-									: 9
+									? 10
+									: 12
 						"
 						class="pr-2"
 					>
@@ -94,33 +94,6 @@
 							v-model="invoiceType"
 							:disabled="invoiceType == 'Return'"
 						/>
-					</v-col>
-					<!-- Inclusive Tax: 2 cols with sales order, 3 cols without -->
-					<v-col
-						:cols="
-							$vuetify.display.mdAndDown
-								? 12
-								: pos_profile.posa_allow_sales_order
-									? 2
-									: 3
-						"
-						class="pl-2 d-flex align-center justify-end"
-					>
-						<v-switch
-							v-model="inclusive_tax"
-							:color="inclusive_tax ? 'primary' : 'grey'"
-							:base-color="inclusive_tax ? 'primary' : 'grey'"
-							inset
-							density="compact"
-							hide-details
-							class="small-switch flex-shrink-0"
-						>
-							<template v-slot:label>
-								<span class="text-nowrap text-body-2">{{
-									__("Inclusive Tax")
-								}}</span>
-							</template>
-						</v-switch>
 					</v-col>
 					<!-- Return Mode Badge -->
 					<v-col
@@ -4313,6 +4286,7 @@ export default {
 				this.float_precision = window.sys_defaults?.float_precision || 2;
 				this.currency_precision = window.sys_defaults?.currency_precision || 2;
 				this.invoiceType = this.pos_profile.posa_default_sales_order ? "Order" : "Invoice";
+				this.inclusive_tax = Boolean(this.pos_profile.posa_tax_inclusive);
 				this.load_approval_config();
 				// Prime the tax config while online so it's cached for offline use.
 				this.load_offline_tax_config();
@@ -4528,11 +4502,6 @@ export default {
 
 .disable-events {
 	pointer-events: none;
-}
-.small-switch .v-label {
-	margin-left: -6px;
-	margin-top: 20px; /* Adjust this value as needed */
-	display: block;
 }
 
 /* .pay-button {
