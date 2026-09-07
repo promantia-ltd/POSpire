@@ -62,7 +62,7 @@
 
 				<v-row>
 					<!-- Left panel: profile selection + payment modes overview -->
-					<v-col cols="12" md="5">
+					<v-col cols="12" :md="denominations_enabled ? 5 : 6">
 						<v-card variant="outlined" rounded="lg" class="pa-4 h-100 d-flex flex-column">
 							<v-autocomplete
 								v-model="company"
@@ -112,37 +112,45 @@
 								</v-tooltip>
 							</div>
 
-							<v-row dense class="mb-2">
-								<v-col
+							<!--
+								CSS grid, not v-row/v-col: Vuetify's cols/sm
+								breakpoints are viewport-width based, but this grid
+								lives inside a md="5" column — a fraction of the
+								dialog, not the viewport. At a wide viewport (e.g.
+								1920px) that column is still only ~5/12 of the
+								dialog width, so a viewport-keyed "3 across" rule
+								stayed 3-across even when the column had room for
+								more, forcing modes like "Credit Card" to truncate
+								on a big monitor but not on a narrower tablet.
+								auto-fill/minmax responds to the column's actual
+								rendered width instead.
+							-->
+							<div class="payment-mode-grid mb-2">
+								<v-card
 									v-for="pm in payments_methods"
 									:key="pm.mode_of_payment"
-									cols="6"
-									sm="4"
+									:variant="isCashMode(pm) ? 'tonal' : 'outlined'"
+									:color="isCashMode(pm) ? 'primary' : undefined"
+									rounded="lg"
+									class="pa-3 d-flex align-center payment-mode-chip"
 								>
-									<v-card
-										:variant="isCashMode(pm) ? 'tonal' : 'outlined'"
+									<v-icon
+										:icon="paymentModeIcon(pm.mode_of_payment)"
+										size="20"
+										class="mr-2"
 										:color="isCashMode(pm) ? 'primary' : undefined"
-										rounded="lg"
-										class="pa-3 d-flex align-center payment-mode-chip"
-									>
-										<v-icon
-											:icon="paymentModeIcon(pm.mode_of_payment)"
-											size="20"
-											class="mr-2"
-											:color="isCashMode(pm) ? 'primary' : undefined"
-										/>
-										<span class="text-body-2 flex-grow-1 text-truncate">
-											{{ pm.mode_of_payment }}
-										</span>
-										<v-icon
-											v-if="isCashMode(pm)"
-											icon="mdi-check-circle"
-											size="18"
-											color="primary"
-										/>
-									</v-card>
-								</v-col>
-							</v-row>
+									/>
+									<span class="text-body-2 flex-grow-1 text-truncate">
+										{{ pm.mode_of_payment }}
+									</span>
+									<v-icon
+										v-if="isCashMode(pm)"
+										icon="mdi-check-circle"
+										size="18"
+										color="primary"
+									/>
+								</v-card>
+							</div>
 							<div class="text-caption text-medium-emphasis mb-4">
 								{{ __("All modes are available for transactions during the shift.") }}
 							</div>
@@ -150,7 +158,7 @@
 					</v-col>
 
 					<!-- Right panel: cash entry -->
-					<v-col cols="12" md="7">
+					<v-col cols="12" :md="denominations_enabled ? 7 : 6">
 						<v-card variant="outlined" rounded="lg" class="pa-4 h-100">
 							<v-expand-transition>
 								<div v-if="denominations_enabled">
@@ -186,7 +194,7 @@
 														size="44"
 														variant="tonal"
 														:disabled="!row.quantity"
-														:aria-label="__('Decrease quantity')"
+														:aria-label="__('Decrease quantity for ') + row.denomination_name"
 														@click="decrementDenom(row)"
 													/>
 													<v-text-field
@@ -203,7 +211,7 @@
 														icon="mdi-plus"
 														size="44"
 														variant="tonal"
-														:aria-label="__('Increase quantity')"
+														:aria-label="__('Increase quantity for ') + row.denomination_name"
 														@click="incrementDenom(row)"
 													/>
 												</div>
@@ -261,7 +269,7 @@
 
 			<v-divider />
 			<v-card-actions
-				class="px-4 px-sm-6 py-4 enhanced-modal-header"
+				class="px-4 px-sm-6 py-4"
 				:class="isMobile ? 'flex-column ga-2' : ''"
 			>
 				<v-btn
@@ -1082,6 +1090,12 @@ export default {
 	min-width: 0;
 }
 
+.payment-mode-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+	gap: 8px;
+}
+
 .payment-mode-chip {
 	min-height: 48px;
 	transition: border-color 0.15s ease;
@@ -1107,6 +1121,24 @@ export default {
 @media (max-width: 599px) {
 	.denom-summary {
 		gap: 12px;
+	}
+
+	/*
+	 * pos-enhancements.css forces `.enhanced-modal-header` / `.v-card-text`
+	 * padding with `!important` and no media query, silently cancelling the
+	 * `px-4`/`pa-4` mobile-reduced padding classes on the header, footer,
+	 * and body below `sm`. These overrides restore that reduction — same
+	 * padding value the utility classes were already trying to set — with
+	 * enough selector specificity (4-5 classes vs. the global rule's 3) to
+	 * actually win.
+	 */
+	.opening-shift-card.d-flex .v-card-title.enhanced-modal-header,
+	.opening-shift-card.d-flex .v-card-actions {
+		padding: 16px !important;
+	}
+
+	.opening-shift-card.d-flex .v-card-text {
+		padding: 16px !important;
 	}
 }
 </style>

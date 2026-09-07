@@ -181,14 +181,10 @@
 						</template>
 
 						<template v-slot:item.difference="{ item }">
-							<span class="font-mono text-no-wrap" :class="differenceClass(item)">
+							<span class="font-mono text-no-wrap d-inline-flex align-center" :class="differenceClass(item)">
+								<v-icon v-if="differenceIcon(item)" :icon="differenceIcon(item)" size="14" class="mr-1" />
 								{{ currencySymbol(pos_profile.currency) }}
-								{{
-									formatCurrency(
-										numberAmount(item.expected_amount) -
-											numberAmount(item.closing_amount)
-									)
-								}}
+								{{ formatCurrency(Math.abs(differenceValue(item))) }}
 							</span>
 						</template>
 					</v-data-table>
@@ -230,7 +226,7 @@
 										size="44"
 										variant="tonal"
 										:disabled="!row.closing_quantity"
-										:aria-label="__('Decrease quantity')"
+										:aria-label="__('Decrease quantity for ') + row.denomination_name"
 										@click="decrementDenom(row)"
 									/>
 									<v-text-field
@@ -247,7 +243,7 @@
 										icon="mdi-plus"
 										size="44"
 										variant="tonal"
-										:aria-label="__('Increase quantity')"
+										:aria-label="__('Increase quantity for ') + row.denomination_name"
 										@click="incrementDenom(row)"
 									/>
 								</div>
@@ -294,8 +290,9 @@
 						</v-col>
 						<v-col cols="12" sm="4">
 							<div class="text-caption text-medium-emphasis">{{ __("Total Difference") }}</div>
-							<div class="text-h6 font-weight-bold" :class="totalDifferenceClass">
-								{{ currencySymbol(pos_profile.currency) }}{{ formatCurrency(totalDifferenceValue) }}
+							<div class="text-h6 font-weight-bold d-flex align-center" :class="totalDifferenceClass">
+								<v-icon v-if="totalDifferenceIcon" :icon="totalDifferenceIcon" size="16" class="mr-1" />
+								{{ currencySymbol(pos_profile.currency) }}{{ formatCurrency(Math.abs(totalDifferenceValue)) }}
 							</div>
 						</v-col>
 					</v-row>
@@ -304,7 +301,7 @@
 
 			<v-divider />
 			<v-card-actions
-				class="px-4 px-sm-6 py-4 enhanced-modal-header"
+				class="px-4 px-sm-6 py-4"
 				:class="isMobile ? 'flex-column ga-2' : ''"
 			>
 				<v-btn
@@ -423,11 +420,20 @@ export default {
 		numberAmount(val) {
 			return Number(val || 0);
 		},
+		/** expected - closing: positive = shortage (counted less), negative = excess (counted more). */
+		differenceValue(item) {
+			return this.numberAmount(item.expected_amount) - this.numberAmount(item.closing_amount);
+		},
 		differenceClass(item) {
-			const expected = this.numberAmount(item.expected_amount);
-			const closing = this.numberAmount(item.closing_amount);
-			const diff = expected - closing;
-			return Math.abs(diff) < 0.01 ? "text-success" : "text-error";
+			const diff = this.differenceValue(item);
+			if (Math.abs(diff) < 0.01) return "text-success";
+			return diff > 0 ? "text-error" : "text-warning";
+		},
+		/** Non-color signal for the same shortage/excess distinction, for colorblind users. */
+		differenceIcon(item) {
+			const diff = this.differenceValue(item);
+			if (Math.abs(diff) < 0.01) return null;
+			return diff > 0 ? "mdi-arrow-down-bold" : "mdi-arrow-up-bold";
 		},
 		incrementDenom(row) {
 			row.closing_quantity = (row.closing_quantity || 0) + 1;
@@ -558,7 +564,12 @@ export default {
 			return this.totalExpected - this.totalClosing;
 		},
 		totalDifferenceClass() {
-			return Math.abs(this.totalDifferenceValue) < 0.01 ? "text-success" : "text-error";
+			if (Math.abs(this.totalDifferenceValue) < 0.01) return "text-success";
+			return this.totalDifferenceValue > 0 ? "text-error" : "text-warning";
+		},
+		totalDifferenceIcon() {
+			if (Math.abs(this.totalDifferenceValue) < 0.01) return null;
+			return this.totalDifferenceValue > 0 ? "mdi-arrow-down-bold" : "mdi-arrow-up-bold";
 		},
 	},
 
@@ -670,6 +681,24 @@ export default {
 @media (max-width: 599px) {
 	.denom-summary {
 		gap: 12px;
+	}
+
+	/*
+	 * pos-enhancements.css forces `.enhanced-modal-header` / `.v-card-actions`
+	 * / `.v-card-text` padding with `!important` and no media query, silently
+	 * cancelling the `px-4`/`pa-4` mobile-reduced padding classes on the
+	 * header, footer, and body below `sm`. These overrides restore that
+	 * reduction — same padding value the utility classes were already trying
+	 * to set — with enough selector specificity (4-5 classes vs. the global
+	 * rule's 3) to actually win.
+	 */
+	.closing-dialog-card.d-flex .v-card-title.enhanced-modal-header,
+	.closing-dialog-card.d-flex .v-card-actions {
+		padding: 16px !important;
+	}
+
+	.closing-dialog-card.d-flex .v-card-text {
+		padding: 16px !important;
 	}
 }
 </style>
