@@ -372,7 +372,7 @@
 					</template>
 
 					<template v-slot:item.actions="{ item }">
-						<v-tooltip text="Delete Item" location="top">
+						<v-tooltip :text="__('Delete Item')" location="top">
 							<template v-slot:activator="{ props }">
 								<v-btn
 									v-bind="props"
@@ -380,7 +380,11 @@
 									color="error"
 									size="small"
 									icon
-									:disabled="!!item.posa_is_offer || !!item.posa_is_replace"
+									:disabled="
+										!!item.posa_is_offer ||
+										!!item.posa_is_replace ||
+										delete_blocked
+									"
 									@click.stop="on_remove_item(item)"
 								>
 									<v-icon>mdi-delete</v-icon>
@@ -1263,6 +1267,13 @@ export default {
 	},
 
 	computed: {
+		delete_blocked() {
+			return (
+				this.approval_config?.actions?.find(
+					(a) => a.action_type === "Delete Item",
+				)?.approval_mode === "Blocked"
+			);
+		},
 		// converts floating number with precision
 		grandTotal() {
 			return this.items.reduce((total, item) => {
@@ -3453,10 +3464,10 @@ export default {
 			}
 		},
 
-		shortDeleteFirstItem(e) {
+		async shortDeleteFirstItem(e) {
 			if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
 				e.preventDefault();
-				this.remove_item(this.items[0]);
+				if (this.items[0]) await this.on_remove_item(this.items[0]);
 			}
 		},
 
