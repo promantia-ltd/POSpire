@@ -183,7 +183,6 @@
 						<template v-slot:item.difference="{ item }">
 							<span
 								class="font-mono text-no-wrap d-inline-flex align-center"
-								:class="differenceClass(item)"
 								:style="differenceStyle(item)"
 							>
 								<v-icon v-if="differenceIcon(item)" :icon="differenceIcon(item)" size="14" class="mr-1" />
@@ -304,7 +303,6 @@
 							<div class="text-caption text-medium-emphasis">{{ __("Total Difference") }}</div>
 							<div
 								class="text-h6 font-weight-bold d-flex align-center"
-								:class="totalDifferenceClass"
 								:style="totalDifferenceStyle"
 							>
 								<v-icon v-if="totalDifferenceIcon" :icon="totalDifferenceIcon" size="16" class="mr-1" />
@@ -393,11 +391,6 @@ export default {
 				sortable: true,
 			},
 		],
-		denomination_headers: [
-		{ title: __("Denomination"), value: "denomination_name", width: "45%" },
-		{ title: __("Closing Qty"), value: "closing_quantity", align: "start", width: "25%" },
-		{ title: __("Closing Amount"), value: "closing_amount", align: "end", width: "30%" },
-		],
 		amountRules,
 		pagination: {},
 		has_denominations: false,
@@ -441,27 +434,26 @@ export default {
 			return this.numberAmount(item.expected_amount) - this.numberAmount(item.closing_amount);
 		},
 		/**
-		 * Vuetify's `text-error`/`text-warning` theme fills are 3.19:1 and
-		 * 2.16:1 against a white card background — both fail WCAG AA's 4.5:1
-		 * for body text. These are cash-variance figures on a till, meant to
-		 * be read under bad lighting, so contrast matters more than reusing
-		 * the theme palette. `#C0392B`/`#B26500` are ~4.6:1 on light; the
-		 * existing dark-theme error/warning tokens are already light enough
-		 * against the app's near-black dark background to clear AA there.
+		 * Vuetify's `text-success`/`text-error`/`text-warning` theme fills
+		 * measure 2.36:1, 3.19:1, and 2.16:1 against a white card background
+		 * — all three fail WCAG AA's 4.5:1 for body text (the "matched" case
+		 * was actually the worst of the three). These are cash-variance
+		 * figures on a till, meant to be read under bad lighting, so
+		 * contrast matters more than reusing the theme palette. `#2E7D32`
+		 * (5.13:1), `#C0392B` (5.44:1), and `#A85D00` (4.96:1) all clear AA
+		 * on light. The dark-theme branch is defensive only — this app has
+		 * no dark theme/toggle wired up yet, so `dark` is never actually
+		 * true and those values are untested; swap them for verified ones
+		 * before a dark theme ships.
 		 */
 		varianceColor(diff) {
 			const dark = this.$vuetify.theme.global.name.value === "dark";
+			if (Math.abs(diff) < 0.01) return dark ? "#81C784" : "#2E7D32"; // matched
 			if (diff > 0) return dark ? "#EF5350" : "#C0392B"; // shortage
-			return dark ? "#FFB74D" : "#B26500"; // excess
-		},
-		differenceClass(item) {
-			const diff = this.differenceValue(item);
-			return Math.abs(diff) < 0.01 ? "text-success" : "";
+			return dark ? "#FFB74D" : "#A85D00"; // excess
 		},
 		differenceStyle(item) {
-			const diff = this.differenceValue(item);
-			if (Math.abs(diff) < 0.01) return {};
-			return { color: this.varianceColor(diff) };
+			return { color: this.varianceColor(this.differenceValue(item)) };
 		},
 		/** Non-color signal for the same shortage/excess distinction, for colorblind users. */
 		differenceIcon(item) {
@@ -602,11 +594,7 @@ export default {
 		totalDifferenceValue() {
 			return this.totalExpected - this.totalClosing;
 		},
-		totalDifferenceClass() {
-			return Math.abs(this.totalDifferenceValue) < 0.01 ? "text-success" : "";
-		},
 		totalDifferenceStyle() {
-			if (Math.abs(this.totalDifferenceValue) < 0.01) return {};
 			return { color: this.varianceColor(this.totalDifferenceValue) };
 		},
 		totalDifferenceIcon() {
