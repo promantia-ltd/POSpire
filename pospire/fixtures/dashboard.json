@@ -15,7 +15,7 @@
   "charts": [
    {
     "chart": "POS Sales Trend (Daily)",
-    "width": "Full"
+    "width": "Half"
    },
    {
     "chart": "Sales by POS Terminal",
@@ -26,7 +26,7 @@
     "width": "Half"
    },
    {
-    "chart": "Sales by Branch / Store",
+    "chart": "Sales by Cost Center",
     "width": "Half"
    },
    {
@@ -35,7 +35,7 @@
    },
    {
     "chart": "Sales by Item Group",
-    "width": "Full"
+    "width": "Half"
    },
    {
     "chart": "Shifts Opened by Cashier",
@@ -48,10 +48,6 @@
    {
     "chart": "Qty Sold by Warehouse",
     "width": "Half"
-   },
-   {
-    "chart": "Sales Order Trends",
-    "width": "Half"
    }
   ],
   "dashboard_name": "POSpire Dashboard",
@@ -59,7 +55,7 @@
   "doctype": "Dashboard",
   "is_default": 0,
   "is_standard": 0,
-  "modified": "2026-09-08 16:19:47.164129",
+  "modified": "2026-09-08 22:26:56.009951",
   "module": "POSpire",
   "name": "POSpire Dashboard"
  }

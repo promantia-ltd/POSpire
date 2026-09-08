@@ -399,10 +399,6 @@ fixtures = [
 		],
 	},
 	{
-		"doctype": "Workspace",
-		"filters": [["module", "=", "POSpire"]],
-	},
-	{
 		"doctype": "Dashboard",
 		"filters": [["module", "=", "POSpire"]],
 	},
@@ -413,19 +409,6 @@ fixtures = [
 	{
 		"doctype": "Dashboard Chart",
 		"filters": [["module", "=", "POSpire"]],
-	},
-	{
-		"doctype": "Report",
-		"filters": [
-			[
-				"name",
-				"in",
-				(
-					"POS Sales report",
-					"POS Sales Trend by Terminal and Store",
-				),
-			]
-		],
 	},
 ]
 add_to_apps_screen = [
