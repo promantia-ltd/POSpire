@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div class="d-flex align-center">
-			<div v-if="showActions" class="d-flex align-center mr-2">
+			<div v-if="showActions && !readonly" class="d-flex align-center mr-2">
 				<v-icon
 					class="customer-action-icon mr-2"
 					color="primary"

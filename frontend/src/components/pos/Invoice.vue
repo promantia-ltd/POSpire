@@ -64,13 +64,15 @@
 			<!-- Fixed Customer Selector Section (Fixed at Top) -->
 			<div class="invoice-header-section">
 				<v-row align="center" no-gutters class="px-3 py-2">
-					<!-- Customer: 10 cols with sales order, 12 (or 10 in return mode) without -->
+					<!-- Customer: 8/10 cols with sales order (return/non-return), 10/12 without -->
 					<v-col
 						:cols="
 							$vuetify.display.mdAndDown
 								? 12
 								: pos_profile.posa_allow_sales_order
-									? 10
+									? invoice_doc.is_return
+										? 8
+										: 10
 									: invoice_doc.is_return
 										? 10
 										: 12

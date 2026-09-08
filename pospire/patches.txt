@@ -7,3 +7,4 @@
 pospire.patches.v1_1.remove_denomination_breakdown_at_closing_field
 pospire.patches.v1_1.add_strict_closure_compound_index
 pospire.patches.v1_1.repair_unclosed_opening_shifts
+pospire.patches.v1_1.remove_tax_inclusive_hidden_property_setter
