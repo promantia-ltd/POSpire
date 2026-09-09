@@ -8,6 +8,7 @@ from frappe.utils import formatdate
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
+	validate_filters(filters)
 	invoice_names = get_permitted_invoice_names(filters)
 	if not invoice_names:
 		return get_columns([]), []
@@ -19,16 +20,27 @@ def execute(filters=None):
 	return columns, data, None, chart
 
 
+def validate_filters(filters):
+	# Without company/date bounds this pulls every POS invoice the user can
+	# see, across all time, into a single IN-list before it can be scoped -
+	# fine on a small site, expensive on one with years of history.
+	if not filters.get("company"):
+		frappe.throw(_("Company is required"))
+	if not filters.get("from_date") or not filters.get("to_date"):
+		frappe.throw(_("From Date and To Date are required"))
+
+
 def get_permitted_invoice_names(filters):
 	# frappe.get_list enforces the current user's read permission for
 	# Sales Invoice, so the terminal/store breakdown never includes rows
 	# the requesting user isn't allowed to see.
-	invoice_filters = {"docstatus": 1, "is_pos": 1, "is_return": 0}
-	if filters.get("company"):
-		invoice_filters["company"] = filters.company
-	if filters.get("from_date") and filters.get("to_date"):
-		invoice_filters["posting_date"] = ["between", [filters.from_date, filters.to_date]]
-
+	invoice_filters = {
+		"docstatus": 1,
+		"is_pos": 1,
+		"is_return": 0,
+		"company": filters.company,
+		"posting_date": ["between", [filters.from_date, filters.to_date]],
+	}
 	return frappe.get_list("Sales Invoice", filters=invoice_filters, pluck="name", limit_page_length=0)
 
 
