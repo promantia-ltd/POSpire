@@ -371,31 +371,31 @@
 						></v-checkbox-btn>
 					</template>
 
+					<template v-slot:item.actions="{ item }">
+						<v-tooltip :text="__('Delete Item')" location="top">
+							<template v-slot:activator="{ props }">
+								<v-btn
+									v-bind="props"
+									variant="text"
+									color="error"
+									size="small"
+									icon
+									:disabled="
+										!!item.posa_is_offer ||
+										!!item.posa_is_replace ||
+										delete_blocked
+									"
+									@click.stop="on_remove_item(item)"
+								>
+									<v-icon>mdi-delete</v-icon>
+								</v-btn>
+							</template>
+						</v-tooltip>
+					</template>
+
 					<template v-slot:expanded-row="{ columns: headers, item }">
 						<td :colspan="headers.length" class="ma-0 pa-0">
 							<v-row class="ma-0 pa-0 align-center">
-								<!-- Delete Button -->
-
-								<v-col cols="auto">
-									<v-tooltip text="Delete Item" location="top">
-										<template v-slot:activator="{ props }">
-											<v-btn
-												v-bind="props"
-												variant="text"
-												color="error"
-												size="small"
-												icon
-												:disabled="
-													!!item.posa_is_offer || !!item.posa_is_replace
-												"
-												@click.stop="on_remove_item(item)"
-											>
-												<v-icon>mdi-delete</v-icon>
-											</v-btn>
-										</template>
-									</v-tooltip>
-								</v-col>
-
 								<v-spacer></v-spacer>
 
 								<!-- Quantity Stepper -->
@@ -1244,12 +1244,30 @@ export default {
 					align: "start",
 					sortable: true,
 					key: "item_name",
+					width: "140px",
 				},
-				{ title: __("QTY"), key: "qty", align: "center" },
-				{ title: __("UOM"), key: "uom", align: "center" },
-				{ title: __("Rate"), key: "rate", align: "center" },
-				{ title: __("Amount"), key: "amount", align: "center" },
-				{ title: __("Offer?"), key: "posa_is_offer", align: "center" },
+				{ title: __("QTY"), key: "qty", align: "center", width: "90px" },
+				{ title: __("UOM"), key: "uom", align: "center", width: "80px" },
+				{ title: __("Rate"), key: "rate", align: "center", width: "110px" },
+				{
+					title: __("Amount"),
+					key: "amount",
+					align: "center",
+					width: "110px",
+				},
+				{
+					title: __("Offer?"),
+					key: "posa_is_offer",
+					align: "center",
+					width: "70px",
+				},
+				{
+					title: __("Actions"),
+					key: "actions",
+					align: "center",
+					sortable: false,
+					width: "70px",
+				},
 			],
 			deleted_items: [],
 		};
@@ -1261,6 +1279,13 @@ export default {
 	},
 
 	computed: {
+		delete_blocked() {
+			return (
+				this.approval_config?.actions?.find(
+					(a) => a.action_type === "Delete Item",
+				)?.approval_mode === "Blocked"
+			);
+		},
 		// converts floating number with precision
 		grandTotal() {
 			return this.items.reduce((total, item) => {
@@ -3451,10 +3476,10 @@ export default {
 			}
 		},
 
-		shortDeleteFirstItem(e) {
+		async shortDeleteFirstItem(e) {
 			if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
 				e.preventDefault();
-				this.remove_item(this.items[0]);
+				if (this.items[0]) await this.on_remove_item(this.items[0]);
 			}
 		},
 
