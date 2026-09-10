@@ -109,4 +109,5 @@ def get_chart(profiles, data):
 			],
 		},
 		"type": "line",
+		"fieldtype": "Currency",
 	}
