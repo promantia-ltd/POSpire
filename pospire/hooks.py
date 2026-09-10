@@ -391,7 +391,6 @@ fixtures = [
 				"in",
 				(
 					"Sales Invoice-posa_pos_opening_shift-no_copy",
-					"POS Profile-posa_tax_inclusive-hidden",
 					"Sales Invoice-main-field_order",
 					"POS Profile-main-field_order",
 				),

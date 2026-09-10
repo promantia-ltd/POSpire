@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- POS Profile's "Tax Inclusive" setting now controls whether an invoice's tax is calculated inclusive or exclusive of item price, replacing the old always-inclusive default. Existing POS Profiles are backfilled to inclusive (matching prior behaviour) during the upgrade.
+
+### Known limitation
+- Unchecking "Tax Inclusive" on a POS Profile can block offline payments on sites whose tax template uses a charge type other than "On Net Total" — offline tax computation only supports that charge type, so the cashier will be asked to reconnect before completing the sale in that case.
+
 ## [1.0.0] - 2026-02-17
 
 First stable release of POSpire — a modern, full-featured Point of Sale application built on ERPNext.
