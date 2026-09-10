@@ -34,6 +34,7 @@ declare module 'vue' {
     Pos: typeof import('./src/components/pos/Pos.vue')['default']
     PosCoupons: typeof import('./src/components/pos/PosCoupons.vue')['default']
     PosOffers: typeof import('./src/components/pos/PosOffers.vue')['default']
+    ResetConfirmDialog: typeof import('./src/components/pos/ResetConfirmDialog.vue')['default']
     Returns: typeof import('./src/components/pos/Returns.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

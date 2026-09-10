@@ -1,12 +1,29 @@
 <template>
-	<v-dialog v-model="isOpen" persistent max-width="600px">
-		<v-card rounded="xl" elevation="8">
+	<v-dialog
+		v-model="isOpen"
+		persistent
+		max-width="1100"
+		scrollable
+		:fullscreen="isFullscreen"
+	>
+		<v-card
+			:rounded="isFullscreen ? 0 : 'xl'"
+			elevation="8"
+			class="opening-shift-card d-flex flex-column"
+			:class="{ 'opening-shift-card--fullscreen': isFullscreen }"
+		>
 			<v-card-title
-				class="d-flex align-center justify-space-between px-6 py-4 enhanced-modal-header"
+				class="d-flex align-center px-4 px-sm-6 py-4 enhanced-modal-header"
 			>
-				<span class="text-h6 font-weight-bold text-primary">
-					{{ __("Create POS Opening Shift") }}
-				</span>
+				<v-avatar rounded="lg" size="40" color="primary" variant="tonal" class="mr-3 mr-sm-4">
+					<v-icon icon="mdi-cash-register" size="22" color="primary" />
+				</v-avatar>
+				<div class="flex-grow-1 min-width-0">
+					<div class="text-h6 font-weight-bold">{{ __("Create Opening Shift") }}</div>
+					<div class="text-body-2 text-medium-emphasis d-none d-sm-block">
+						{{ __("Set opening cash and review active payment modes") }}
+					</div>
+				</div>
 				<!--
 					Hidden while a close is queued: go_desk() navigates to /app
 					and tears down the SPA, which on that path would strand the
@@ -22,139 +39,266 @@
 				></v-btn>
 			</v-card-title>
 
-			<v-card-text class="overflow-y-auto"
-  			style="max-height: 65vh;">
-				<v-container fluid>
-					<v-row dense>
-						<v-col cols="12">
+			<v-divider />
+
+			<v-card-text class="overflow-y-auto pa-4 pa-sm-6 flex-grow-1">
+				<v-alert
+					v-if="config_unavailable"
+					type="warning"
+					variant="tonal"
+					class="mb-4"
+				>
+					{{ __("POS configuration could not be loaded on this device. If you are offline, connect once to load it; if you are online, the server refused the request. Check that your account has POS access, then reopen this dialog.") }}
+				</v-alert>
+				<v-alert
+					v-else-if="config_is_stale"
+					type="info"
+					variant="tonal"
+					density="compact"
+					class="mb-4"
+				>
+					{{ __("Showing saved POS configuration. It will refresh when the connection returns.") }}
+				</v-alert>
+
+				<v-row>
+					<!-- Left panel: profile selection + payment modes overview -->
+					<v-col cols="12" :md="denominations_enabled ? 5 : 6">
+						<v-card variant="outlined" rounded="lg" class="pa-4 h-100 d-flex flex-column">
 							<v-autocomplete
 								v-model="company"
 								:items="companies"
-								:label="__('Company')"
+								:label="__('Store')"
 								density="comfortable"
 								variant="outlined"
+								prepend-inner-icon="mdi-domain"
+								hide-details
+								class="mb-4"
 								required
 							/>
-						</v-col>
 
-						<v-col cols="12">
 							<v-autocomplete
 								v-model="pos_profile"
 								:items="pos_profiles"
 								:label="__('POS Profile')"
 								density="comfortable"
 								variant="outlined"
+								prepend-inner-icon="mdi-monitor"
+								hide-details
+								class="mb-4"
 								required
 							/>
-						</v-col>
 
-						<v-col cols="12">
-							<v-data-table
-								:headers="payments_methods_headers"
-								:items="payments_methods"
-								item-key="mode_of_payment"
-								class="rounded-lg elevation-1"
-								:items-per-page="itemsPerPage"
-								density="comfortable"
-								hide-default-footer
-							>
-								<template v-slot:item.amount="props">
-									<v-text-field
-										v-model.number="props.item.amount"
-										type="number"
-										min="0"
-										density="compact"
-										variant="outlined"
-										hide-details
-										:prefix="currencySymbol(pos_profile.currency)"
-										:readonly="
-											denominations_enabled ||
-											props.item.mode_of_payment !== cashModeForSelectedProfile
-										"
+							<div class="d-flex align-center justify-center mb-4 store-logo-wrap">
+								<img
+									:src="selectedCompanyLogo || '/assets/pospire/images/app-128x128-rounded.png'"
+									:alt="company || 'POSpire'"
+									class="store-logo-img"
+								/>
+							</div>
+
+							<div class="d-flex align-center mb-2">
+								<span class="text-subtitle-2 font-weight-bold">
+									{{ __("Available Payment Modes") }}
+								</span>
+								<v-tooltip :text="__('Cash is entered below. Other modes are available for sales during the shift but are not counted here.')">
+									<template #activator="{ props }">
+										<v-icon
+											v-bind="props"
+											icon="mdi-information-outline"
+											size="16"
+											class="ml-1 text-medium-emphasis"
 										/>
-								</template>
-							</v-data-table>
-							<v-expand-transition>
+									</template>
+								</v-tooltip>
+							</div>
+
+							<!--
+								CSS grid, not v-row/v-col: Vuetify's cols/sm
+								breakpoints are viewport-width based, but this grid
+								lives inside a md="5" column — a fraction of the
+								dialog, not the viewport. At a wide viewport (e.g.
+								1920px) that column is still only ~5/12 of the
+								dialog width, so a viewport-keyed "3 across" rule
+								stayed 3-across even when the column had room for
+								more, forcing modes like "Credit Card" to truncate
+								on a big monitor but not on a narrower tablet.
+								auto-fill/minmax responds to the column's actual
+								rendered width instead.
+							-->
+							<div class="payment-mode-grid mb-2">
 								<v-card
-									v-if="denominations_enabled"
-									class="rounded-lg elevation-1 mt-6"
-									style="border-top: none !important;"
+									v-for="pm in payments_methods"
+									:key="pm.mode_of_payment"
+									:variant="isCashMode(pm) ? 'tonal' : 'outlined'"
+									:color="isCashMode(pm) ? 'primary' : undefined"
+									rounded="lg"
+									class="pa-3 d-flex align-center payment-mode-chip"
 								>
-									<v-card-title class="text-subtitle-2">
-									{{ __("Cash Denomination Breakdown") }}
-									</v-card-title>
+									<v-icon
+										:icon="paymentModeIcon(pm.mode_of_payment)"
+										size="20"
+										class="mr-2"
+										:color="isCashMode(pm) ? 'primary' : undefined"
+									/>
+									<span class="text-body-2 flex-grow-1 text-truncate">
+										{{ pm.mode_of_payment }}
+									</span>
+									<v-icon
+										v-if="isCashMode(pm)"
+										icon="mdi-check-circle"
+										size="18"
+										color="primary"
+									/>
+								</v-card>
+							</div>
+							<div class="text-caption text-medium-emphasis mb-4">
+								{{ __("All modes are available for transactions during the shift.") }}
+							</div>
+						</v-card>
+					</v-col>
 
-									<v-data-table
-									:headers="[
-										{ title: 'Denomination', value: 'denomination_name' },
-										{ title: 'Value', value: 'denomination_value' },
-										{ title: 'Quantity', value: 'quantity' },
-										{ title: 'Amount', value: 'amount' }
-									]"
-									:items="denomination_rows"
-									density="compact"
-									hide-default-footer
-									>
+					<!-- Right panel: cash entry -->
+					<v-col cols="12" :md="denominations_enabled ? 7 : 6">
+						<v-card variant="outlined" rounded="lg" class="pa-4 h-100">
+							<v-expand-transition>
+								<div v-if="denominations_enabled">
+									<div class="d-flex align-center mb-1">
+										<v-icon icon="mdi-cash" class="mr-2" color="primary" />
+										<span class="text-subtitle-1 font-weight-bold">
+											{{ __("Opening Cash (Cash Only)") }}
+										</span>
+									</div>
+									<div class="text-body-2 text-medium-emphasis mb-4">
+										{{ __("Enter quantity for each denomination in cash drawer.") }}
+									</div>
 
-									<template v-slot:item.denomination_value="{ item }">
-										{{ formatCurrency(item.denomination_value) }}
-									</template>
+									<!--
+										CSS grid, not v-row/v-col — same reasoning as
+										the payment chip grid above: a stepper row
+										(two 44px buttons + the qty field) needs
+										~160px, which cols="6" doesn't reliably give
+										at xs (this column's extra padding makes it
+										worse than ClosingDialog's), squashing the
+										buttons back under the touch minimum.
+										auto-fill/minmax sizes off the actual
+										container width instead of a viewport
+										breakpoint.
+									-->
+									<div class="denom-grid">
+										<v-card
+											v-for="row in denomination_rows"
+											:key="row.denomination"
+											variant="outlined"
+											rounded="lg"
+											class="pa-3 denom-card"
+										>
+											<div class="d-flex align-center justify-space-between mb-2">
+												<span class="text-body-2 font-weight-bold text-truncate">
+													{{ formatCurrency(row.denomination_value) }} {{ __("Note") }}
+												</span>
+												<v-icon icon="mdi-cash" size="16" color="success" />
+											</div>
+											<div class="d-flex align-center justify-center mb-2">
+												<v-btn
+													icon="mdi-minus"
+													size="44"
+													variant="tonal"
+													:disabled="!row.quantity"
+													:aria-label="__('Decrease quantity for ') + row.denomination_name"
+													class="denom-stepper-btn"
+													@click="decrementDenom(row)"
+												/>
+												<v-text-field
+													v-model.number="row.quantity"
+													type="number"
+													min="0"
+													density="compact"
+													variant="plain"
+													hide-details
+													:aria-label="__('Quantity')"
+													class="denom-qty-input mx-2"
+												/>
+												<v-btn
+													icon="mdi-plus"
+													size="44"
+													variant="tonal"
+													:aria-label="__('Increase quantity for ') + row.denomination_name"
+													class="denom-stepper-btn"
+													@click="incrementDenom(row)"
+												/>
+											</div>
+											<div class="text-body-2 text-medium-emphasis text-center">
+												{{ currencySymbol(row.currency) }}{{ formatCurrency(row.denomination_value * (row.quantity || 0)) }}
+											</div>
+										</v-card>
+									</div>
 
-									<template v-slot:item.quantity="props">
-										<v-text-field
-										v-model.number="props.item.quantity"
+									<v-divider class="my-4" />
+
+									<div class="d-flex align-center denom-summary">
+										<v-avatar rounded="lg" color="primary" variant="tonal" size="40" class="mr-3">
+											<v-icon icon="mdi-credit-card-outline" color="primary" />
+										</v-avatar>
+										<div>
+											<div class="text-caption text-medium-emphasis">{{ __("Counted Cash Total") }}</div>
+											<div class="text-h6 font-weight-bold text-primary">
+												{{ currencySymbol(pos_profile.currency) }}{{ formatCurrency(denominationTotal) }}
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div v-else>
+									<div class="d-flex align-center mb-1">
+										<v-icon icon="mdi-cash" class="mr-2" color="primary" />
+										<span class="text-subtitle-1 font-weight-bold">{{ __("Opening Cash") }}</span>
+									</div>
+									<div class="text-body-2 text-medium-emphasis mb-4">
+										{{ __("Enter the opening cash amount for this shift.") }}
+									</div>
+									<v-text-field
+										v-if="cashPaymentMethod"
+										v-model.number="cashPaymentMethod.amount"
 										type="number"
 										min="0"
-										density="compact"
 										variant="outlined"
-										:rules="[v => v >= 0 || 'Quantity must be non-negative']"
+										density="comfortable"
+										:prefix="currencySymbol(pos_profile.currency)"
+										:label="__('Opening Amount')"
+										:rules="amountRules"
 										hide-details
-										/>
-									</template>
-
-									<template v-slot:item.amount="{ item }">
-										{{ formatCurrency(item.denomination_value * (item.quantity || 0)) }}
-									</template>
-
-									</v-data-table>
-
-									<v-card-text class="text-right font-weight-bold">
-									{{ __("Total") }}: {{ formatCurrency(denominationTotal) }}
-									</v-card-text>
-
-								</v-card>
-								</v-expand-transition>
-						</v-col>
-					</v-row>
-				</v-container>
+									/>
+									<div v-else class="text-body-2 text-medium-emphasis">
+										{{ __("Select a Company and POS Profile to continue.") }}
+									</div>
+								</div>
+							</v-expand-transition>
+						</v-card>
+					</v-col>
+				</v-row>
 			</v-card-text>
 
-			<v-alert
-				v-if="config_unavailable"
-				type="warning"
-				variant="tonal"
-				class="mx-6 mb-2"
-			>
-				{{ __("POS configuration could not be loaded on this device. If you are offline, connect once to load it; if you are online, the server refused the request. Check that your account has POS access, then reopen this dialog.") }}
-			</v-alert>
-			<v-alert
-				v-else-if="config_is_stale"
-				type="info"
-				variant="tonal"
-				density="compact"
-				class="mx-6 mb-2"
-			>
-				{{ __("Showing saved POS configuration. It will refresh when the connection returns.") }}
-			</v-alert>
 			<v-divider />
-			<v-card-actions class="px-6 py-4 enhanced-modal-header">
-				<v-spacer />
+			<v-card-actions
+				class="px-4 px-sm-6 py-4"
+				:class="isNarrow ? 'flex-column ga-2' : ''"
+			>
+				<v-btn
+					variant="text"
+					color="grey-darken-1"
+					:block="isNarrow"
+					@click="show_reset_confirm = true"
+				>
+					{{ __("Reset") }}
+				</v-btn>
+				<v-spacer v-if="!isNarrow" />
 				<!-- Same exit, same reason, same invariant — hiding only the
 					 header X would leave the escape hatch wide open. -->
 				<v-btn
 					v-if="can_exit_dialog"
-					variant="text"
+					variant="outlined"
 					color="grey-darken-1"
+					:block="isNarrow"
 					@click="go_desk"
 				>
 					{{ __("Cancel") }}
@@ -162,13 +306,22 @@
 				<v-btn
 					variant="elevated"
 					color="primary"
+					append-icon="mdi-arrow-right"
+					:loading="is_loading"
 					:disabled="is_loading || config_unavailable"
+					:block="isNarrow"
 					@click="submit_dialog"
 				>
-					{{ __("Submit") }}
+					{{ __("Create Opening Shift") }}
 				</v-btn>
 			</v-card-actions>
 		</v-card>
+
+		<ResetConfirmDialog
+			v-model="show_reset_confirm"
+			@confirm="reset_form"
+			@cancel="show_reset_confirm = false"
+		/>
 	</v-dialog>
 </template>
 
@@ -179,7 +332,10 @@ import connectivity from "@/offline/connectivity";
 import format from "@/utils/format";
 import { toast } from "vue3-toastify";
 import { amountRules, isAmountValid } from "@/utils/validation";
+import { paymentModeIcon } from "@/utils/paymentModeIcon";
+import ResetConfirmDialog from "@/components/pos/ResetConfirmDialog.vue";
 export default {
+	components: { ResetConfirmDialog },
 	mixins: [format],
 	// `closingPending` comes in as a prop rather than over the eventBus: this
 	// dialog is `v-if`-ed into existence BY the offline-close path, so a
@@ -191,28 +347,15 @@ export default {
 			isOpen: this.dialog ? this.dialog : false,
 			dialog_data: {},
 			is_loading: false,
+			show_reset_confirm: false,
 			companies: [],
+			company_logos: {},
 			company: "",
 			pos_profiles_data: [],
 			pos_profiles: [],
 			pos_profile: "",
 			payments_method_data: [],
 			payments_methods: [],
-			payments_methods_headers: [
-				{
-					title: __("Mode of Payment"),
-					align: "start",
-					sortable: false,
-					value: "mode_of_payment",
-				},
-				{
-					title: __("Opening Amount"),
-					value: "amount",
-					align: "center",
-					sortable: false,
-				},
-			],
-			itemsPerPage: 100,
 			amountRules,
 			pagination: {},
 			snack: false, // TODO : need to remove
@@ -237,70 +380,17 @@ export default {
 			outbox_store: null,
 		};
 	},
-	watch: {
-		company(val) {
-			this.pos_profiles = [];
-			this.pos_profiles_data.forEach((element) => {
-				if (element.company === val) {
-					this.pos_profiles.push(element.name);
-				}
-				if (this.pos_profiles.length) {
-					this.pos_profile = this.pos_profiles[0];
-				} else {
-					this.pos_profile = "";
-				}
-			});
-		},
-		pos_profile(val) {
-			this.payments_methods = [];
-			this.payments_method_data.forEach((element) => {
-				if (element.parent === val) {
-					this.payments_methods.push({
-						mode_of_payment: element.mode_of_payment,
-						amount: 0,
-						currency: element.currency,
-					});
-				}
-			});
-			const config = this.denomination_config[val];
-			if (config?.denominations?.length) {
-				this.denominations_enabled = true;
-				this.denomination_rows = config.denominations.map((d) => ({
-					denomination: d.denomination,
-					denomination_name: d.denomination_name,
-					denomination_value: d.denomination_value,
-					currency: d.currency,
-					quantity: 0,
-					amount: 0,
-				}));
-			} else {
-				this.denominations_enabled = false;
-				this.denomination_rows = [];
-				if (config) {
-					toast.warning(__("Cash denominations are enabled for this profile but no denomination rows are configured."), {
-						autoClose: 5000,
-					});
-				}
-			}
-		},
-		denominationTotal(newVal) {
-			if (!this.denominations_enabled) return;
-
-			const config = this.denomination_config[this.pos_profile];
-			if (!config) return;
-
-			const cashMode = config.cash_mode;
-
-			const cashRow = this.payments_methods.find(
-				(p) => p.mode_of_payment === cashMode
-			);
-
-			if (cashRow) {
-				cashRow.amount = newVal;
-			}
-		},
-	},
 	computed:{
+			/** Narrow viewport. Drives anything that stacks or reflows for width. */
+			isNarrow() {
+				return this.$vuetify.display.smAndDown;
+			},
+			/** Narrow OR short. Drives fullscreen only — a short-but-wide laptop
+			 *  window shouldn't lose the two-column layout just to fit vertically. */
+			isFullscreen() {
+				return this.isNarrow || this.$vuetify.display.height < 700;
+			},
+
 			denominationTotal() {
 		if (!this.denomination_rows.length) return 0;
 
@@ -318,6 +408,40 @@ export default {
 			 */
 			cashModeForSelectedProfile() {
 				return this.denomination_config[this.pos_profile]?.cash_mode || "Cash";
+			},
+
+			/** Selected store's uploaded logo, or null to show the POSpire fallback mark. */
+			selectedCompanyLogo() {
+				return this.company_logos[this.company] || null;
+			},
+
+			/** Payment mode row matching the profile's cash mode, or null before one loads. */
+			cashPaymentMethod() {
+				return (
+					this.payments_methods.find(
+						(p) => p.mode_of_payment === this.cashModeForSelectedProfile,
+					) || null
+				);
+			},
+
+			/** Every payment mode except cash — informational only, not entered here. */
+			otherPaymentMethods() {
+				return this.payments_methods.filter(
+					(p) => p.mode_of_payment !== this.cashModeForSelectedProfile,
+				);
+			},
+
+			/**
+			 * Display total for the "Opening Cash Total" summary card. Mirrors
+			 * whichever figure is authoritative: the denomination sum when the
+			 * breakdown grid is in play (same value the `denominationTotal`
+			 * watcher already writes into the cash row), otherwise the cash
+			 * row's own amount.
+			 */
+			cashTotal() {
+				return this.denominations_enabled
+					? this.denominationTotal
+					: this.cashPaymentMethod?.amount || 0;
 			},
 
 			/**
@@ -395,7 +519,129 @@ export default {
 			},
 
 	},
+	watch: {
+		company(val) {
+			this.pos_profiles = [];
+			this.pos_profiles_data.forEach((element) => {
+				if (element.company === val) {
+					this.pos_profiles.push(element.name);
+				}
+				if (this.pos_profiles.length) {
+					this.pos_profile = this.pos_profiles[0];
+				} else {
+					this.pos_profile = "";
+				}
+			});
+		},
+		pos_profile(val) {
+			this.payments_methods = [];
+			this.payments_method_data.forEach((element) => {
+				if (element.parent === val) {
+					this.payments_methods.push({
+						mode_of_payment: element.mode_of_payment,
+						amount: 0,
+						currency: element.currency,
+					});
+				}
+			});
+			const config = this.denomination_config[val];
+			if (config?.denominations?.length) {
+				this.denominations_enabled = true;
+				this.denomination_rows = config.denominations.map((d) => ({
+					denomination: d.denomination,
+					denomination_name: d.denomination_name,
+					denomination_value: d.denomination_value,
+					currency: d.currency,
+					quantity: 0,
+					amount: 0,
+				}));
+			} else {
+				this.denominations_enabled = false;
+				this.denomination_rows = [];
+				if (config) {
+					toast.warning(__("Cash denominations are enabled for this profile but no denomination rows are configured."), {
+						autoClose: 5000,
+					});
+				}
+			}
+		},
+		denominationTotal(newVal) {
+			if (!this.denominations_enabled) return;
+
+			const config = this.denomination_config[this.pos_profile];
+			if (!config) return;
+
+			const cashMode = config.cash_mode;
+
+			const cashRow = this.payments_methods.find(
+				(p) => p.mode_of_payment === cashMode
+			);
+
+			if (cashRow) {
+				cashRow.amount = newVal;
+			}
+		},
+	},
+	created: function () {
+		// Before the first paint: `can_exit_dialog` reads this, and defaulting
+		// to "online, snapshot fine" for a tick would flash the exits away on
+		// a dialog that is genuinely exit-worthy.
+		this.refresh_submit_gate();
+		this.$nextTick(function () {
+			this.get_opening_dialog_data();
+		});
+	},
+	mounted() {
+		// Dynamic, and tolerant of failure, for the same reason submit_dialog's
+		// own chained-shifts gate is: the store may not be initialised yet.
+		// `submit_can_never_succeed` fails open on a null store, matching what
+		// submit_dialog itself does when the import fails.
+		import("@/stores/outbox")
+			.then(({ useOutboxStore }) => {
+				this.outbox_store = useOutboxStore();
+			})
+			.catch((err) => {
+				console.warn("[OpeningDialog] outbox store unavailable", err);
+			});
+		// isOnline() needs THRESHOLD_ONLINE = 3 consecutive successful pings
+		// before it flips back, and any offline:false read throws without
+		// touching the network during that window. A dialog opened in the
+		// gap would otherwise stay on stale config for its whole lifetime.
+		this.unsubConnectivity = connectivity.onChange(() => {
+			// Unconditional, and before the early returns below: connectivity
+			// is one of the two inputs to the never-trap gate, and going
+			// offline (which takes neither branch below) is exactly when the
+			// exits need to come back.
+			this.refresh_submit_gate();
+			if (!connectivity.isOnline()) return;
+			if (!this.config_is_stale && !this.config_unavailable) return;
+			this.refresh_dialog_config();
+		});
+	},
+	beforeUnmount() {
+		if (this.unsubConnectivity) this.unsubConnectivity();
+	},
 	methods: {
+		isCashMode(pm) {
+			return pm.mode_of_payment === this.cashModeForSelectedProfile;
+		},
+		paymentModeIcon,
+		incrementDenom(row) {
+			row.quantity = (row.quantity || 0) + 1;
+		},
+		decrementDenom(row) {
+			row.quantity = Math.max(0, (row.quantity || 0) - 1);
+		},
+		/** Clears entered amounts/quantities only — Store and POS Profile selections are left as-is. */
+		reset_form() {
+			this.payments_methods.forEach((p) => {
+				p.amount = 0;
+			});
+			this.denomination_rows.forEach((row) => {
+				row.quantity = 0;
+			});
+			this.show_reset_confirm = false;
+		},
 		close_opening_dialog() {
 			this.eventBus.emit("close_opening_dialog");
 		},
@@ -476,6 +722,10 @@ export default {
 		 */
 		applyDialogData(r) {
 			this.companies = (r.companies || []).map((element) => element.name);
+			this.company_logos = {};
+			(r.companies || []).forEach((element) => {
+				this.company_logos[element.name] = element.company_logo || null;
+			});
 			const companySticky = Boolean(this.company) && this.companies.includes(this.company);
 			if (!companySticky) {
 				this.company = this.companies[0];
@@ -832,44 +1082,94 @@ export default {
 			window.location.href = "/app";
 		},
 	},
-	created: function () {
-		// Before the first paint: `can_exit_dialog` reads this, and defaulting
-		// to "online, snapshot fine" for a tick would flash the exits away on
-		// a dialog that is genuinely exit-worthy.
-		this.refresh_submit_gate();
-		this.$nextTick(function () {
-			this.get_opening_dialog_data();
-		});
-	},
-	mounted() {
-		// Dynamic, and tolerant of failure, for the same reason submit_dialog's
-		// own chained-shifts gate is: the store may not be initialised yet.
-		// `submit_can_never_succeed` fails open on a null store, matching what
-		// submit_dialog itself does when the import fails.
-		import("@/stores/outbox")
-			.then(({ useOutboxStore }) => {
-				this.outbox_store = useOutboxStore();
-			})
-			.catch((err) => {
-				console.warn("[OpeningDialog] outbox store unavailable", err);
-			});
-		// isOnline() needs THRESHOLD_ONLINE = 3 consecutive successful pings
-		// before it flips back, and any offline:false read throws without
-		// touching the network during that window. A dialog opened in the
-		// gap would otherwise stay on stale config for its whole lifetime.
-		this.unsubConnectivity = connectivity.onChange(() => {
-			// Unconditional, and before the early returns below: connectivity
-			// is one of the two inputs to the never-trap gate, and going
-			// offline (which takes neither branch below) is exactly when the
-			// exits need to come back.
-			this.refresh_submit_gate();
-			if (!connectivity.isOnline()) return;
-			if (!this.config_is_stale && !this.config_unavailable) return;
-			this.refresh_dialog_config();
-		});
-	},
-	beforeUnmount() {
-		if (this.unsubConnectivity) this.unsubConnectivity();
-	},
 };
 </script>
+
+<style scoped>
+.store-logo-wrap {
+	min-height: clamp(48px, 8vw, 72px);
+}
+
+.store-logo-img {
+	height: clamp(48px, 8vw, 72px);
+	width: auto;
+	max-width: 100%;
+	object-fit: contain;
+}
+
+.opening-shift-card--fullscreen {
+	width: 100%;
+	height: 100%;
+}
+
+.min-width-0 {
+	min-width: 0;
+}
+
+.payment-mode-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+	gap: 8px;
+}
+
+.payment-mode-chip {
+	min-height: 48px;
+	transition: border-color 0.15s ease;
+}
+
+.denom-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 8px;
+}
+
+.denom-card {
+	height: 100%;
+}
+
+.denom-stepper-btn {
+	flex: 0 0 auto;
+}
+
+.denom-qty-input {
+	width: 56px;
+	flex: 0 0 auto;
+}
+
+.denom-qty-input :deep(input) {
+	text-align: center;
+}
+
+.denom-summary > div {
+	min-width: 0;
+}
+
+@media (max-width: 599px) {
+	.denom-summary {
+		gap: 12px;
+	}
+
+	/*
+	 * pos-enhancements.css forces `.enhanced-modal-header` / `.v-card-text`
+	 * padding with `!important` and no media query, silently cancelling the
+	 * `px-4`/`pa-4` mobile-reduced padding classes on the header, footer,
+	 * and body below `sm`. These overrides restore that reduction — same
+	 * padding value the utility classes were already trying to set.
+	 *
+	 * The `.v-card-actions` rule needs `.v-card` in the chain specifically:
+	 * the winning global selector is `body:has(.pos-page) .v-dialog .v-card >
+	 * .v-card-actions` (pos-enhancements.css), which is 4 classes + 1 element
+	 * (body) — a bare `.opening-shift-card.d-flex .v-card-actions` ties on
+	 * classes (4) and loses on the element tiebreak. Adding `.v-card` here
+	 * brings it to 5 classes, which wins outright before types are compared.
+	 */
+	.opening-shift-card.d-flex .v-card-title.enhanced-modal-header,
+	.opening-shift-card.v-card.d-flex .v-card-actions {
+		padding: 16px !important;
+	}
+
+	.opening-shift-card.d-flex .v-card-text {
+		padding: 16px !important;
+	}
+}
+</style>

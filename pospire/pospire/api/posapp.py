@@ -86,7 +86,12 @@ def _make_pos_cache_key(prefix: str, *args) -> str:
 @frappe.whitelist()
 def get_opening_dialog_data() -> dict:
 	data = {}
-	data["companies"] = frappe.get_list("Company", limit_page_length=0, order_by="name")
+	data["companies"] = frappe.get_list(
+		"Company",
+		fields=["name", "company_logo"],
+		limit_page_length=0,
+		order_by="name",
+	)
 	data["pos_profiles_data"] = frappe.get_list(
 		"POS Profile",
 		filters={"disabled": 0},
