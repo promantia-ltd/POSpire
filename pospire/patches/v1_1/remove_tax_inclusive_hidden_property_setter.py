@@ -7,15 +7,17 @@ The field is now visible via the Custom Field itself. Fixture sync never
 deletes records dropped from a fixture file, so sites installed before this
 change keep the old setter and the field stays hidden.
 
-Also backfills posa_tax_inclusive to 1 on POS Profiles created before this
-field existed. The field's own "default": "1" only applies to newly inserted
-rows, so a pre-existing profile sits at 0 - Check fields get a NOT NULL
-DEFAULT 0 column, they are never actually NULL. The frontend used to hardcode
-tax-inclusive behaviour regardless of this field, so a profile at 0 silently
-switching to tax-exclusive would change real invoice totals with no warning.
+Also backfills posa_tax_inclusive to 1 as a safety net.
 
-Safe to backfill unconditionally at 0: before this change the field was
-hidden and had no effect, so no site could have deliberately unchecked it.
+In normal cases this matches no rows. Frappe puts the field's own
+default into the ADD COLUMN statement, so the column is created as
+NOT NULL DEFAULT 1 and the database fills existing rows with 1 at
+that moment. Profiles older than the field are already correct.
+
+It only matters in one edge case: a site where the column was created
+while the field had no default and the default was added afterwards,
+because ALTER COLUMN SET DEFAULT does not touch rows that already
+exist. Cheap to keep, so we keep it.
 """
 
 import frappe
@@ -30,4 +32,5 @@ def execute():
 	)
 	frappe.clear_cache(doctype="POS Profile")
 
-	frappe.db.sql("update `tabPOS Profile` set posa_tax_inclusive = 1 where posa_tax_inclusive = 0")
+	if frappe.db.has_column("POS Profile", "posa_tax_inclusive"):
+		frappe.db.sql("update `tabPOS Profile` set posa_tax_inclusive = 1 where posa_tax_inclusive = 0")
