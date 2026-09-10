@@ -397,6 +397,18 @@ fixtures = [
 			]
 		],
 	},
+	{
+		"doctype": "Dashboard",
+		"filters": [["module", "=", "POSpire"]],
+	},
+	{
+		"doctype": "Number Card",
+		"filters": [["module", "=", "POSpire"]],
+	},
+	{
+		"doctype": "Dashboard Chart",
+		"filters": [["module", "=", "POSpire"]],
+	},
 ]
 add_to_apps_screen = [
 	{

@@ -1,0 +1,62 @@
+[
+ {
+  "cards": [
+   {
+    "card": "Total POS Sales"
+   },
+   {
+    "card": "Total POS Transactions"
+   },
+   {
+    "card": "Average Transaction Value"
+   }
+  ],
+  "chart_options": null,
+  "charts": [
+   {
+    "chart": "POS Sales Trend (Daily)",
+    "width": "Half"
+   },
+   {
+    "chart": "Sales by POS Terminal",
+    "width": "Half"
+   },
+   {
+    "chart": "Sales by Payment Mode",
+    "width": "Half"
+   },
+   {
+    "chart": "Sales by Cost Center",
+    "width": "Half"
+   },
+   {
+    "chart": "Top 10 Selling Items (Revenue)",
+    "width": "Half"
+   },
+   {
+    "chart": "Sales by Item Group",
+    "width": "Half"
+   },
+   {
+    "chart": "Shifts Opened by Cashier",
+    "width": "Half"
+   },
+   {
+    "chart": "Returns Trend (Daily)",
+    "width": "Half"
+   },
+   {
+    "chart": "Qty Sold by Warehouse",
+    "width": "Half"
+   }
+  ],
+  "dashboard_name": "POSpire Dashboard",
+  "docstatus": 0,
+  "doctype": "Dashboard",
+  "is_default": 0,
+  "is_standard": 0,
+  "modified": "2026-09-08 22:26:56.009951",
+  "module": "POSpire",
+  "name": "POSpire Dashboard"
+ }
+]

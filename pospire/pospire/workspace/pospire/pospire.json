@@ -1,8 +1,13 @@
 {
  "app": "pospire",
- "charts": [],
- "content": "[{\"id\":\"cJigdSD9mh\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">POSpire</span>\",\"col\":12}},{\"id\":\"4D2sc3CbN3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POSpire App\",\"col\":3}},{\"id\":\"nVBkn7nfDw\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"-B_qEZqEA6\",\"type\":\"card\",\"data\":{\"card_name\":\"Loyalty\",\"col\":4}},{\"id\":\"tsAHaUCd5l\",\"type\":\"card\",\"data\":{\"card_name\":\"Profile\",\"col\":4}},{\"id\":\"2-3HMkGou3\",\"type\":\"card\",\"data\":{\"card_name\":\"Shift\",\"col\":4}},{\"id\":\"GdPtnrazDS\",\"type\":\"card\",\"data\":{\"card_name\":\"Delivery Charges\",\"col\":4}},{\"id\":\"cABO53xhGv\",\"type\":\"card\",\"data\":{\"card_name\":\"Offers &amp; Coupons\",\"col\":4}}]",
- "creation": "2026-08-06 11:32:04.916519",
+ "charts": [
+  {
+   "chart_name": "POS Sales Trend by Terminal & Store",
+   "label": "POS Sales Trend by Terminal & Store"
+  }
+ ],
+ "content": "[{\"id\":\"cJigdSD9mh\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">POSpire Shortcuts</span>\",\"col\":12}},{\"id\":\"4D2sc3CbN3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POSpire App\",\"col\":3}},{\"id\":\"8BBwBYe58o\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Profile\",\"col\":3}},{\"id\":\"cswkaFt3N2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Invoice\",\"col\":3}},{\"id\":\"G5Ao0JBYHc\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POSpire Dashboard\",\"col\":3}},{\"id\":\"hdr003ovw\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">POS Overview</span>\",\"col\":12}},{\"id\":\"nc006total\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total POS Sales\",\"col\":4}},{\"id\":\"nc007promo\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Promotions\",\"col\":4}},{\"id\":\"nc008held\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Held Bills\",\"col\":4}},{\"id\":\"nc009newc\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"New Customers via POS\",\"col\":6}},{\"id\":\"nc010retv\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Returns (Value)\",\"col\":6}},{\"id\":\"ch011trend2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"POS Sales Trend by Terminal & Store\",\"col\":12}},{\"id\":\"HZKe7ywC01\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h3\\\">Reports and Masters</span>\",\"col\":12}},{\"id\":\"tM2Vda2GqQ\",\"type\":\"card\",\"data\":{\"card_name\":\"Transactions\",\"col\":4}},{\"id\":\"IId1z_AIok\",\"type\":\"card\",\"data\":{\"card_name\":\"Masters\",\"col\":4}},{\"id\":\"pePZ-XWbAt\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"rpt012posr\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "creation": "2026-09-08 22:24:02.823774",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -16,17 +21,38 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Profile",
+   "label": "Reports",
    "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "POS Sales report",
+   "link_count": 0,
+   "link_to": "POS Sales report",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Sales Invoice",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setup",
+   "link_count": 8,
+   "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "POS Profile",
+   "label": "Assortment",
    "link_count": 0,
-   "link_to": "POS Profile",
+   "link_to": "Assortment",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -34,17 +60,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Delivery Charges",
-   "link_count": 1,
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Delivery Charges",
+   "label": "POS Denomination",
    "link_count": 0,
-   "link_to": "Delivery Charges",
+   "link_to": "POS Denomination",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -52,15 +70,47 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Offers &amp; Coupons",
-   "link_count": 3,
+   "label": "POS Manager Pin",
+   "link_count": 0,
+   "link_to": "POS Manager PIN",
+   "link_type": "DocType",
    "onboard": 0,
-   "type": "Card Break"
+   "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Offers",
+   "label": "POSpire Offline Settings",
+   "link_count": 0,
+   "link_to": "POSpire Offline Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Device Controller",
+   "link_count": 0,
+   "link_to": "POS Hardware Manager Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS XML Print Designer",
+   "link_count": 0,
+   "link_to": "POS XML Print Designer",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Offer",
    "link_count": 0,
    "link_to": "POS Offer",
    "link_type": "DocType",
@@ -70,7 +120,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Coupons",
+   "label": "Coupon",
    "link_count": 0,
    "link_to": "POS Coupon",
    "link_type": "DocType",
@@ -80,27 +130,18 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Referral Code",
-   "link_count": 0,
-   "link_to": "Referral Code",
+   "label": "Transactions",
+   "link_count": 4,
    "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Loyalty",
-   "link_count": 2,
    "onboard": 0,
    "type": "Card Break"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Loyalty Program",
+   "label": "POS Invoice",
    "link_count": 0,
-   "link_to": "Loyalty Program",
+   "link_to": "Sales Invoice",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -118,15 +159,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Shift",
-   "link_count": 2,
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Opening Shift",
+   "label": "Open Shift",
    "link_count": 0,
    "link_to": "POS Opening Shift",
    "link_type": "DocType",
@@ -136,31 +169,159 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Closing Shift",
+   "label": "Close Shift",
    "link_count": 0,
    "link_to": "POS Closing Shift",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Masters",
+   "link_count": 7,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Profile",
+   "link_count": 0,
+   "link_to": "POS Profile",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loyalty Program",
+   "link_count": 0,
+   "link_to": "Loyalty Program",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Delivery Charges",
+   "link_count": 0,
+   "link_to": "Delivery Charges",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Offline Beacon",
+   "link_count": 0,
+   "link_to": "POS Offline Beacon",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Offline Recovery Log",
+   "link_count": 0,
+   "link_to": "POS Offline Recovery Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Approval Request",
+   "link_count": 0,
+   "link_to": "POS Approval Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POSpire Offline Sync",
+   "link_count": 0,
+   "link_to": "POSpire Offline Sync Review",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-07-20 15:26:19.424280",
+ "modified": "2026-09-08 22:25:37.972366",
  "modified_by": "Administrator",
  "module": "POSpire",
  "name": "POSpire",
- "number_cards": [],
+ "number_cards": [
+  {
+   "label": "Total POS Sales",
+   "number_card_name": "Total POS Sales"
+  },
+  {
+   "label": "Active Promotions",
+   "number_card_name": "Active Promotions"
+  },
+  {
+   "label": "Held Bills",
+   "number_card_name": "Held Bills"
+  },
+  {
+   "label": "New Customers via POS",
+   "number_card_name": "New Customers via POS"
+  },
+  {
+   "label": "Total Returns (Value)",
+   "number_card_name": "Total Returns (Value)"
+  }
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
  "quick_lists": [],
+ "restrict_to_domain": "",
  "roles": [],
  "sequence_id": 1.5,
  "shortcuts": [
   {
-   "color": "Green",
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "POS Invoice",
+   "link_to": "Sales Invoice",
+   "stats_filter": "[[\"Sales Invoice\",\"posa_pos_opening_shift\",\"is\",\"set\"]]",
+   "type": "DocType",
+   "url": "/pospire"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "POSpire Dashboard",
+   "link_to": "POSpire Dashboard",
+   "stats_filter": "[[\"Sales Invoice\",\"posa_pos_opening_shift\",\"is\",\"set\"]]",
+   "type": "Dashboard",
+   "url": "/pospire"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
    "label": "POSpire App",
-   "link_to": "",
    "type": "URL",
+   "url": "/pospire"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "POS Profile",
+   "link_to": "POS Profile",
+   "stats_filter": "[]",
+   "type": "DocType",
    "url": "/pospire"
   }
  ],
