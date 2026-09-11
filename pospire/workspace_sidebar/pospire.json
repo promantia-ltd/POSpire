@@ -1,0 +1,85 @@
+{
+ "app": "pospire",
+ "creation": "2026-07-21 10:58:05.765702",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "retail",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "chart-area",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Dashboard",
+   "link_to": "POSpire Dashboard",
+   "link_type": "Dashboard",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "POS Profile",
+   "link_to": "POS Profile",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Loyalty Point Entry",
+   "link_to": "Loyalty Point Entry",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Open Shift",
+   "link_to": "POS Opening Shift",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Close Shift",
+   "link_to": "POS Closing Shift",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "sheet",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "POS Sales Report",
+   "link_to": "POS Sales report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-09-11 17:03:30.055372",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POSpire",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "POSpire"
+}
