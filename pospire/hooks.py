@@ -26,6 +26,7 @@ extend_bootinfo = "pospire.boot.extend_bootinfo"
 app_include_js = [
 	"/assets/pospire/js/pos_approval_desk.js",
 	"/assets/pospire/js/pos_core_route_guard.js",
+	"/assets/pospire/js/pos_universal_filter.js",
 ]
 
 # include js, css files in header of web template
