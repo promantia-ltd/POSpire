@@ -227,9 +227,9 @@ override_whitelisted_methods = {
 # 	"Task": "pospire.task.get_dashboard_data"
 # }
 
-override_doctype_class = {
-	"Sales Invoice": "pospire.pospire.overrides.sales_invoice.CustomSalesInvoice",
-	"Loyalty Program": "pospire.pospire.overrides.loyalty_program.CustomLoyaltyProgram",
+extend_doctype_class = {
+	"Sales Invoice": ["pospire.pospire.overrides.sales_invoice.CustomSalesInvoice"],
+	"Loyalty Program": ["pospire.pospire.overrides.loyalty_program.CustomLoyaltyProgram"],
 }
 
 # exempt linked doctypes from being automatically cancelled

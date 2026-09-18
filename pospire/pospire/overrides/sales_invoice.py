@@ -1,10 +1,13 @@
 import frappe
 from erpnext.accounts.doctype.loyalty_point_entry.loyalty_point_entry import get_redemption_details
-from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
 from frappe.utils import flt
 
 
-class CustomSalesInvoice(SalesInvoice):
+class CustomSalesInvoice:
+	# Mixed into Sales Invoice via extend_doctype_class (not override_doctype_class,
+	# which replaces the whole controller class and can silently stop applying if
+	# another app also overrides it, or if erpnext's own controller changes).
+	#
 	# Core erpnext subtracts get_redemption_details()'s result, which is already
 	# negative (sum of loyalty_points < 0), so it adds already-used points back
 	# instead of deducting them. That lets a later redemption re-charge rows

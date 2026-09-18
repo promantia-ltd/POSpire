@@ -1,12 +1,15 @@
 import frappe
-from erpnext.accounts.doctype.loyalty_program.loyalty_program import LoyaltyProgram
 from frappe import _
 from frappe.query_builder import Case
 from frappe.query_builder.functions import Sum
 from frappe.utils import flt, today
 
 
-class CustomLoyaltyProgram(LoyaltyProgram):
+class CustomLoyaltyProgram:
+	# Mixed into Loyalty Program via extend_doctype_class (not
+	# override_doctype_class, which replaces the whole controller class and can
+	# silently stop applying if another app also overrides it, or if erpnext's
+	# own controller changes).
 	def validate_lowest_tier(self):
 		# Core erpnext compares rule.min_spent without converting it to a
 		# number first. The Minimum Total Spent grid field has no "default",
