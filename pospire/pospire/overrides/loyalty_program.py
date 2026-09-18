@@ -29,7 +29,9 @@ class CustomLoyaltyProgram(LoyaltyProgram):
 			)
 
 
-def get_loyalty_details(customer, loyalty_program, expiry_date=None, company=None, include_expired_entry=False):
+def get_loyalty_details(
+	customer, loyalty_program, expiry_date=None, company=None, include_expired_entry=False
+):
 	# Core erpnext sums purchase_amount across every Loyalty Point Entry row,
 	# including redemption rows. apply_loyalty_points() writes the full
 	# invoice grand_total into purchase_amount on every redemption row it
