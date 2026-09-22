@@ -26,6 +26,7 @@ declare module 'vue' {
     NumberCard: typeof import('./src/components/widgets/NumberCard.vue')['default']
     OffersModal: typeof import('./src/components/pos/OffersModal.vue')['default']
     OfflineBanner: typeof import('./src/components/offline/OfflineBanner.vue')['default']
+    OfflineReceipts: typeof import('./src/components/OfflineReceipts.vue')['default']
     OfflineSyncStatus: typeof import('./src/components/offline/OfflineSyncStatus.vue')['default']
     OpeningDialog: typeof import('./src/components/pos/OpeningDialog.vue')['default']
     PaidInvoice: typeof import('./src/components/pos/PaidInvoice.vue')['default']

@@ -148,6 +148,16 @@
                 }}</v-list-item-title>
 
               </v-list-item>
+              <v-list-item @click="offlineReceiptsOpen = true">
+                <template v-slot:prepend>
+                  <v-icon icon="mdi-receipt-text-clock-outline"></v-icon>
+                </template>
+
+                <v-list-item-title>{{
+                  __('Offline receipts')
+                }}</v-list-item-title>
+
+              </v-list-item>
               <v-divider class="my-0"></v-divider>
               <v-list-item @click="logOut">
                 <template v-slot:prepend>
@@ -223,6 +233,7 @@
         <v-card-text>{{ freezeMsg }}</v-card-text>
       </v-card>
     </v-dialog>
+    <OfflineReceipts v-model="offlineReceiptsOpen" :pos-profile="pos_profile" />
   </nav>
 </template>
 
@@ -234,10 +245,19 @@ import hardwareUtils from "@/utils/hardwareUtils";
 import { useOutboxStore } from "@/stores/outbox";
 import { useConnectivityStore } from "@/stores/connectivity";
 import ThemeToggle from "@/components/ThemeToggle.vue";
+import OfflineReceipts from "@/components/OfflineReceipts.vue";
 import busListeners from "@/utils/busListeners";
+import { getOutboxEntry } from "@/offline/repos/outbox";
+import connectivity from "@/offline/connectivity";
+import { toast } from "vue3-toastify";
+import {
+  saveLastInvoiceIds,
+  readLastInvoiceIds,
+  clearLastInvoiceIds,
+} from "@/utils/lastInvoiceSnapshot";
 
 export default {
-  components: { ThemeToggle },
+  components: { ThemeToggle, OfflineReceipts },
   mixins: [hardwareUtils, busListeners],
   emits: ["changePage", "open-reconciliation"],
   setup() {
@@ -276,7 +296,10 @@ export default {
       freeze: false,
       freezeTitle: '',
       freezeMsg: '',
-      last_invoice: '',
+      // { name, offline_id } | null. offline_id is null for an ordinary
+      // online sale, set for one that went through the outbox.
+      last_invoice: null,
+      offlineReceiptsOpen: false,
     };
   },
   methods: {
@@ -334,40 +357,44 @@ export default {
       await call('logout');
       window.location.href = "/login";
     },
+    /**
+     * Print Last Invoice — routes through the single printReceipt() entry
+     * point (hardwareUtils.js), same as Submit & Print. Three cases:
+     *   1. An ordinary online sale (no offline_id) — print by name.
+     *   2. An offline sale that has since synced — print the real,
+     *      final receipt under its server name, not the stale
+     *      provisional one.
+     *   3. An offline sale still pending sync — reconstruct the invoice
+     *      from the outbox's own (encrypted) payload and print the
+     *      provisional receipt again.
+     * See the receipt printing plan §"Reading an offline sale back".
+     */
     async print_last_invoice() {
-      if (!this.last_invoice) return;
-      try {
-        const res = await this.hardwareConfiguration(
-          this.pos_profile.name
-        );
+      if (!this.last_invoice?.name) return;
+      const { name, offline_id } = this.last_invoice;
 
-        if (res === true) { 
-          await this.custom_print(this.last_invoice);
-        } else {
-          const print_format =
-            this.pos_profile.print_format_for_online ||
-            this.pos_profile.print_format;
-          const letter_head = this.pos_profile.letter_head || 0;
-          const url =
-            window.location.origin +
-            '/printview?doctype=Sales%20Invoice&name=' +
-            this.last_invoice +
-            '&trigger_print=1' +
-            '&format=' +
-            print_format +
-            '&no_letterhead=' +
-            letter_head;
-          const printWindow = window.open(url, 'Print');
-          printWindow.addEventListener(
-            'load',
-            function () {
-              printWindow.print();
-            },
-            true
+      if (!offline_id) {
+        await this.printReceipt({ name });
+        return;
+      }
+
+      try {
+        const entry = await getOutboxEntry(offline_id);
+        if (!entry) {
+          toast.error(
+            __("This sale is no longer stored on this till. Print it from the Sales Invoice list.")
           );
+          return;
         }
+        if (entry.server_doc_name && connectivity.isOnline()) {
+          await this.printReceipt({ name: entry.server_doc_name });
+          return;
+        }
+        const invoice = JSON.parse(entry.payload.data);
+        await this.printReceipt({ invoice, offlineId: offline_id });
       } catch (err) {
-        console.error("Hardware config check failed", err);
+        console.error("[Navbar] print_last_invoice failed", err);
+        toast.error(__("Could not print the receipt. Please try again."));
       }
     },
   },
@@ -388,8 +415,28 @@ export default {
       // that bootstrap doesn't fan out to POS children that aren't mounted.
       this.onBus('register_pos_profile', this.apply_pos_profile);
       this.onBus('navbar_pos_profile', this.apply_pos_profile);
+      // Restore across a same-tab reload — Print Last Invoice would
+      // otherwise be unavailable (hidden entirely, per the v-if below)
+      // until the next sale, even though the last one is still
+      // reprintable.
+      const restored = readLastInvoiceIds();
+      if (restored?.name) {
+        this.last_invoice = restored;
+      }
       this.onBus('set_last_invoice', (data) => {
         this.last_invoice = data;
+        if (data?.offline_id) {
+          saveLastInvoiceIds({
+            name: data.name,
+            offline_id: data.offline_id,
+            pos_profile_name: this.pos_profile?.name,
+          });
+        } else {
+          // An ordinary online sale — nothing here needs the sessionStorage
+          // mirror (getOutboxEntry has no row for it anyway), and leaving a
+          // stale offline entry behind would outlive its usefulness.
+          clearLastInvoiceIds();
+        }
       });
       this.onBus('freeze', (data) => {
         this.freeze = true;

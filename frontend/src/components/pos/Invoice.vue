@@ -1124,7 +1124,7 @@
 
 <script>
 import { call, unwrapStale } from "@/utils/call";
-import { TAX_CONFIG_CACHE_KEY_PREFIX } from "@/utils/call-registry";
+import { TAX_CONFIG_CACHE_KEY_PREFIX, PRINT_CONFIG_CACHE_KEY_PREFIX } from "@/utils/call-registry";
 import format from "@/utils/format";
 import hardwareUtils from "@/utils/hardwareUtils";
 import Customer from "./Customer.vue";
@@ -1146,6 +1146,9 @@ export default {
 			// Cached tax config + last offline tax estimate (see @/offline/tax).
 			offline_tax_config: null,
 			offline_tax_supported: true,
+			// Cached printer/template/formatting config for offline receipts
+			// (see @/offline/print). Primed the same way as offline_tax_config.
+			offline_print_config: null,
 			sales_persons: [],
 			//
 			pos_profile: "",
@@ -2192,6 +2195,33 @@ export default {
 				}
 			} catch {
 				// Non-fatal: offline tax falls back to the untaxed subtotal seed.
+			}
+		},
+
+		/**
+		 * Prime the printer/template/formatting config for offline receipts
+		 * — mirrors load_offline_tax_config() exactly, including the
+		 * clear-first and stale-response guards, for the same reasons.
+		 */
+		async load_print_config() {
+			const requestedProfile = this.pos_profile?.name;
+			if (!requestedProfile) return;
+			this.offline_print_config = null;
+			try {
+				const config = unwrapStale(
+					await call({
+						method: "pospire.pospire.api.hardware_manager.get_offline_print_config",
+						args: { pos_profile: requestedProfile },
+						intent: "read",
+						cacheKey: PRINT_CONFIG_CACHE_KEY_PREFIX + requestedProfile,
+					}),
+				);
+				if (config && this.pos_profile?.name === requestedProfile) {
+					this.offline_print_config = config;
+				}
+			} catch {
+				// Non-fatal: printReceipt() surfaces its own error if it ever
+				// needs a config that never got cached.
 			}
 		},
 
@@ -4320,6 +4350,9 @@ export default {
 				this.load_approval_config();
 				// Prime the tax config while online so it's cached for offline use.
 				this.load_offline_tax_config();
+				// Same for the printer/template/formatting config — required
+				// for offline receipts to print at all.
+				this.load_print_config();
 		});
 		this.onBus("auto_set_delivery_charge", () => {
 			if (this.delivery_charges.length > 0 && !this.selected_delivery_charge) {

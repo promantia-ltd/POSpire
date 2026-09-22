@@ -527,6 +527,7 @@ def get_offline_tax_config(pos_profile: str | dict) -> dict:
 					"account_head": row.account_head,
 					"charge_type": row.charge_type,
 					"rate": flt(row.rate),
+					"description": row.description or row.account_head,
 				}
 			)
 
@@ -990,6 +991,20 @@ def update_invoice(data: str | dict):
 	today_date = getdate()
 	if invoice_doc.get("posting_date") and getdate(invoice_doc.posting_date) != today_date:
 		invoice_doc.set_posting_time = 1
+
+	if invoice_doc.is_return:
+		# set_missing_values() above already copied the POS Profile's print
+		# heading onto this draft (ERPNext's normal behaviour), so a return
+		# would otherwise carry the same heading as a sale for as long as
+		# it stays a draft — including if someone opens/prints it from the
+		# desk before the cashier ever submits. Stamped here (not only at
+		# submit_invoice) so it's correct at every save, not just the last
+		# one. POS XML receipt templates don't need this — they decide the
+		# header themselves from doc.is_return — this is for Desk prints
+		# and emailed PDFs, which do read select_print_heading.
+		credit_note_heading = frappe.get_cached_value("Print Heading", _("Credit Note"))
+		if credit_note_heading:
+			invoice_doc.select_print_heading = credit_note_heading
 
 	ensure_typed_batches_exist_for_invoice(invoice_doc)
 	invoice_doc.save()

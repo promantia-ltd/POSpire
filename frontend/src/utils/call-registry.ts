@@ -148,6 +148,13 @@ export const OPENING_DIALOG_CACHE_KEY = "offline.opening_dialog_data";
  *  name so switching profiles cannot serve the previous profile's rates. */
 export const TAX_CONFIG_CACHE_KEY_PREFIX = "offline.tax_config:";
 
+/** Per-profile durable key for the offline print config (printer URL,
+ *  default XML template + its modified timestamp, company address, and
+ *  the site's date/time/number/currency formatting). Must match the
+ *  prefix allowlisted in read-cache.ts DURABLE_KEY_PREFIXES. Same
+ *  per-profile-switch rationale as TAX_CONFIG_CACHE_KEY_PREFIX. */
+export const PRINT_CONFIG_CACHE_KEY_PREFIX = "offline.print_config:";
+
 /**
  * The canonical registry. Names are the exact server method paths.
  *
@@ -182,6 +189,14 @@ export const methodRegistry: Record<string, MethodConfig> = {
 	// Tax config for offline estimation. Rarely changes (admin tax setup), so a
 	// long window keeps the cart taxable offline for a full shift.
 	"pospire.pospire.api.posapp.get_offline_tax_config": {
+		intent: "read",
+		offline: true,
+		cacheTTLMs: 24 * HOUR,
+	},
+	// Print config (printer URL, default XML template, company address,
+	// site formatting) for offline receipts. Admin configuration, changes
+	// rarely — same long window as the tax config it's primed alongside.
+	"pospire.pospire.api.hardware_manager.get_offline_print_config": {
 		intent: "read",
 		offline: true,
 		cacheTTLMs: 24 * HOUR,
