@@ -633,7 +633,9 @@ def check_offline_compatibility(template):
 		)
 
 	if re.search(r"\bfrappe\.\w+", template):
-		warnings.append("Calls frappe.* directly, which is not available offline. Use a template helper instead.")
+		warnings.append(
+			"Calls frappe.* directly, which is not available offline. Use a template helper instead."
+		)
 
 	if re.search(r"\.\s*(upper|lower|title|strip|format)\s*\(", template):
 		warnings.append(
