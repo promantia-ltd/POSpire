@@ -9,6 +9,7 @@ from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
 	get_checks_for_pl_and_bs_accounts,
 )
+from erpnext.accounts.doctype.bank_account.bank_account import get_party_bank_account
 from erpnext.accounts.doctype.loyalty_program.loyalty_program import (
 	get_loyalty_program_details_with_points,
 )
@@ -18,7 +19,6 @@ from erpnext.accounts.doctype.payment_request.payment_request import (
 )
 from erpnext.accounts.doctype.pos_profile.pos_profile import get_item_groups
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
-from erpnext.accounts.party import get_party_bank_account
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from erpnext.stock.doctype.batch.batch import (
 	get_batch_no,
