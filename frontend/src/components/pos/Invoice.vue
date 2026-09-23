@@ -2260,7 +2260,7 @@ export default {
 				doc.rounded_total = this.subtotal;
 				doc.net_total = this.subtotal;
 			}
-			// Undefined here poisons Payments.vue's total_payments sum (NaN).
+			// Undefined here becomes NaN in Payments.vue's total_payments sum.
 			doc.loyalty_amount = doc.loyalty_amount || 0;
 			doc.discount_amount = flt(this.discount_amount);
 			doc.additional_discount_percentage = flt(this.additional_discount_percentage);
