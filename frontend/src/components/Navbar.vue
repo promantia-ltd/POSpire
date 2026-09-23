@@ -2,7 +2,8 @@
   <nav>
     <v-app-bar height="72" class="modern-header" elevation="1">
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" class="modern-nav-icon"></v-app-bar-nav-icon>
-      <v-toolbar-title @click="go_desk" class="stylish-brand">
+      <!-- Presentational only: v-toolbar-title is flex:1, so a click handler here covers the whole empty app-bar strip. -->
+      <v-toolbar-title class="stylish-brand">
         <div class="brand-container-modern hover-vibrant">
           <!-- Client branding (left) -->
           <div class="client-brand-section">
@@ -45,6 +46,69 @@
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
+      <!--
+        Offline pending-sync badge. Hidden when queuedCount === 0. Reads
+        from @/stores/outbox (Pinia reactive facade over Dexie liveQuery).
+        Clickable: emits `open-reconciliation` so the parent can route to the
+        OfflineSyncStatus dialog. That dialog is fully read-only — it
+        shows handed-off entries (with their server OSR-... IDs so the
+        cashier can give one to a manager), local rows still awaiting
+        handoff, and rows currently in flight. Recovery actions
+        (Retry / Void) live in Desk for Sales Manager / System Manager.
+      -->
+      <div v-if="queuedCount > 0" class="sync-badge-wrapper">
+        <v-chip class="sync-badge" variant="tonal" color="warning" size="small" clickable
+          :title="__('Tap to view pending and review queue')" @click="$emit('open-reconciliation')">
+          <v-icon start size="small">mdi-cloud-sync-outline</v-icon>
+          {{ queuedCount }} {{ __('pending') }}
+        </v-chip>
+      </div>
+      <!--
+        Compact inline connectivity pill. Sits next to the profile chip so the
+        cashier has an always-visible status indicator even when the wide
+        OfflineBanner subtitle is clipped on narrow viewports. Online state is
+        rendered as a quiet green dot (no text); offline / degraded states get
+        labels so they read at a glance. Click is wired to the same
+        reconciliation workspace the badge below uses.
+      -->
+      <div class="connectivity-pill-wrapper">
+        <v-chip
+          v-if="connectionQuality === 'offline'"
+          class="connectivity-pill"
+          variant="tonal"
+          color="error"
+          size="small"
+          :title="__('You are offline. Sales continue locally')"
+        >
+          <v-icon start size="small">mdi-cloud-off-outline</v-icon>
+          {{ __('Offline') }}
+        </v-chip>
+        <v-chip
+          v-else-if="connectionQuality === 'degraded'"
+          class="connectivity-pill"
+          variant="tonal"
+          color="warning"
+          size="small"
+          :title="__('Connectivity unstable. Saving locally')"
+        >
+          <v-icon start size="small">mdi-access-point-network-off</v-icon>
+          {{ __('Unstable') }}
+        </v-chip>
+        <v-chip
+          v-else
+          class="connectivity-pill connectivity-pill--online"
+          variant="tonal"
+          color="success"
+          size="small"
+          :title="__('Online')"
+        >
+          <v-icon start size="small">mdi-check-circle-outline</v-icon>
+          {{ __('Online') }}
+        </v-chip>
+      </div>
+      <div class="theme-toggle-wrapper">
+        <ThemeToggle />
+      </div>
       <div class="user-info">
         <v-chip class="user-chip pospire-chip-neutral" variant="tonal" color="grey-darken-2">
           <v-icon start size="small">mdi-account-circle</v-icon>
@@ -106,6 +170,14 @@
           </v-card>
         </v-menu>
       </div>
+      <!--
+        OfflineBanner used to live in v-app-bar's `extension` slot, but
+        Vuetify auto-reserves the default extension height even when the
+        banner v-if'd itself out (online state) — leaving a phantom gap
+        above the page content. The banner now mounts at the v-app level
+        in App.vue as its own layout item, which collapses cleanly when
+        hidden.
+      -->
     </v-app-bar>
     <v-navigation-drawer v-model="drawer" v-model:mini-variant="mini" class="modern-sidebar" width="280" temporary>
       <!-- Company Header Section -->
@@ -155,17 +227,40 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { storeToRefs } from "pinia";
+import { call } from "@/utils/call";
+import { OPENING_DIALOG_CACHE_KEY } from "@/utils/call-registry";
 import hardwareUtils from "@/utils/hardwareUtils";
+import { useOutboxStore } from "@/stores/outbox";
+import { useConnectivityStore } from "@/stores/connectivity";
+import ThemeToggle from "@/components/ThemeToggle.vue";
+import busListeners from "@/utils/busListeners";
+
 export default {
-  // components: {MyPopup},
-  mixins: [hardwareUtils],
+  components: { ThemeToggle },
+  mixins: [hardwareUtils, busListeners],
+  emits: ["changePage", "open-reconciliation"],
+  setup() {
+    // Surfaces the outbox depth on the navbar (pending + in-flight). Hidden
+    // in the template when queuedCount is 0 so the navbar is unchanged in
+    // the steady-state online path.
+    const outbox = useOutboxStore();
+    const { queuedCount } = storeToRefs(outbox);
+    // Compact inline status pill — separate from the full-width OfflineBanner
+    // so cashiers always have an at-a-glance indicator in the navbar even on
+    // narrow viewports where the banner subtitle gets ellipsised.
+    const connectivity = useConnectivityStore();
+    const { connectionQuality } = storeToRefs(connectivity);
+    return { queuedCount, connectionQuality };
+  },
   data() {
     return {
       drawer: false,
       mini: true,
       item: 0,
-      items: [{ text: 'POS', icon: 'mdi-network-pos' }],
+      items: [{ text: 'POS', icon: 'mdi-network-pos' },
+              { text: 'Dashboard', icon: 'mdi-view-dashboard-outline' }
+      ],
       page: '',
       fav: true,
       menu: false,
@@ -189,9 +284,6 @@ export default {
       this.$emit('changePage', key);
       this.drawer = false;
     },
-    go_desk() {
-      window.location.href = "/app";
-    },
     go_about() {
       const win = window.open(
         'https://github.com/promantia-ltd/POSpire',
@@ -199,8 +291,26 @@ export default {
       );
       win.focus();
     },
+    apply_pos_profile(data) {
+      this.pos_profile = data.pos_profile;
+      const payments = { text: 'Payments', icon: 'mdi-cash-register' };
+      if (
+        this.pos_profile.posa_use_pos_awesome_payments &&
+        !this.items.some((item) => item.text === 'Payments')
+      ) {
+        this.items.push(payments);
+      }
+    },
     close_shift_dialog() {
-      this.eventBus.emit('open_closing_dialog');
+      // ClosingDialog is owned by Pos.vue, which is only mounted on /pos. From
+      // any other route the event lands on nothing, so the menu item silently
+      // did nothing. Carry the intent through the navigation instead and let
+      // Pos consume it once its opening-shift check has settled.
+      if (this.$route.path === '/pos') {
+        this.eventBus.emit('open_closing_dialog');
+        return;
+      }
+      this.$router.push({ path: '/pos', query: { close_shift: '1' } });
     },
     show_message(data) {
       this.snack = true;
@@ -209,6 +319,18 @@ export default {
     },
     async logOut() {
       this.logged_out = true;
+      // The cached POS configuration must not outlive the session that fetched
+      // it; the next cashier may have a different profile set.
+      try {
+        // NOTE: getReadCache lives in "@/offline/runtime" (the registration
+        // shim), not "@/offline/read-cache" (the adapter implementations) —
+        // the latter never exports it. Corrected from the brief's snippet,
+        // which would have silently no-op'd here.
+        const { getReadCache } = await import("@/offline/runtime");
+        await getReadCache()?.invalidate(OPENING_DIALOG_CACHE_KEY);
+      } catch {
+        /* non-fatal */
+      }
       await call('logout');
       window.location.href = "/login";
     },
@@ -251,35 +373,30 @@ export default {
   },
   created: function () {
     this.$nextTick(function () {
-      this.eventBus.on('show_message', (data) => {
-        console.log("GOT Something: <s>")
+      this.onBus('show_message', (data) => {
         this.show_message(data);
       });
-      this.eventBus.on('set_company', (data) => {
+      this.onBus('set_company', (data) => {
         this.company = data.name;
         this.company_img = data.company_logo
           ? data.company_logo
           : this.company_img;
       });
-      this.eventBus.on('register_pos_profile', (data) => {
-        this.pos_profile = data.pos_profile;
-        const payments = { text: 'Payments', icon: 'mdi-cash-register' };
-        if (
-          this.pos_profile.posa_use_pos_awesome_payments &&
-          this.items.length !== 2
-        ) {
-          this.items.push(payments);
-        }
-      });
-      this.eventBus.on('set_last_invoice', (data) => {
+      // Two sources, same payload shape: Pos.vue broadcasts
+      // `register_pos_profile` on /pos, and App.vue publishes
+      // `navbar_pos_profile` on every other route — a Navbar-only channel, so
+      // that bootstrap doesn't fan out to POS children that aren't mounted.
+      this.onBus('register_pos_profile', this.apply_pos_profile);
+      this.onBus('navbar_pos_profile', this.apply_pos_profile);
+      this.onBus('set_last_invoice', (data) => {
         this.last_invoice = data;
       });
-      this.eventBus.on('freeze', (data) => {
+      this.onBus('freeze', (data) => {
         this.freeze = true;
         this.freezeTitle = data.title;
         this.freezeMsg = data.msg;
       });
-      this.eventBus.on('unfreeze', () => {
+      this.onBus('unfreeze', () => {
         this.freeze = false;
         this.freezTitle = '';
         this.freezeMsg = '';
@@ -292,28 +409,29 @@ export default {
 <style scoped>
 /* Header Styles */
 .modern-header {
-  border-bottom: 1px solid #e2e8f0 !important;
+  background: var(--pospire-navbar-bg) !important;
+  border-bottom: 1px solid var(--pospire-border) !important;
   backdrop-filter: blur(10px);
-  padding: 0 1rem;
+  padding: 0 1rem 0 0;
   height: 72px;
   max-height: 72px;
   ;
 }
 
 .modern-nav-icon {
-  color: #64748b !important;
+  color: var(--pospire-text-muted) !important;
   border-radius: 8px;
+  margin-inline-start: 0.75rem !important;
   transition: all 0.2s ease;
 }
 
 .modern-nav-icon:hover {
-  background-color: #f1f5f9 !important;
-  color: #334155 !important;
+  background-color: var(--pospire-hover-bg) !important;
+  color: var(--pospire-text-main) !important;
 }
 
 /* Brand Title */
 .stylish-brand {
-  cursor: pointer;
   transition: all 0.3s ease;
   padding: 8px 0;
   background: none;
@@ -336,7 +454,7 @@ export default {
   align-items: center;
   gap: 10px;
   padding: 6px 16px;
-  background: linear-gradient(135deg, rgba(0, 188, 212, 0.08) 0%, rgba(52, 73, 94, 0.05) 100%);
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 8%, transparent);
   border-radius: 10px;
   border: 1px solid rgba(0, 188, 212, 0.15);
   transition: all 0.3s ease;
@@ -348,8 +466,6 @@ export default {
 .brand-container-modern:hover {
   background: linear-gradient(135deg, rgba(0, 188, 212, 0.12) 0%, rgba(52, 73, 94, 0.08) 100%);
   border-color: rgba(0, 188, 212, 0.25);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.15);
 }
 
 .brand-icon {
@@ -384,7 +500,7 @@ export default {
   font-family: 'Inter', sans-serif;
   font-size: 1.35rem;
   font-weight: 600;
-  color: #34495E;
+  color: var(--pospire-text-primary);
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -393,14 +509,14 @@ export default {
 }
 
 .client-logo {
-  border: 1px solid #e2e8f0;
-  background: white;
+  border: 1px solid var(--pospire-border);
+  background: var(--pospire-surface);
 }
 
 .brand-divider {
   width: 1px;
   height: 28px;
-  background: linear-gradient(180deg, transparent, #cbd5e1, transparent);
+  background: linear-gradient(180deg, transparent, var(--pospire-border), transparent);
   margin: 0 12px;
 }
 
@@ -414,7 +530,7 @@ export default {
 
 .powered-by-text {
   font-size: 0.6rem;
-  color: #94a3b8;
+  color: var(--pospire-text-faint);
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -443,7 +559,7 @@ export default {
   font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
-  color: #34495E;
+  color: var(--pospire-text-primary);
   letter-spacing: -0.3px;
 }
 
@@ -451,7 +567,7 @@ export default {
   font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--pospire-text-muted);
   letter-spacing: -0.2px;
   transition: color 0.3s ease;
 }
@@ -498,14 +614,13 @@ export default {
   overflow: hidden;
   padding: 4px 8px;
   border-radius: 6px;
-  cursor: pointer;
 }
 
 .brand-pos-modern {
   font-family: 'Inter', sans-serif;
   font-size: 1.4rem;
   font-weight: 700;
-  color: #34495E;
+  color: var(--pospire-text-primary);
   letter-spacing: -0.5px;
   line-height: 1;
 }
@@ -524,7 +639,7 @@ export default {
   font-family: 'Inter', sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #34495E;
+  color: var(--pospire-text-primary);
   letter-spacing: -0.5px;
   line-height: 1;
   text-transform: uppercase;
@@ -535,7 +650,7 @@ export default {
   font-family: 'Inter', sans-serif;
   font-size: 1.5rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--pospire-text-muted);
   letter-spacing: -0.3px;
   line-height: 1;
   text-transform: lowercase;
@@ -596,7 +711,7 @@ export default {
   font-family: var(--brand-font-latin);
   font-size: 1.7rem;
   font-weight: 600;
-  color: #34495E;
+  color: var(--pospire-text-primary);
   letter-spacing: 1.5px;
   text-transform: uppercase;
   line-height: 1;
@@ -613,6 +728,49 @@ export default {
 
 .user-info {
   margin-right: 8px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.sync-badge-wrapper {
+  margin-right: 10px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.sync-badge {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.connectivity-pill-wrapper {
+  margin-right: 10px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.connectivity-pill {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.theme-toggle-wrapper {
+  margin-right: 10px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/*
+ * Online pill is intentionally low-key: same chip shape as offline/degraded
+ * for layout stability (no jumping when the network flaps), but muted so it
+ * doesn't distract during the steady-state happy path.
+ */
+.connectivity-pill--online {
+  opacity: 0.7;
 }
 
 .user-chip {
@@ -622,22 +780,28 @@ export default {
 }
 
 .menu-button {
-  color: #64748b !important;
+  color: var(--pospire-text-muted) !important;
   width: 40px;
   height: 40px;
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
+.text-center {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
 .menu-button:hover {
-  background-color: #f1f5f9 !important;
-  color: #334155 !important;
+  background-color: var(--pospire-hover-bg) !important;
+  color: var(--pospire-text-main) !important;
 }
 
 /* Sidebar Styles */
 .modern-sidebar {
   background: var(--sidebar-bg) !important;
-  border-right: 1px solid #e2e8f0 !important;
+  border-right: 1px solid var(--pospire-border) !important;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
@@ -653,7 +817,7 @@ export default {
 }
 
 .company-avatar {
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--pospire-border);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -664,19 +828,19 @@ export default {
 .company-name {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--pospire-text-primary);
   line-height: 1.2;
 }
 
 .company-type {
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--pospire-text-muted);
   font-weight: 500;
   margin-top: 2px;
 }
 
 .sidebar-divider {
-  border-color: #e2e8f0 !important;
+  border-color: var(--pospire-border) !important;
   margin: 0 !important;
 }
 
@@ -714,7 +878,7 @@ export default {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background-color: #f1f5f9;
+  background-color: var(--pospire-surface-muted);
   transition: all 0.2s ease;
 }
 
@@ -727,13 +891,13 @@ export default {
 }
 
 .nav-icon {
-  color: #64748b !important;
+  color: var(--pospire-text-muted) !important;
   font-size: 18px !important;
   transition: all 0.2s ease;
 }
 
 .nav-item:hover .nav-icon {
-  color: #334155 !important;
+  color: var(--pospire-text-main) !important;
 }
 
 .nav-item.v-list-item--active .nav-icon {
@@ -742,7 +906,7 @@ export default {
 
 .nav-text {
   font-weight: 500 !important;
-  color: #334155 !important;
+  color: var(--pospire-text-main) !important;
   font-size: 0.95rem !important;
   margin-left: 12px;
   transition: all 0.2s ease;
@@ -840,4 +1004,3 @@ export default {
   }
 }
 </style>
-

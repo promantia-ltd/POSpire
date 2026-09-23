@@ -4,9 +4,22 @@
 // Desk-side approval notification handler.
 // Shows actionable Approve/Reject dialog to managers when a cashier requests remote approval.
 
-frappe.realtime.on("pos_approval_request", function (data) {
-	_show_approval_dialog(data);
-});
+// frappe.realtime.on() silently no-ops while frappe.realtime.socket is undefined
+// (see RealTimeClient.on() in frappe/public/js/frappe/socketio_client.js). The
+// socket is only created by frappe.realtime.init(), which runs inside
+// Application.startup() on document.ready — long after this app_include_js file
+// executes during <body> parse. Binding here directly would never register.
+function _bind_approval_listener() {
+	frappe.realtime.on("pos_approval_request", function (data) {
+		_show_approval_dialog(data);
+	});
+}
+
+if (frappe.realtime && frappe.realtime.socket) {
+	_bind_approval_listener();
+} else {
+	$(document).on("app_ready", _bind_approval_listener);
+}
 
 function _show_approval_dialog(data) {
 	var cashier = data.requested_by_full_name || data.requested_by || __("A cashier");

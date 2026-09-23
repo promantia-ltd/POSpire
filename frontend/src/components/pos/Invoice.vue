@@ -88,7 +88,7 @@
 							hide-details
 							variant="outlined"
 							color="primary"
-							bg-color="white"
+							bg-color="surface"
 							:items="invoiceTypes"
 							:label="__('Type')"
 							v-model="invoiceType"
@@ -108,8 +108,8 @@
 					>
 						<v-switch
 							v-model="inclusive_tax"
-							:color="inclusive_tax ? '#00BCD4' : '#BDBDBD'"
-							:base-color="inclusive_tax ? '#00BCD4' : '#BDBDBD'"
+							:color="inclusive_tax ? 'primary' : 'grey'"
+							:base-color="inclusive_tax ? 'primary' : 'grey'"
 							inset
 							density="compact"
 							hide-details
@@ -170,7 +170,7 @@
 							item-title="name"
 							item-value="name"
 							return-object
-							bg-color="white"
+							bg-color="surface"
 							:no-data-text="__('Charges not found')"
 							hide-details
 							:customFilter="deliveryChargesFilter"
@@ -178,13 +178,12 @@
 						>
 							<template v-slot:item="{ props, item }">
 								<v-list-item v-bind="props">
-									<v-list-item-title
-										class="text-primary text-subtitle-1"
-										v-html="item.raw.name"
-									></v-list-item-title>
-									<v-list-item-subtitle
-										v-html="`Rate: ${item.raw.rate}`"
-									></v-list-item-subtitle>
+									<v-list-item-title class="text-primary text-subtitle-1">
+										{{ item.raw.name }}
+									</v-list-item-title>
+									<v-list-item-subtitle>
+										Rate: {{ item.raw.rate }}
+									</v-list-item-subtitle>
 								</v-list-item>
 							</template>
 						</v-autocomplete>
@@ -198,7 +197,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('Delivery Charges Rate')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="formatCurrency(delivery_charges_rate)"
 							:prefix="currencySymbol(pos_profile.currency)"
@@ -224,7 +223,7 @@
 									readonly
 									variant="outlined"
 									density="compact"
-									bg-color="white"
+									bg-color="surface"
 									clearable
 									color="primary"
 									hide-details
@@ -266,7 +265,7 @@
 								variant="outlined"
 								color="primary"
 								:label="__('')"
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								:model-value="
 									formatFloat(
@@ -321,7 +320,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:prefix="currencySymbol(pos_profile.currency)"
 							:model-value="formatCurrency(item.rate)"
@@ -346,7 +345,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:prefix="
 								invoice_doc.is_return
@@ -383,7 +382,7 @@
 											<v-btn
 												v-bind="props"
 												variant="text"
-												color="black"
+												color="error"
 												size="small"
 												icon
 												:disabled="
@@ -450,7 +449,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Item Code')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										v-model="item.item_code"
 										readonly
@@ -462,7 +461,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('QTY')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:model-value="formatFloat(item.qty)"
 										@change="[
@@ -482,7 +481,7 @@
 								<v-col cols="4">
 									<v-select
 										density="compact"
-										bg-color="white"
+										bg-color="surface"
 										:label="__('UOM')"
 										v-model="item.uom"
 										:items="item.item_uoms"
@@ -508,7 +507,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Rate')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:prefix="currencySymbol(pos_profile.currency)"
 										:model-value="formatCurrency(item.rate)"
@@ -533,7 +532,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Item Total')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:prefix="currencySymbol(pos_profile.currency)"
 										:model-value="formatCurrency(item.qty * item.rate || 0.0)"
@@ -563,7 +562,7 @@
 										variant="outlined"
 										color="primary"
 										label="Discount Percentage"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:rules="[isNumber]"
 										suffix="%"
@@ -589,7 +588,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Discount Amount')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:model-value="formatCurrency(item.discount_amount)"
 										:rules="[isNumber]"
@@ -613,7 +612,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Price list Rate')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:model-value="formatCurrency(item.price_list_rate)"
 										readonly
@@ -626,7 +625,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Available QTY')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:model-value="formatFloat(item.actual_qty)"
 										readonly
@@ -638,7 +637,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Group')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										v-model="item.item_group"
 										readonly
@@ -650,7 +649,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Stock QTY')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:model-value="formatFloat(item.stock_qty)"
 										readonly
@@ -662,7 +661,7 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Stock UOM')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										v-model="item.stock_uom"
 										readonly
@@ -678,41 +677,59 @@
 										class="shrink mr-2 mt-0"
 									></v-checkbox>
 								</v-col>
-								<v-col cols="4" v-if="item.has_serial_no == 1 || item.serial_no">
-									<v-text-field
-										density="compact"
-										variant="outlined"
-										color="primary"
-										:label="__('Serial No QTY')"
-										bg-color="white"
-										hide-details
-										v-model="item.serial_no_selected_count"
-										type="number"
-										readonly
-									></v-text-field>
-								</v-col>
-								<v-col cols="12" v-if="item.has_serial_no == 1 || item.serial_no">
-									<v-autocomplete
-										v-model="item.serial_no_selected"
-										:items="item.serial_no_data"
-										item-title="serial_no"
-										variant="outlined"
-										density="compact"
-										chips
-										color="primary"
-										small-chips
-										:label="__('Serial No')"
-										multiple
-										@update:model-value="set_serial_no(item)"
-									></v-autocomplete>
-								</v-col>
+									<v-col cols="4" v-if="item.has_serial_no == 1 || item.serial_no">
+										<v-text-field
+											density="compact"
+											variant="outlined"
+											color="primary"
+											:label="__('Serial No QTY')"
+											bg-color="surface"
+											hide-details
+											v-model="item.serial_no_selected_count"
+											type="number"
+											readonly
+										></v-text-field>
+									</v-col>
+									<v-col cols="12" v-if="item.has_serial_no == 1 || item.serial_no">
+										<v-combobox
+											v-if="pos_profile.posa_auto_stock_reconcile == 1"
+											v-model="item.serial_no_selected"
+											:items="item.serial_no_data"
+											item-title="serial_no"
+											item-value="serial_no"
+											variant="outlined"
+											density="compact"
+											chips
+											color="primary"
+											small-chips
+											:label="__('Serial No')"
+											multiple
+											@update:modelValue="set_serial_no(item, $event)"
+										></v-combobox>
+
+										<v-autocomplete
+											v-else
+											v-model="item.serial_no_selected"
+											:items="item.serial_no_data"
+											item-title="serial_no"
+											item-value="serial_no"
+											variant="outlined"
+											density="compact"
+											chips
+											color="primary"
+											small-chips
+											:label="__('Serial No')"
+											multiple
+											@update:modelValue="set_serial_no(item, $event)"
+										></v-autocomplete>
+									</v-col>
 								<v-col cols="4" v-if="item.has_batch_no == 1 || item.batch_no">
 									<v-text-field
 										density="compact"
 										variant="outlined"
 										color="primary"
 										:label="__('Batch No. Available QTY')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:model-value="formatFloat(item.actual_batch_qty)"
 										readonly
@@ -724,17 +741,19 @@
 										variant="outlined"
 										color="primary"
 										:label="__('Batch No Expiry Date')"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										v-model="item.batch_no_expiry_date"
 										readonly
 									></v-text-field>
 								</v-col>
 								<v-col cols="8" v-if="item.has_batch_no == 1 || item.batch_no">
-									<v-autocomplete
+									<v-combobox
+										v-if="pos_profile.posa_auto_stock_reconcile"
 										v-model="item.batch_no"
 										:items="item.batch_no_data"
 										item-title="batch_no"
+										item-value="batch_no"
 										variant="outlined"
 										density="compact"
 										color="primary"
@@ -742,15 +761,39 @@
 										@update:model-value="set_batch_qty(item, $event)"
 									>
 										<template v-slot:item="{ props, item }">
-											<v-list-item v-bind="props">
-												<v-list-item-title
-													v-html="item.raw.batch_no"
-												></v-list-item-title>
-												<v-list-item-subtitle
-													v-html="
-														`Available QTY  '${item.raw.batch_qty}' - Expiry Date ${item.raw.expiry_date}`
-													"
-												></v-list-item-subtitle>
+											<v-list-item v-bind="props" :title="null" :subtitle="null">
+												<v-list-item-title>
+													{{ item.raw.batch_no }}
+												</v-list-item-title>
+												<v-list-item-subtitle>
+													Available Qty: {{ item.raw.batch_qty }} - Expiry Date:
+													{{ item.raw.expiry_date }}
+												</v-list-item-subtitle>
+											</v-list-item>
+										</template>
+									</v-combobox>
+
+									<v-autocomplete
+										v-else
+										v-model="item.batch_no"
+										:items="item.batch_no_data"
+										item-title="batch_no"
+										item-value="batch_no"
+										variant="outlined"
+										density="compact"
+										color="primary"
+										:label="__('Batch No')"
+										@update:model-value="set_batch_qty(item, $event)"
+									>
+										<template v-slot:item="{ props, item }">
+											<v-list-item v-bind="props" :title="null" :subtitle="null">
+												<v-list-item-title>
+													{{ item.raw.batch_no }}
+												</v-list-item-title>
+												<v-list-item-subtitle>
+													Available Qty: {{ item.raw.batch_qty }} - Expiry Date:
+													{{ item.raw.expiry_date }}
+												</v-list-item-subtitle>
 											</v-list-item>
 										</template>
 									</v-autocomplete>
@@ -839,7 +882,7 @@
 										:items="sales_persons"
 										item-title="sales_person_name"
 										item-value="name"
-										bg-color="white"
+										bg-color="surface"
 										:no-data-text="__('Sales Person not found')"
 										hide-details
 										:customFilter="salesPersonFilter"
@@ -849,14 +892,14 @@
 												<v-list-item-title
 													class="text-primary text-subtitle-1"
 												>
-													<div v-html="item.raw.sales_person_name"></div>
+													<div>{{ item.raw.sales_person_name }}</div>
 												</v-list-item-title>
 												<v-list-item-subtitle
 													v-if="
 														item.raw.sales_person_name != item.raw.name
 													"
 												>
-													<div v-html="`ID: ${item.raw.name}`"></div>
+													<div>ID: {{ item.raw.name }}</div>
 												</v-list-item-subtitle>
 											</v-list-item>
 										</template>
@@ -868,7 +911,7 @@
 					<template v-slot:no-data>
 						<div class="empty-cart-state">
 							<div class="empty-cart-icon-wrapper">
-								<v-icon size="72" color="#00BCD4">mdi-cart-plus</v-icon>
+								<v-icon size="72" color="primary">mdi-cart-plus</v-icon>
 							</div>
 							<h3 class="empty-cart-title">{{ __("No items yet") }}</h3>
 							<p class="empty-cart-description">
@@ -876,15 +919,15 @@
 							</p>
 							<div class="empty-cart-hints">
 								<span
-									><v-icon size="14" color="#00BCD4">mdi-magnify</v-icon>
+									><v-icon size="14" color="primary">mdi-magnify</v-icon>
 									{{ __("Search") }}</span
 								>
 								<span
-									><v-icon size="14" color="#00BCD4">mdi-barcode-scan</v-icon>
+									><v-icon size="14" color="primary">mdi-barcode-scan</v-icon>
 									{{ __("Scan") }}</span
 								>
 								<span
-									><v-icon size="14" color="#00BCD4">mdi-gesture-tap</v-icon>
+									><v-icon size="14" color="primary">mdi-gesture-tap</v-icon>
 									{{ __("Click") }}</span
 								>
 							</div>
@@ -893,11 +936,10 @@
 				</v-data-table>
 			</div>
 		</v-card>
-		<v-card
-			class="cards mb-0 py-0 pospire-invoice-footer pos-footer-section"
-			:elevation="0"
-			style="border: 2px solid #00bcd4 !important"
-		>
+			<v-card
+				class="cards mb-0 py-0 pospire-invoice-footer pos-footer-section"
+				:elevation="0"
+			>
 			<v-row no-gutters>
 				<v-col cols="12" sm="6" class="pa-1">
 					<v-row no-gutters class="pa-1 pt-2 pr-1">
@@ -1104,20 +1146,28 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { call, unwrapStale } from "@/utils/call";
+import { TAX_CONFIG_CACHE_KEY_PREFIX } from "@/utils/call-registry";
 import format from "@/utils/format";
 import hardwareUtils from "@/utils/hardwareUtils";
 import Customer from "./Customer.vue";
 import ApprovalDialog from "./ApprovalDialog.vue";
 import { toast } from "vue3-toastify";
 import { datetime } from "@/utils/datetime";
+import connectivity from "@/offline/connectivity";
+import { computeOfflineTax } from "@/offline/tax";
 
+import busListeners from "@/utils/busListeners";
+import { loadSalesPersons, readStoredSalesPersons } from "@/utils/salesPersons";
 export default {
-	mixins: [format, hardwareUtils],
+	mixins: [format, hardwareUtils, busListeners],
 	data() {
 		return {
 			//
 			inclusive_tax: true,
+			// Cached tax config + last offline tax estimate (see @/offline/tax).
+			offline_tax_config: null,
+			offline_tax_supported: true,
 			sales_persons: [],
 			//
 			pos_profile: "",
@@ -1126,7 +1176,21 @@ export default {
 			invoice_doc: "",
 			return_doc: "",
 			customer: "",
+			// Set when the cart's customer was offline-created. Forwarded onto
+			// the invoice doc as `customer_offline_id`; server resolves to the
+			// real customer name when the customer outbox row syncs.
+			customer_offline_id: null,
 			customer_info: "",
+			// H4: true while the cashier has queued an offline closing for the
+			// current shift but it hasn't synced yet. Locks add_item +
+			// show_payment so new sales don't slip into a shift whose
+			// strict-closure parent_offline_ids list was already snapshotted.
+			shiftClosingPending: false,
+			// Lifecycle UUID of the shift `shiftClosingPending` refers to.
+			// Without it a `shift_closing_complete` for shift A would clear a
+			// lock that shift B put up — chained offline shifts are supported,
+			// so the two can be in flight at the same time.
+			closingPendingShiftId: null,
 			discount_amount: 0,
 			additional_discount_percentage: 0,
 			total_tax: 0,
@@ -1325,16 +1389,16 @@ export default {
 		// Sales Person
 		async get_sales_person_names() {
 			const vm = this;
-			if (vm.pos_profile.posa_local_storage && localStorage.sales_persons_storage) {
-				vm.sales_persons = JSON.parse(localStorage.getItem("sales_persons_storage"));
+			const persist = !!vm.pos_profile.posa_local_storage;
+			if (persist) {
+				const stored = readStoredSalesPersons();
+				if (stored) vm.sales_persons = stored;
 			}
-			const r = await call("pospire.pospire.api.posapp.get_sales_person_names");
-			if (r) {
-				vm.sales_persons = r;
-				if (vm.pos_profile.posa_local_storage) {
-					localStorage.setItem("sales_persons_storage", "");
-					localStorage.setItem("sales_persons_storage", JSON.stringify(r));
-				}
+			try {
+				const r = await loadSalesPersons({ persist });
+				if (r) vm.sales_persons = r;
+			} catch {
+				/* offline or network error — local cache already loaded above */
 			}
 		},
 
@@ -1842,7 +1906,7 @@ export default {
 				(!this.pos_profile.posa_auto_set_batch && new_item.has_batch_no) ||
 				new_item.has_serial_no
 			) {
-				this.expanded.push(new_item);
+				this.expanded.push(new_item.posa_row_id);
 			}
 			// Sales Person
 			new_item.sales_person = "";
@@ -1871,6 +1935,10 @@ export default {
 			this.eventBus.emit("set_pos_coupons", []);
 			this.posa_coupons = [];
 			this.customer = this.pos_profile.customer;
+			// Reset any offline_id from a previously-resolved offline customer.
+			// Without this, the next sale would carry a stale offline_id onto
+			// its invoice doc and the server would resolve to the wrong customer.
+			this.customer_offline_id = null;
 			this.invoice_doc = "";
 			this.return_doc = "";
 			this.discount_amount = 0;
@@ -1907,6 +1975,14 @@ export default {
 		},
 
 		async load_invoice(data = {}) {
+			// Offline draft: strip the provisional name so update_invoice doesn't
+			// try to PUT a doc that has never existed on the server. Remove it
+			// from the local store — it's been loaded into the cart now.
+			if (typeof data.name === "string" && data.name.startsWith("OFFLINE-DRAFT-")) {
+				this.removeLocalOfflineDraft(data.name);
+				data = { ...data, name: "" };
+			}
+
 			// clear_invoice cancels any Pending approvals from the previous cart.
 			// We pass submitted=false so orphaned Pending requests are cancelled.
 			this.clear_invoice();
@@ -1972,20 +2048,42 @@ export default {
 			}
 
 			const doc = this.get_invoice_doc();
+
+			// Offline path: persist the cart locally and clear — never call the
+			// server. update_invoice's network-error catch shows a "preparing
+			// payment" toast which is wrong here; bypassing it entirely avoids
+			// that misleading message. Drafts live in localStorage keyed by
+			// shift name and are surfaced by get_draft_invoices when offline.
+			if (!connectivity.isOnline()) {
+				this.savingDraft = true;
+				try {
+					return this.saveOfflineDraftAndClear(doc);
+				} finally {
+					this.savingDraft = false;
+				}
+			}
+
 			let old_invoice = null;
 			this.savingDraft = true;
 			try {
 				if (doc.name) {
-					old_invoice = await this.update_invoice(doc);
+					old_invoice = await this.update_invoice(doc, {
+						fallbackOnNetworkError: false,
+					});
 				} else {
 					if (doc.items.length) {
-						old_invoice = await this.update_invoice(doc);
+						old_invoice = await this.update_invoice(doc, {
+							fallbackOnNetworkError: false,
+						});
 					} else {
 						toast.error("Nothing to save");
 						return null;
 					}
 				}
 			} catch (error) {
+				if (this.isLikelyNetworkError(error)) {
+					return this.saveOfflineDraftAndClear(doc);
+				}
 				return null;
 			} finally {
 				this.savingDraft = false;
@@ -2019,6 +2117,7 @@ export default {
 				this.items = [];
 				this.deleted_items = [];
 				this.customer = this.pos_profile.customer;
+				this.customer_offline_id = null;
 				this.invoice_doc = "";
 				this.discount_amount = 0;
 				this.additional_discount_percentage = 0;
@@ -2062,6 +2161,58 @@ export default {
 			return old_invoice;
 		},
 
+		async load_offline_tax_config() {
+			const requestedProfile = this.pos_profile?.name;
+			if (!requestedProfile) return;
+			// Clear first: on a profile switch the catch below would otherwise
+			// leave the PREVIOUS profile's rates installed, and computeOfflineTax
+			// would happily price this profile's cart with them.
+			this.offline_tax_config = null;
+			try {
+				// Cached reads return a StaleReadResult wrapper; assigning it raw
+				// makes computeOfflineTax dereference an absent
+				// `sales_taxes_and_charges` and throw.
+				const config = unwrapStale(
+					await call({
+						method: "pospire.pospire.api.posapp.get_offline_tax_config",
+						args: { pos_profile: requestedProfile },
+						intent: "read",
+						// Per-profile durable key: one slot per POS Profile, so a
+						// profile switch can't serve the previous profile's rates.
+						cacheKey: TAX_CONFIG_CACHE_KEY_PREFIX + requestedProfile,
+					}),
+				);
+				// A slow response for a profile we've since switched away from
+				// must not overwrite the active profile's config.
+				if (config && this.pos_profile?.name === requestedProfile) {
+					this.offline_tax_config = config;
+				}
+			} catch {
+				// Non-fatal: offline tax falls back to the untaxed subtotal seed.
+			}
+		},
+
+		// Estimate cart tax from the cached config. Returns null when it can't be
+		// computed offline (no config / unsupported charge type).
+		compute_offline_taxes() {
+			const lines = this.items.map((item) => ({
+				net: flt(item.qty) * flt(item.rate),
+				item_tax_template: item.item_tax_template || null,
+			}));
+			// Taxable base = item net minus invoice discount (delivery is untaxed).
+			const netTotal = this.flt(
+				this.subtotal - (this.delivery_charges_rate || 0),
+				this.currency_precision,
+			);
+			const result = computeOfflineTax(lines, this.offline_tax_config, {
+				inclusive: this.inclusive_tax,
+				netTotal,
+				precision: this.currency_precision,
+			});
+			this.offline_tax_supported = result.supported;
+			return result.supported ? result : null;
+		},
+
 		get_invoice_doc() {
 			let doc = {};
 			if (this.invoice_doc?.name) {
@@ -2077,12 +2228,54 @@ export default {
 			doc.update_stock = this.pos_profile.update_stock ? 1 : 0;
 			doc.naming_series = doc.naming_series || this.pos_profile.naming_series;
 			doc.customer = this.customer;
+			// When the customer was offline-created, server-side
+			// `_resolve_customer_by_offline_id` rewrites the link to the real
+			// name once the customer outbox row syncs. Without this field the
+			// invoice payload's `customer` value is the OFFLINE-CUST-... name
+			// which the server can't insert as a doc link.
+			if (this.customer_offline_id) {
+				doc.customer_offline_id = this.customer_offline_id;
+			}
 			doc.items = this.get_invoice_items();
-			doc.total = this.subtotal;
+			// Seed totals locally (update_invoice is bypassed offline) so the
+			// cashier collects the right amount. `doc.taxes` stays empty on
+			// purpose: the server re-expands taxes on sync and stays authoritative.
+			const offlineTax = this.compute_offline_taxes();
+			if (offlineTax) {
+				const delivery = this.flt(this.delivery_charges_rate || 0, this.currency_precision);
+				const grand = this.flt(offlineTax.grand_total + delivery, this.currency_precision);
+				doc.total = offlineTax.net_total;
+				doc.net_total = offlineTax.net_total;
+				doc.total_taxes_and_charges = offlineTax.total_taxes_and_charges;
+				doc.grand_total = grand;
+				doc.rounded_total = grand;
+			} else {
+				// Can't compute tax: fall back to untaxed subtotal. show_payment
+				// blocks this offline for exclusive tax (would undercharge).
+				doc.total = this.subtotal;
+				doc.grand_total = this.subtotal;
+				doc.rounded_total = this.subtotal;
+				doc.net_total = this.subtotal;
+			}
 			doc.discount_amount = flt(this.discount_amount);
 			doc.additional_discount_percentage = flt(this.additional_discount_percentage);
 			doc.custom_delivery_charge_rate = this.delivery_charges_rate || 0;
 			doc.posa_pos_opening_shift = this.pos_opening_shift?.name || "";
+			// F2: when the current shift was opened offline, the `name` is the
+			// provisional `OFFLINE-OPN-...` and the real link is the offline_id.
+			// submit_invoice's adapter forwards this as `opening_entry_offline_id`
+			// to the server, which resolves to the real shift name on sync via
+			// `_resolve_opening_shift`. Without this field the server would
+			// either reject (parent_not_ready) or insert with a dangling link.
+			if (this.pos_opening_shift?.pos_offline_id) {
+				doc.pos_opening_shift_offline_id = this.pos_opening_shift.pos_offline_id;
+				// Separate the server reference from the local dependency: the
+				// id above always goes to the server, but only a still-queued
+				// opening has an outbox row to wait on.
+				doc.pos_opening_shift_pending_sync = Boolean(
+					this.pos_opening_shift.pospire_pending_sync,
+				);
+			}
 			doc.disable_rounded_total = this.pos_profile.disable_rounded_total ? 1 : 0;
 			doc.payments = this.get_payments();
 			doc.taxes = [];
@@ -2174,6 +2367,7 @@ export default {
 			this.items.forEach((item) => {
 				const new_item = {
 					item_code: item.item_code,
+					item_name: item.item_name,
 					posa_row_id: item.posa_row_id,
 					posa_offers: item.posa_offers,
 					posa_offer_applied: item.posa_offer_applied,
@@ -2192,6 +2386,8 @@ export default {
 					posa_notes: item.posa_notes,
 					posa_delivery_date: item.posa_delivery_date,
 					price_list_rate: item.price_list_rate,
+					// Forwarded so the server can re-derive item-level taxes on sync.
+					item_tax_template: item.item_tax_template || undefined,
 					// Sales Person
 					custom_sales_person: item.sales_person,
 					// Return item references (for sales returns)
@@ -2237,8 +2433,11 @@ export default {
 
 		get_payments() {
 			const payments = [];
-			this.pos_profile.payments.forEach((payment) => {
+			this.pos_profile.payments.forEach((payment, index) => {
 				payments.push({
+					// Offline rows skip the server, so seed the child-table idx
+					// that Payments.vue's set_full_amount/set_rest_amount key on.
+					idx: index + 1,
 					amount: 0,
 					mode_of_payment: payment.mode_of_payment,
 					default: payment.default,
@@ -2248,15 +2447,31 @@ export default {
 			return payments;
 		},
 
-		async update_invoice(doc) {
+		async update_invoice(doc, { fallbackOnNetworkError = true } = {}) {
 			var vm = this;
-			const r = await call("pospire.pospire.api.posapp.update_invoice", {
-				data: doc,
-			});
-			if (r) {
-				vm.invoice_doc = r;
+			try {
+				const r = await call("pospire.pospire.api.posapp.update_invoice", {
+					data: doc,
+				});
+				if (r) {
+					vm.invoice_doc = r;
+				}
+				return this.invoice_doc;
+			} catch (err) {
+				if (fallbackOnNetworkError && this.isLikelyNetworkError(err)) {
+					// `update_invoice` is live-only in the registry, so when the
+					// cashier is offline we fall back to the local cart snapshot
+					// and continue into the payment step. Final submit goes through
+					// `submit_invoice`, which is offline-capable and queueable.
+					toast.info(
+						__("Offline mode: preparing payment from local cart data."),
+					);
+					const localDoc = this.get_invoice_doc();
+					this.invoice_doc = localDoc;
+					return localDoc;
+				}
+				throw err;
 			}
-			return this.invoice_doc;
 		},
 
 		async update_invoice_from_order(doc) {
@@ -2279,6 +2494,27 @@ export default {
 			}
 		},
 
+		isLikelyNetworkError(err) {
+			if (!err) return false;
+			if (typeof err === "object") {
+				const maybe = err;
+				if (
+					typeof maybe.status === "number" ||
+					typeof maybe.statusCode === "number" ||
+					typeof maybe.httpStatus === "number"
+				) {
+					return false;
+				}
+			}
+			const msg = String(err?.message || err).toLowerCase();
+			return (
+				msg.includes("failed to fetch") ||
+				msg.includes("network") ||
+				msg.includes("connection refused") ||
+				msg.includes("offline")
+			);
+		},
+
 		async process_invoice_from_order() {
 			const doc = await this.get_invoice_from_order_doc();
 			var up_invoice;
@@ -2295,6 +2531,22 @@ export default {
 				return;
 			}
 
+			// H4: shift is closing-pending — refuse Pay so a new invoice
+			// can't slip in under a closed shift. The cashier should open a
+			// new shift (or void the closing in reconciliation if they
+			// changed their mind — reconcilePendingClosuresFromOutbox returns
+			// a voided shift to `open` and keeps its snapshot, so that really
+			// is a route back and not just a suggestion). Durable check, not
+			// the in-session flag: after a reload no event has fired.
+			if (await this.isShiftLocked()) {
+				toast.error(
+					__(
+						"This shift is closing. Open a new shift before submitting another invoice.",
+					),
+				);
+				return;
+			}
+
 			if (!this.customer) {
 				toast.error(__("Select a customer"));
 				return;
@@ -2303,6 +2555,20 @@ export default {
 			if (!this.items.length) {
 				toast.error(__("Select items to sell"));
 				return;
+			}
+
+			// Offline + exclusive tax we can't compute: block Pay to avoid
+			// undercharging. Inclusive is safe (price already includes tax).
+			if (!connectivity.isOnline() && !this.inclusive_tax) {
+				this.compute_offline_taxes();
+				if (!this.offline_tax_supported) {
+					toast.error(
+						__(
+							"Tax can't be calculated offline for this tax setup. Reconnect to take this payment.",
+						),
+					);
+					return;
+				}
 			}
 
 			if (!this.validate()) {
@@ -2315,17 +2581,24 @@ export default {
 				if (this.invoice_doc.doctype == "Sales Order") {
 					invoice_doc = await this.process_invoice_from_order();
 				} else if (this.invoice_doc.doctype == "Sales Invoice") {
-					const sales_invoice_item = this.invoice_doc.items[0];
+					const sales_invoice_item = this.invoice_doc.items?.[0];
 					let sales_invoice_item_doc = {};
-					const siChildResult = await call(
-						"pospire.pospire.api.posapp.get_sales_invoice_child_table",
-						{
-							sales_invoice: this.invoice_doc.name,
-							sales_invoice_item: sales_invoice_item.name,
-						},
-					);
-					if (siChildResult) {
-						sales_invoice_item_doc = siChildResult;
+					// Only query the child table when the invoice has already been
+					// saved server-side (has a real Frappe name) AND the first item
+					// has a server-side row name. A client-side-constructed doc
+					// (offline fallback, fresh offer cart) has name=undefined, which
+					// JSON.stringify strips to {}, causing a server-side TypeError.
+					if (this.invoice_doc.name && sales_invoice_item?.name) {
+						const siChildResult = await call(
+							"pospire.pospire.api.posapp.get_sales_invoice_child_table",
+							{
+								sales_invoice: this.invoice_doc.name,
+								sales_invoice_item: sales_invoice_item.name,
+							},
+						);
+						if (siChildResult) {
+							sales_invoice_item_doc = siChildResult;
+						}
 					}
 					if (sales_invoice_item_doc.sales_order) {
 						invoice_doc = await this.process_invoice_from_order();
@@ -2394,7 +2667,10 @@ export default {
 						}
 					}
 				}
-				if (this.stock_settings.allow_negative_stock != 1) {
+				if (
+					this.stock_settings.allow_negative_stock != 1 &&
+					!this.pos_profile.posa_auto_stock_reconcile
+				) {
 					if (
 						this.invoiceType == "Invoice" &&
 						((item.is_stock_item && item.stock_qty && !item.actual_qty) ||
@@ -2439,7 +2715,10 @@ export default {
 					}
 				}
 				if (item.has_batch_no) {
-					if (item.stock_qty > item.actual_batch_qty) {
+					if (
+						!this.pos_profile.posa_auto_stock_reconcile &&
+						item.stock_qty > item.actual_batch_qty
+					) {
 						toast.error(
 							__(`The existing batch quantity of item {0} is not enough`, [
 								item.item_name,
@@ -2512,13 +2791,109 @@ export default {
 			return value;
 		},
 
+		// ---------------------------------------------------------------------------
+		// Offline-draft localStorage helpers
+		// ---------------------------------------------------------------------------
+
+		_offlineDraftKey() {
+			const shiftKey =
+				this.pos_opening_shift?.pos_offline_id ||
+				this.pos_opening_shift?.name ||
+				"unknown";
+			return `pospire.offline_drafts.${shiftKey}`;
+		},
+
+		getLocalOfflineDrafts() {
+			try {
+				const raw = localStorage.getItem(this._offlineDraftKey());
+				const drafts = raw ? JSON.parse(raw) : [];
+				return Array.isArray(drafts) ? drafts : [];
+			} catch {
+				return [];
+			}
+		},
+
+		saveLocalOfflineDraft(doc) {
+			try {
+				const drafts = this.getLocalOfflineDrafts();
+				drafts.push(doc);
+				localStorage.setItem(this._offlineDraftKey(), JSON.stringify(drafts));
+				return true;
+			} catch {
+				return false;
+			}
+		},
+
+		removeLocalOfflineDraft(name) {
+			try {
+				const drafts = this.getLocalOfflineDrafts().filter((d) => d.name !== name);
+				localStorage.setItem(this._offlineDraftKey(), JSON.stringify(drafts));
+			} catch {
+				/* non-fatal */
+			}
+		},
+
+		saveOfflineDraftAndClear(doc) {
+			if (!doc.items?.length) {
+				toast.error(__("Nothing to save"));
+				return null;
+			}
+			const offlineId =
+				typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+					? crypto.randomUUID()
+					: this.makeid(20);
+			const draft = {
+				...doc,
+				name: `OFFLINE-DRAFT-${offlineId}`,
+				customer_name: this.invoice_doc?.customer_name || doc.customer || this.customer,
+				posting_time: new Date().toTimeString().slice(0, 8),
+			};
+			if (!this.saveLocalOfflineDraft(draft)) {
+				toast.error(
+					__(
+						"Could not save the offline draft on this device. The cart was not cleared.",
+					),
+				);
+				return null;
+			}
+			this.clear_invoice();
+			this.eventBus.emit("cart_emptied");
+			toast.info(
+				__("Draft saved offline. Load it from 'Load Draft Sale' while offline."),
+				{ autoClose: 4000 },
+			);
+			return draft;
+		},
+
+		// ---------------------------------------------------------------------------
+
 		async get_draft_invoices() {
 			var vm = this;
-			const r = await call("pospire.pospire.api.posapp.get_draft_invoices", {
-				pos_opening_shift: this.pos_opening_shift.name,
-			});
-			if (r) {
-				vm.eventBus.emit("open_drafts", r);
+			try {
+				const r = await call("pospire.pospire.api.posapp.get_draft_invoices", {
+					pos_opening_shift: this.pos_opening_shift.name,
+				});
+				if (r) {
+					vm.eventBus.emit("open_drafts", r);
+				}
+			} catch (err) {
+				if (this.isLikelyNetworkError(err) || !connectivity.isOnline()) {
+					// Offline or network error: fall back to locally saved drafts.
+					const localDrafts = vm.getLocalOfflineDrafts();
+					vm.eventBus.emit("open_drafts", localDrafts);
+					if (!localDrafts.length) {
+						toast.info(
+							__(
+								"You are offline. No drafts saved on this device for this shift.",
+							),
+							{ autoClose: 4000 },
+						);
+					}
+					return;
+				}
+				toast.error(
+					err && err.message ? err.message : __("Error loading draft invoices"),
+				);
 			}
 		},
 
@@ -2554,10 +2929,18 @@ export default {
 			}
 			var vm = this;
 			if (!vm.pos_profile) return;
-			const r = await call("pospire.pospire.api.posapp.get_items_details", {
-				pos_profile: vm.pos_profile,
-				items_data: items,
-			});
+			let r = null;
+			try {
+				r = await call("pospire.pospire.api.posapp.get_items_details", {
+					pos_profile: vm.pos_profile,
+					items_data: items,
+				});
+			} catch {
+				// Offline: keep the cart as-is. Stock/serial/batch enrichment
+				// is deferred until reconnect — the cart still totals using
+				// the cached item prices.
+				return;
+			}
 			if (r) {
 				items.forEach((item) => {
 					const updated_item = r.find(
@@ -2613,6 +2996,7 @@ export default {
 					update_stock: this.pos_profile.update_stock,
 					price_list: this.get_price_list(),
 					has_batch_no: item.has_batch_no,
+					has_serial_no: item.has_serial_no,
 					serial_no: item.serial_no,
 					batch_no: item.batch_no,
 					is_stock_item: item.is_stock_item,
@@ -2620,6 +3004,9 @@ export default {
 			}).then((r) => {
 				if (r) {
 					const data = r;
+					item.serial_no_data = data.serial_no_data || [];
+					item.serial_no_selected = item.serial_no_selected || [];
+					item.serial_no_selected_count = item.serial_no_selected.length;
 					if (data.batch_no_data) {
 						item.batch_no_data = data.batch_no_data;
 					}
@@ -2669,15 +3056,27 @@ export default {
 						(item.has_batch_no = data.has_batch_no),
 						vm.calc_item_price(item));
 				}
+			}).catch(() => {
+				// Offline: skip the per-item enrichment (price/stock/batch).
+				// The cart row already has price_list_rate from the cached
+				// items list; calc_item_price will use that.
+				vm.calc_item_price(item);
 			});
 		},
 
 		async fetch_customer_details() {
 			var vm = this;
 			if (this.customer) {
-				const r = await call("pospire.pospire.api.posapp.get_customer_info", {
-					customer: vm.customer,
-				});
+				let r = null;
+				try {
+					r = await call("pospire.pospire.api.posapp.get_customer_info", {
+						customer: vm.customer,
+					});
+				} catch {
+					// Offline: skip the customer-detail enrichment but still let
+					// the price-list update fall through using whatever info we
+					// already have.
+				}
 				if (r) {
 					vm.customer_info = {
 						...r,
@@ -2745,6 +3144,9 @@ export default {
 				// Subtract discount amount from item total and update RATE
 				item.rate = flt(item.rate) - flt(value);
 				item.discount_amount = this.flt(value, this.currency_precision);
+				// Cashier entered a discount larger than the item rate — floor
+				// at 0 instead of letting ERPNext reject the whole submit.
+				this.clamp_item_rate(item);
 
 				// Mark the item as modified
 				item.modified = true;
@@ -2806,9 +3208,33 @@ export default {
 				}
 			}
 
+			// Floor at 0 in case a typed-in discount_amount > price_list_rate
+			// or discount_percentage > 100 just got converted into a negative rate.
+			this.clamp_item_rate(item);
 			item.item_total = this.flt(flt(item.qty) * flt(item.rate), this.currency_precision);
 		},
 
+		/**
+		 * Floor item rate at 0 (and cap the related discount fields so totals
+		 * stay coherent) before ERPNext sees the row. Sales Invoice submit
+		 * runs `validate_qty` which throws a ValidationError on `rate < 0`
+		 * unless `Selling Settings.allow_negative_rates_for_items` is on.
+		 * Pospire-style retail expectation: a stacked offer can take a line
+		 * down to free, never below — so we clamp here rather than flip the
+		 * global flag.
+		 */
+		clamp_item_rate(item) {
+			if (flt(item.discount_percentage) > 100) {
+				item.discount_percentage = 100;
+			}
+			const priceListRate = flt(item.price_list_rate);
+			if (priceListRate > 0 && flt(item.discount_amount) > priceListRate) {
+				item.discount_amount = this.flt(priceListRate, this.currency_precision);
+			}
+			if (flt(item.rate) < 0) {
+				item.rate = 0;
+			}
+		},
 		calc_item_price(item) {
 			if (!item.posa_offer_applied) {
 				if (item.price_list_rate) {
@@ -2829,6 +3255,7 @@ export default {
 					this.currency_precision,
 				);
 			}
+			this.clamp_item_rate(item);
 		},
 
 		calc_uom(item, value) {
@@ -2892,22 +3319,32 @@ export default {
 			this.$forceUpdate();
 		},
 
-		set_serial_no(item) {
+		set_serial_no(item, value) {
+			if (value !== undefined) {
+				item.serial_no_selected = value || [];
+			}
 			if (!item.has_serial_no) return;
 			item.serial_no = "";
-			item.serial_no_selected.forEach((element) => {
-				item.serial_no += element + "\n";
+			const selected_serials = item.serial_no_selected || [];
+			selected_serials.forEach((element) => {
+				const serial_no =
+					element && typeof element === "object" ? element.serial_no : element;
+				if (serial_no) {
+					item.serial_no += serial_no + "\n";
+				}
 			});
-			item.serial_no_selected_count = item.serial_no_selected.length;
+			item.serial_no_selected_count = selected_serials.length;
 			if (item.serial_no_selected_count != item.stock_qty) {
-				item.qty = item.serial_no_selected_count;
+				const conversion_factor = flt(item.conversion_factor) || 1;
+				item.qty = item.serial_no_selected_count / conversion_factor;
 				this.calc_stock_qty(item, item.qty);
-				this.$forceUpdate();
 			}
+			this.$forceUpdate();
 		},
 
 		set_batch_qty(item, value, update = true) {
-			console.log(item, value);
+			const autoStockReconcile = !!this.pos_profile.posa_auto_stock_reconcile;
+			const selected_batch_no = value && typeof value === "object" ? value.batch_no : value;
 			const existing_items = this.items.filter(
 				(element) =>
 					element.item_code == item.item_code && element.posa_row_id != item.posa_row_id,
@@ -2934,7 +3371,7 @@ export default {
 			// 3. we should not use batch with remaining_qty = 0
 			// 4. we should the highest remaining_qty
 			const batch_no_data = Object.values(used_batches)
-				.filter((batch) => batch.remaining_qty > 0)
+				.filter((batch) => autoStockReconcile || batch.remaining_qty > 0)
 				.sort((a, b) => {
 					if (a.expiry_date && b.expiry_date) {
 						return a.expiry_date - b.expiry_date;
@@ -2954,11 +3391,29 @@ export default {
 				});
 			if (batch_no_data.length > 0) {
 				let batch_to_use = null;
-				if (value) {
-					batch_to_use = batch_no_data.find((batch) => batch.batch_no == value);
+				if (selected_batch_no) {
+					batch_to_use = batch_no_data.find(
+						(batch) => batch.batch_no == selected_batch_no,
+					);
+				}
+				if (!batch_to_use && autoStockReconcile && selected_batch_no) {
+					batch_to_use = {
+						batch_no: selected_batch_no,
+						batch_qty: 0,
+						expiry_date: null,
+						batch_price: null,
+					};
+				}
+				if (!batch_to_use && !autoStockReconcile) {
+					batch_to_use = batch_no_data[0];
 				}
 				if (!batch_to_use) {
-					batch_to_use = batch_no_data[0];
+					item.batch_no = selected_batch_no || null;
+					item.actual_batch_qty = null;
+					item.batch_no_expiry_date = null;
+					item.batch_price = null;
+					item.batch_no_data = batch_no_data;
+					return;
 				}
 				item.batch_no = batch_to_use.batch_no;
 				item.actual_batch_qty = batch_to_use.batch_qty;
@@ -2971,6 +3426,11 @@ export default {
 					item.batch_price = null;
 					this.update_item_detail(item);
 				}
+			} else if (autoStockReconcile && selected_batch_no) {
+				item.batch_no = selected_batch_no;
+				item.actual_batch_qty = 0;
+				item.batch_no_expiry_date = null;
+				item.batch_price = null;
 			} else {
 				item.batch_no = null;
 				item.actual_batch_qty = null;
@@ -3002,7 +3462,9 @@ export default {
 			if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
 				e.preventDefault();
 				this.expanded = [];
-				this.expanded.push(this.items[0]);
+				if (this.items[0]) {
+					this.expanded.push(this.items[0].posa_row_id);
+				}
 			}
 		},
 
@@ -3572,7 +4034,7 @@ export default {
 				(!this.pos_profile.posa_auto_set_batch && new_item.has_batch_no) ||
 				new_item.has_serial_no
 			) {
-				this.expanded.push(new_item);
+				this.expanded.push(new_item.posa_row_id);
 			}
 			this.update_item_detail(new_item);
 			return new_item;
@@ -3591,6 +4053,10 @@ export default {
 							item.discount_amount += offer.discount_amount;
 						}
 						item.posa_offer_applied = 1;
+						// `calc_item_price` recomputes rate from discount and clamps
+						// it at 0 (see clamp_item_rate). For "Rate" offers it also
+						// catches the rare case where offer.rate was misconfigured
+						// to a negative value.
 						this.calc_item_price(item);
 					}
 				}
@@ -3791,6 +4257,42 @@ export default {
 				this.delivery_charges_rate = 0;
 			}
 		},
+		/**
+		 * Durable lock check.
+		 *
+		 * `shiftClosingPending` is only the in-session signal: after a reload
+		 * no `shift_closing_pending` event has fired in this session, and the
+		 * cart must not accept items on a shift whose close is already queued.
+		 * So fall through to the shift row, keyed on the ACTIVE shift's
+		 * lifecycle UUID — isSellingBlocked() returns true only when that shift
+		 * is itself closing, never because some other shift is.
+		 *
+		 * The fast path must honour `closingPendingShiftId` for the same
+		 * reason. Relying on `register_pos_data` to clear the flag is not
+		 * enough: a shift change can arrive via `register_pos_profile` alone
+		 * (applyOpeningSnapshot(r) when the live response differs from the
+		 * cached snapshot), which would otherwise strand shift A's lock on
+		 * shift B. An unattributed lock (no id in the payload) still blocks —
+		 * we can't prove it belongs to another shift.
+		 */
+		async isShiftLocked() {
+			const activeId = this.pos_opening_shift?.pospire_lifecycle_id;
+			if (
+				this.shiftClosingPending &&
+				(!this.closingPendingShiftId || this.closingPendingShiftId === activeId)
+			) {
+				return true;
+			}
+			if (!activeId) return false;
+			try {
+				const { isSellingBlocked } = await import("@/offline/shift-lifecycle");
+				return await isSellingBlocked(activeId);
+			} catch {
+				// Fail open — never block a cashier from selling because of a
+				// storage error.
+				return false;
+			}
+		},
 	},
 
 	mounted() {
@@ -3798,19 +4300,24 @@ export default {
 		this.get_sales_person_names();
 		if (this.invoice_doc && this.invoice_doc.inclusive_tax === undefined) {
 			this.invoice_doc.inclusive_tax = this.inclusive_tax;
-		}
-		//
-		this.eventBus.on("register_pos_profile", (data) => {
-			this.pos_profile = data.pos_profile;
-			this.customer = data.pos_profile.customer;
-			this.pos_opening_shift = data.pos_opening_shift;
-			this.stock_settings = data.stock_settings;
-			this.float_precision = window.sys_defaults?.float_precision || 2;
-			this.currency_precision = window.sys_defaults?.currency_precision || 2;
-			this.invoiceType = this.pos_profile.posa_default_sales_order ? "Order" : "Invoice";
-			this.load_approval_config();
+			}
+			//
+			this.onBus("register_pos_profile", (data) => {
+				this.pos_profile = data.pos_profile;
+				this.customer = data.pos_profile.customer;
+				this.pos_opening_shift = data.pos_opening_shift;
+				// Closing-pending is NOT read off the snapshot any more — it
+				// lives on the durable shift row and is resolved lazily by
+				// isShiftLocked(), via this shift's `pospire_lifecycle_id`.
+				this.stock_settings = data.stock_settings;
+				this.float_precision = window.sys_defaults?.float_precision || 2;
+				this.currency_precision = window.sys_defaults?.currency_precision || 2;
+				this.invoiceType = this.pos_profile.posa_default_sales_order ? "Order" : "Invoice";
+				this.load_approval_config();
+				// Prime the tax config while online so it's cached for offline use.
+				this.load_offline_tax_config();
 		});
-		this.eventBus.on("auto_set_delivery_charge", () => {
+		this.onBus("auto_set_delivery_charge", () => {
 			if (this.delivery_charges.length > 0 && !this.selected_delivery_charge) {
 				// optionally pick based on is_default
 				const default_charge = this.delivery_charges.find((dc) => dc.is_default);
@@ -3818,19 +4325,93 @@ export default {
 				this.update_delivery_charges();
 			}
 		});
-		this.eventBus.on("add_item", (item) => {
+		this.onBus("add_item", async (item) => {
+			if (await this.isShiftLocked()) {
+				toast.warning(
+					__(
+						"This shift is closing. Its closing entry is queued. Open a new shift before ringing up another sale.",
+					),
+					{ autoClose: 5000 },
+				);
+				return;
+			}
 			this.add_item(item);
 		});
-		this.eventBus.on("update_customer", (customer) => {
+
+		// H4: Pos.vue emits this when the offline closing is queued (and
+		// again on reload, from the durable shift row). The lock applies only
+		// while the shift the cashier is actively on is itself closing — a
+		// closing-pending shift A must not lock selling on a freshly opened
+		// shift B, because chained offline shifts are supported and blocking
+		// them would halt sales during exactly the outage offline mode exists
+		// for. These three listeners are the fast in-session signal only;
+		// isShiftLocked() below is the durable answer.
+		this.onBus("shift_closing_pending", (payload) => {
+			this.closingPendingShiftId = payload?.shift_lifecycle_id ?? null;
+			this.shiftClosingPending = true;
+		});
+		this.onBus("shift_closing_complete", (payload) => {
+			if (
+				payload?.shift_lifecycle_id &&
+				this.closingPendingShiftId &&
+				payload.shift_lifecycle_id !== this.closingPendingShiftId
+			) {
+				return; // a different shift's closing resolved — stay locked
+			}
+			this.closingPendingShiftId = null;
+			this.shiftClosingPending = false;
+		});
+		this.onBus("register_pos_data", () => {
+			// A new shift was just opened, so whatever was closing is no longer
+			// the shift the cashier is on. Clearing the in-session flag hands
+			// the decision back to isShiftLocked(), which reads the NEW shift's
+			// row and correctly allows selling on it.
+			this.closingPendingShiftId = null;
+			this.shiftClosingPending = false;
+		});
+		this.onBus("update_customer", (customer) => {
+			// Customer.vue's watcher pairs `update_customer` with
+			// `update_customer_offline_id` in the same tick (it derives the
+			// offline_id from the customers list). So we MUST NOT reset
+			// offline_id here — doing so would erase the value the paired
+			// listener just set.
 			this.customer = customer;
 		});
-		this.eventBus.on("fetch_customer_details", () => {
+		this.onBus("update_customer_offline_id", (offlineId) => {
+			this.customer_offline_id = offlineId;
+		});
+
+		// When an offline-created customer finally syncs, Customer.vue's
+		// onSynced listener emits `customer_renamed` with the old provisional
+		// name and the new server doc name. Swap any in-memory references so
+		// the cart shows the real name and the customer_offline_id is no
+		// longer needed (the link is now stable). Future invoices reference
+		// the real name natively; the server-side `_resolve_customer_by_offline_id`
+		// path stays correct for any invoice already queued under the old id.
+		this.onBus("customer_renamed", ({ old_name, new_name } = {}) => {
+			if (!old_name || !new_name || old_name === new_name) return;
+			if (this.customer === old_name) {
+				this.customer = new_name;
+				// The offline_id link is no longer needed at the cart level —
+				// the customer is now a real server doc. Server-side resolution
+				// for already-queued invoices that captured the old offline_id
+				// continues to work unchanged.
+				this.customer_offline_id = null;
+			}
+			if (this.invoice_doc && this.invoice_doc.customer === old_name) {
+				this.invoice_doc.customer = new_name;
+				if (this.invoice_doc.customer_offline_id) {
+					this.invoice_doc.customer_offline_id = null;
+				}
+			}
+		});
+		this.onBus("fetch_customer_details", () => {
 			this.fetch_customer_details();
 		});
-		this.eventBus.on("clear_invoice", ({ submitted = false } = {}) => {
+		this.onBus("clear_invoice", ({ submitted = false } = {}) => {
 			this.clear_invoice({ submitted });
 		});
-		this.eventBus.on("load_invoice", (data) => {
+		this.onBus("load_invoice", (data) => {
 			this.load_invoice(data);
 			// Sales Person
 			this.items = data.items.map((item) => ({
@@ -3839,46 +4420,35 @@ export default {
 			}));
 			//
 		});
-		this.eventBus.on("load_order", (data) => {
+		this.onBus("load_order", (data) => {
 			this.new_order(data);
 			// this.eventBus.emit("set_pos_coupons", data.posa_coupons);
 		});
-		this.eventBus.on("set_offers", (data) => {
+		this.onBus("set_offers", (data) => {
 			this.posOffers = data;
 		});
-		this.eventBus.on("update_invoice_offers", (data) => {
+		this.onBus("update_invoice_offers", (data) => {
 			this.updateInvoiceOffers(data);
 		});
-		this.eventBus.on("update_invoice_coupons", (data) => {
+		this.onBus("update_invoice_coupons", (data) => {
 			this.posa_coupons = data;
 			this.handelOffers();
 		});
-		this.eventBus.on("set_all_items", (data) => {
+		this.onBus("set_all_items", (data) => {
 			this.allItems = data;
 			this.items.forEach((item) => {
 				this.update_item_detail(item);
 			});
 		});
-		this.eventBus.on("load_return_invoice", (data) => {
+		this.onBus("load_return_invoice", (data) => {
 			this.load_invoice(data.invoice_doc);
 			this.discount_amount = -data.return_doc.discount_amount;
 			this.additional_discount_percentage = -data.return_doc.additional_discount_percentage;
 			this.return_doc = data.return_doc;
 		});
-		this.eventBus.on("set_new_line", (data) => {
+		this.onBus("set_new_line", (data) => {
 			this.new_line = data;
 		});
-	},
-	beforeUnmount() {
-		this.eventBus.off("register_pos_profile");
-		this.eventBus.off("add_item");
-		this.eventBus.off("update_customer");
-		this.eventBus.off("fetch_customer_details");
-		this.eventBus.off("clear_invoice");
-		this.eventBus.off("set_offers");
-		this.eventBus.off("update_invoice_offers");
-		this.eventBus.off("update_invoice_coupons");
-		this.eventBus.off("set_all_items");
 	},
 	created() {
 		document.addEventListener("keydown", this.shortOpenPayment.bind(this));
@@ -3912,11 +4482,11 @@ export default {
 			if (data_value.length > 0) {
 				// Only update if item does not already have modified values
 				let expandedItem = this.items.find(
-					(i) => i.posa_row_id === data_value[0].posa_row_id,
+					(i) => i.posa_row_id === data_value[0],
 				);
 
 				if (expandedItem && !expandedItem.modified) {
-					this.update_item_detail(data_value[0]);
+					this.update_item_detail(expandedItem);
 				}
 			}
 		},
@@ -3953,7 +4523,7 @@ export default {
 
 <style scoped>
 .border_line_bottom {
-	border-bottom: 1px solid lightgray;
+	border-bottom: 1px solid var(--pospire-border);
 }
 
 .disable-events {
@@ -3995,24 +4565,24 @@ export default {
 	border: 2px solid var(--pospire-vibrant-teal) !important;
 	border-style: solid !important;
 	border-width: 2px !important;
-	border-color: #00bcd4 !important;
+	border-color: rgb(var(--v-theme-primary)) !important;
 	border-radius: 12px !important;
 	box-shadow: 0 4px 12px rgba(0, 188, 212, 0.15) !important;
 }
 
 /* Override v-card default border */
 :deep(.v-card.pospire-invoice-footer) {
-	border: 2px solid #00bcd4 !important;
+	border: 2px solid rgb(var(--v-theme-primary)) !important;
 	border-radius: 12px !important;
 }
 
 /* Items table styling */
 :deep(.v-data-table thead th) {
-	background: var(--pospire-light-gray) !important;
+	background: var(--pospire-surface-soft) !important;
 	font: var(--pospire-font-body-medium) !important;
-	color: var(--pospire-deep-slate) !important;
+	color: var(--pospire-text-primary) !important;
 	height: 40px !important;
-	border-bottom: 2px solid var(--pospire-border-gray) !important;
+	border-bottom: 2px solid var(--pospire-border) !important;
 }
 
 :deep(.v-data-table tbody tr) {
@@ -4020,11 +4590,11 @@ export default {
 }
 
 :deep(.v-data-table tbody tr:nth-child(even)) {
-	background: #fafafa;
+	background: var(--pospire-surface-soft);
 }
 
 :deep(.v-data-table tbody tr:hover) {
-	background: rgba(0, 188, 212, 0.05) !important;
+	background: var(--pospire-hover-bg) !important;
 }
 
 /* PAY button text styling */

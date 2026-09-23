@@ -10,7 +10,7 @@ app_email = "rajit@example.com"
 app_license = "GPLv3"
 required_apps = ["erpnext"]
 
-POSPIRE_COLOR = "#2563EB"
+POSPIRE_COLOR = "#0CC2D1"
 POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE = "POSpire Manager PIN"
 
 # Includes in <head>
@@ -20,8 +20,13 @@ POSPIRE_MANAGER_PIN_EMAIL_TEMPLATE = "POSpire Manager PIN"
 # app_include_css = "/assets/pospire/css/pos-enhancements.css"
 # app_include_js = ["pospire.bundle.js"]
 
+extend_bootinfo = "pospire.boot.extend_bootinfo"
+
 # Approval workflow desk notifications (runs on all desk pages for managers)
-app_include_js = ["/assets/pospire/js/pos_approval_desk.js"]
+app_include_js = [
+	"/assets/pospire/js/pos_approval_desk.js",
+	"/assets/pospire/js/pos_core_route_guard.js",
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/pospire/css/pospire.css"
@@ -34,7 +39,12 @@ app_include_js = ["/assets/pospire/js/pos_approval_desk.js"]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
-# SPA routing — serves pospire.html for all /pospire/* paths
+# SPA routing — serves pospire.html for all /pospire/* paths.
+# Service Worker assets (sw.js, offline.html) are served at root scope via
+# their own www/ page modules — see pospire/www/sw.{js,py} and
+# pospire/www/offline.{html,py}. No website_route_rules entry needed for
+# them because Frappe's TemplatePage resolver matches the URL filename
+# against pospire/www/<filename> directly.
 website_route_rules = [
 	{"from_route": "/pospire/<path:app_path>", "to_route": "pospire"},
 ]
@@ -44,6 +54,7 @@ doctype_js = {
 	"POS Profile": "pospire/api/pos_profile.js",
 	"Sales Invoice": "pospire/api/invoice.js",
 	"Company": "pospire/api/company.js",
+	"Payment Entry": "pospire/api/payment_entry.js",
 	"POS Manager PIN": "pospire/pospire/doctype/pos_manager_pin/pos_manager_pin.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -76,6 +87,7 @@ doctype_js = {
 # before_install = "pospire.install.before_install"
 # after_install = "pospire.install.after_install"
 after_install = "pospire.install.after_install"
+after_migrate = "pospire.install.after_migrate"
 boot_session = "pospire.install.fix_desktop_icon_on_boot"
 # before_uninstall = "pospire.uninstall.before_uninstall"
 after_uninstall = "pospire.uninstall.after_uninstall"
@@ -143,6 +155,13 @@ doc_events = {
 		"on_update": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
 		"on_trash": "pospire.pospire.utils.pos_server_cache.invalidate_pos_server_cache_from_doc",
 	},
+	# POS Offline Recovery Log is immutable post-insert (audit record).
+	# Immutability of captured fields is enforced by the class-level before_save
+	# hook in pos_offline_recovery_log.POSOfflineRecoveryLog; hook-level on_update
+	# would fire post-save where get_doc_before_save() is unreliable.
+	"POS Offline Recovery Log": {
+		"on_trash": "pospire.pospire.doctype.pos_offline_recovery_log.pos_offline_recovery_log.prevent_delete",
+	},
 }
 
 # Scheduled Tasks
@@ -172,6 +191,16 @@ scheduler_events = {
 			"pospire.pospire.api.approval.expire_stale_requests",
 		],
 	},
+	# P2-19 / P2-27: daily housekeeping for the recovery queue. The
+	# notifier runs first thing in the morning so SLA breaches surface
+	# during the working window; archival runs in the off-hours so the
+	# delete pass doesn't compete with cashier traffic.
+	"daily": [
+		"pospire.pospire.api.recovery.notify_sla_breaches",
+	],
+	"daily_long": [
+		"pospire.pospire.api.recovery.archive_old_recovery_rows",
+	],
 }
 
 # Testing
@@ -185,6 +214,11 @@ scheduler_events = {
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "pospire.event.get_events"
 # }
+
+override_whitelisted_methods = {
+	"frappe.desk.desk_page.getpage": "pospire.boot.getpage",
+	"frappe.desk.desktop.get_desktop_page": "pospire.workspace_filter.get_desktop_page",
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
@@ -324,6 +358,27 @@ fixtures = [
 					"Sales Invoice-custom_deleted_pos_items",
 					"POS Profile-custom_assortment",
 					"POS Profile-custom_denomination",
+					"Sales Invoice-pos_offline_id",
+					"Sales Invoice-pos_device_id",
+					"Sales Invoice-pos_opening_shift_offline_id",
+					"Sales Invoice-pos_material_receipt_offline_ids",
+					"POS Opening Shift-pos_offline_id",
+					"POS Opening Shift-pos_device_id",
+					"POS Opening Shift-pos_profile_snapshot_allow_negative_stock",
+					"POS Opening Shift-pos_profile_snapshot_allow_add_to_stock_at_pos",
+					"POS Closing Shift-pos_offline_id",
+					"POS Closing Shift-pos_device_id",
+					"POS Closing Shift-variance_at_close",
+					"POS Closing Shift-variance_at_sync",
+					"Stock Entry-pos_offline_id",
+					"Stock Entry-pos_device_id",
+					"Customer-pos_offline_id",
+					"POS Profile-posa_auto_stock_reconcile",
+					"POS Opening Shift-pos_profile_snapshot_auto_stock_reconcile",
+					"Stock Reconciliation-posa_pos_offline_id",
+					"Stock Reconciliation-posa_sales_invoice",
+					"Payment Entry-custom_pos_opening_shift",
+					"POS Opening Shift-custom_cancelled_count",
 				),
 			]
 		],

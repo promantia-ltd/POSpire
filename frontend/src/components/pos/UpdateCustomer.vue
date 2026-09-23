@@ -182,11 +182,16 @@
 
 <script>
 import { call } from "@/utils/call";
+import connectivity from "@/offline/connectivity";
 import { datetime } from "@/utils/datetime";
 import { playSound } from "@/utils/sounds";
 import { toast } from "vue3-toastify";
+import { putCustomer } from "@/offline/repos/customers";
+import { voidEntry as voidOutboxEntry } from "@/offline/outbox";
 
+import busListeners from "@/utils/busListeners";
 export default {
+	mixins: [busListeners],
 	data: () => ({
 		customerDialog: false,
 		submittingCustomer: false,
@@ -305,57 +310,62 @@ export default {
 			this.loyalty_points = null;
 			this.loyalty_program = null;
 		},
-		async getCustomerGroups() {
-			if (this.groups.length > 0 || this._fetchingGroups) return;
-			this._fetchingGroups = true;
-			try {
-				const data = await call("frappe.client.get_list", {
-					doctype: "Customer Group",
-					fields: ["name"],
-					filters: { is_group: 0 },
-					limit: 200,
-					order_by: "name",
-				});
-				if (data && data.length > 0) {
-					this.groups = data.map((el) => el.name);
-				}
-			} finally {
-				this._fetchingGroups = false;
+		/**
+		 * Loads the three reference lists (Customer Group / Territory /
+		 * Gender) used by this dialog's dropdowns from the offline-capable
+		 * endpoint. One round-trip instead of three, and the result is
+		 * cached for 12h via the registry's read-cache so subsequent opens
+		 * — including offline ones — don't refetch and the dropdowns
+		 * always have data to render.
+		 *
+		 * Falls back gracefully on offline + cold cache: the dropdowns
+		 * stay empty and the dialog still opens; the cashier sees a
+		 * "Territory not found" affordance rather than a crash.
+		 */
+		async loadCustomerFormOptions() {
+			if (this._fetchingFormOptions) return;
+			if (
+				this.groups.length > 0 &&
+				this.territorys.length > 0 &&
+				this.genders.length > 0
+			) {
+				return;
 			}
-		},
-		async getCustomerTerritorys() {
-			if (this.territorys.length > 0 || this._fetchingTerritories) return;
-			this._fetchingTerritories = true;
+			this._fetchingFormOptions = true;
 			try {
-				const data = await call("frappe.client.get_list", {
-					doctype: "Territory",
-					fields: ["name"],
-					filters: { is_group: 0 },
-					limit: 200,
-					order_by: "name",
+				const res = await call({
+					method: "pospire.pospire.api.offline.get_customer_form_options",
+					intent: "read",
+					cacheKey: "offline.customer_form_options",
 				});
-				if (data && data.length > 0) {
-					this.territorys = data.map((el) => el.name);
+				// Read calls served from the offline cache return a
+				// StaleReadResult<{...}> wrapper; live reads return the
+				// payload directly. Unwrap once so the rest of the method
+				// only deals with the inner shape.
+				const payload =
+					res && typeof res === "object" && "stale" in res && "data" in res
+						? res.data
+						: res;
+				if (!payload || typeof payload !== "object") return;
+				if (Array.isArray(payload.customer_groups)) {
+					this.groups = payload.customer_groups;
 				}
-			} finally {
-				this._fetchingTerritories = false;
-			}
-		},
-		async getGenders() {
-			if (this.genders.length > 0 || this._fetchingGenders) return;
-			this._fetchingGenders = true;
-			try {
-				const data = await call("frappe.client.get_list", {
-					doctype: "Gender",
-					fields: ["name"],
-					limit: 1000,
-					order_by: "name",
-				});
-				if (data && data.length > 0) {
-					this.genders = data.map((el) => el.name);
+				if (Array.isArray(payload.territories)) {
+					this.territorys = payload.territories;
 				}
+				if (Array.isArray(payload.genders)) {
+					this.genders = payload.genders;
+				}
+			} catch (err) {
+				// Offline + cold cache, or transient server issue. Leave
+				// the dropdowns empty rather than crashing the dialog.
+				// eslint-disable-next-line no-console
+				console.warn(
+					"[UpdateCustomer] loadCustomerFormOptions failed",
+					err,
+				);
 			} finally {
-				this._fetchingGenders = false;
+				this._fetchingFormOptions = false;
 			}
 		},
 		async submit_dialog() {
@@ -377,6 +387,19 @@ export default {
 				// If text is present but onBirthdayInput couldn't produce a valid Date, block.
 				if (!this.birthday) return;
 			}
+			// Edits ("update" path) are NOT offline-capable: the offline
+			// create_customer endpoint is create-only and would either fail or
+			// silently produce a duplicate. Block offline edits with a clear
+			// message; create still works offline via the adapter.
+			const isEdit = !!this.customer_id;
+			if (isEdit && !connectivity.isOnline()) {
+				toast.warning(
+					__("Editing an existing customer requires an online connection."),
+					{ autoClose: 4000 },
+				);
+				return;
+			}
+
 			this.submittingCustomer = true;
 			const args = {
 				customer_id: this.customer_id,
@@ -391,11 +414,120 @@ export default {
 				territory: this.territory,
 				customer_type: this.customer_type,
 				gender: this.gender,
-				method: this.customer_id ? "update" : "create",
+				method: isEdit ? "update" : "create",
 				pos_profile_doc: this.pos_profile,
 			};
 			try {
 				const r = await call("pospire.pospire.api.posapp.create_customer", args);
+
+				// Offline-enqueue ack: r.offline === true with provisional_name.
+				// We treat it as success so the cashier can keep working — the
+				// provisional name (OFFLINE-CUST-…) replaces r.name everywhere
+				// the customer is referenced until sync resolves it server-side.
+				if (r && r.offline === true && r.status === "enqueued") {
+					const provisionalName = r.provisional_name;
+					args.name = provisionalName;
+					args.pos_offline_id = r.offline_id;
+
+					// Persist the provisional row to the encrypted Dexie
+					// customers table BEFORE the eventBus emits + toast.
+					// The earlier code fire-and-forgot this — when it failed
+					// (Dexie quota / schema blip / corruption), the outbox
+					// row was already enqueued but the local picker had no
+					// row, so a reload would lose the customer and the
+					// cashier would re-create them. Two queued create_customer
+					// rows for the same person → two real Customer docs at
+					// sync.
+					//
+					// Failure mode now: AWAIT putCustomer; on failure, void
+					// the just-enqueued outbox entry so the orphan queue
+					// doesn't sync, surface a toast, and DON'T emit the
+					// eventBus events that put the customer in the cart.
+					// Cashier sees a clear failure message and can retry —
+					// no silent data loss.
+					try {
+						await putCustomer({
+							name: provisionalName,
+							customer_name: args.customer_name,
+							mobile_no: args.mobile_no || null,
+							tax_id: args.tax_id || null,
+							customer_group: args.customer_group || null,
+							email_id: args.email_id || null,
+							offline_created: true,
+							offline_id: r.offline_id,
+							cached_at: Date.now(),
+						});
+					} catch (err) {
+						console.warn(
+							"[UpdateCustomer] putCustomer failed; voiding orphan outbox entry",
+							err,
+						);
+						// Best-effort rollback. Note: this is NOT a true
+						// shared transaction — putCustomer and voidEntry
+						// are both Dexie writes, so a storage-level fault
+						// (quota exhausted, safe-mode, IndexedDB blocked)
+						// can fail BOTH. The toast copy below branches on
+						// the actual void outcome so the cashier doesn't
+						// get told the queue was rolled back when it
+						// wasn't. A real shared-transaction rewrite is
+						// tracked as a backlog item; this branching keeps
+						// the failure mode honest in the meantime.
+						let voidSucceeded = false;
+						try {
+							await voidOutboxEntry(
+								r.offline_id,
+								"local customer cache write failed; rolling back to avoid orphan queue",
+							);
+							voidSucceeded = true;
+						} catch (voidErr) {
+							console.warn(
+								"[UpdateCustomer] voidOutboxEntry failed during recovery — outbox row may need manual cleanup",
+								voidErr,
+							);
+						}
+						if (voidSucceeded) {
+							toast.error(
+								__(
+									"Customer create failed (local cache write). The queue was rolled back; please try again.",
+								),
+								{ autoClose: 5000 },
+							);
+						} else {
+							// Both Dexie writes failed — likely device
+							// storage is unhealthy. The cashier's queue
+							// has an orphan entry that needs manual
+							// cleanup (manager-side via the recovery
+							// queue once it reaches the server, or
+							// dev-console deletion if it never does).
+							// Surface the offline_id so support has a
+							// concrete handle.
+							toast.error(
+								__(
+									"Customer create failed AND rollback failed. Local storage may be unhealthy. Contact support; reference offline_id {0}.",
+									[r.offline_id],
+								),
+								{ autoClose: 8000 },
+							);
+						}
+						this.submittingCustomer = false;
+						return;
+					}
+
+					toast.info(
+						__("Customer queued offline. It will sync when online."),
+						{ autoClose: 3000 },
+					);
+					playSound("submit");
+
+					// add_customer_to_list MUST fire before set_customer so the
+					// new entry is in the list when Customer.vue's watcher
+					// derives offline_id by name lookup.
+					this.eventBus.emit("add_customer_to_list", args);
+					this.eventBus.emit("set_customer", provisionalName);
+					this.close_dialog();
+					return;
+				}
+
 				if (r && r.name) {
 					const text = this.customer_id
 						? __("Customer Updated Successfully.")
@@ -427,18 +559,16 @@ export default {
 		},
 	},
 	created: function () {
-		// Non-reactive in-flight flags — prevent duplicate concurrent API calls
-		// if the dialog is opened again before the first fetch resolves.
-		this._fetchingGroups = false;
-		this._fetchingTerritories = false;
-		this._fetchingGenders = false;
+		// Non-reactive in-flight flag — prevents duplicate concurrent fetches
+		// if the dialog is opened again before the first request resolves.
+		this._fetchingFormOptions = false;
 
-		this.eventBus.on("open_update_customer", (data) => {
+		this.onBus("open_update_customer", (data) => {
 			this.customerDialog = true;
-			// Lazy-load reference data on first open only
-			this.getCustomerGroups();
-			this.getCustomerTerritorys();
-			this.getGenders();
+			// Lazy-load reference data on first open only. Pos.vue
+			// pre-warms the same cache on shift-open so this is usually a
+			// cache hit (including when offline).
+			this.loadCustomerFormOptions();
 			if (data) {
 				// Update mode: populate every field directly from the selected customer
 				this.customer_id = data.name;
@@ -460,20 +590,15 @@ export default {
 				this.clear_customer();
 			}
 		});
-		this.eventBus.on("register_pos_profile", (data) => {
+		this.onBus("register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
 		});
-		this.eventBus.on("payments_register_pos_profile", (data) => {
+		this.onBus("payments_register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
 		});
 		// set default values for customer group and territory from user defaults
 		this.group = window.user_defaults?.["Customer Group"] || "";
 		this.territory = window.user_defaults?.["Territory"] || "";
-	},
-	beforeUnmount() {
-		this.eventBus.off("open_update_customer");
-		this.eventBus.off("register_pos_profile");
-		this.eventBus.off("payments_register_pos_profile");
 	},
 };
 </script>

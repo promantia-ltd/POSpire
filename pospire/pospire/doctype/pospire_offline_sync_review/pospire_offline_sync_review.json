@@ -1,0 +1,374 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-05-05 00:00:00.000000",
+ "description": "Server-side review queue for offline-queued cashier writes that the scheduler classified as needs_review. Owned by Sales Manager / System Manager — cashiers do not see or edit these rows. The cashier's local outbox keeps a tombstone for dependency-graph integrity (parent_offline_ids, shift_offline_id) until the row resolves here.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_identity",
+  "naming_series",
+  "offline_id",
+  "entry_type",
+  "col_break_identity",
+  "status",
+  "cashier_user",
+  "device_id",
+  "section_origin",
+  "posting_date",
+  "shift_offline_id",
+  "col_break_origin",
+  "parent_offline_ids",
+  "client_build_hash",
+  "schema_version",
+  "section_error",
+  "error_category",
+  "attempt_count",
+  "col_break_error",
+  "last_attempt_at",
+  "error_detail",
+  "section_payload",
+  "original_payload",
+  "original_payload_hash",
+  "payload",
+  "payload_hash",
+  "section_resolution",
+  "resolved_doctype",
+  "resolved_doc_name",
+  "legal_hold",
+  "col_break_resolution",
+  "reviewer_user",
+  "reviewer_notes",
+  "legal_hold_reason",
+  "section_audit",
+  "activity",
+  "edits"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_identity",
+   "fieldtype": "Section Break",
+   "label": "Identity"
+  },
+  {
+   "default": "OSR-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "OSR-.YYYY.-",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "description": "UUID v4 stamped by the cashier device at enqueue time. Globally unique within this site. The doctype enforces uniqueness so a duplicate handoff is a no-op idempotent return.",
+   "fieldname": "offline_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Offline ID",
+   "read_only": 1,
+   "reqd": 1,
+   "set_only_once": 1,
+   "unique": 1
+  },
+  {
+   "description": "Which outbox endpoint the entry was queued against. Mirrors the client's `OutboxType` taxonomy (see frontend/src/offline/types.ts) so round-tripping a row between cashier device and server keeps the type stable. Drives which `pospire.pospire.api.offline.*` method `recovery.retry` invokes on replay.",
+   "fieldname": "entry_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Entry Type",
+   "options": "invoice\ncustomer\nmaterial_receipt\nopening_entry\nclosing_entry\nreturn",
+   "read_only": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "col_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending Review",
+   "description": "State machine: Pending Review -> In Review -> Retrying -> Resolved or Voided. Retry failure transitions back to Pending Review with attempt_count incremented.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending Review\nIn Review\nRetrying\nResolved\nVoided",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "description": "The cashier user who originated the queued write. Replay impersonates this user via `_acting_as_user` so attribution stays with them — the manager is recorded separately as reviewer_user.",
+   "fieldname": "cashier_user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Cashier",
+   "options": "User",
+   "read_only": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "description": "Device identifier set at enqueue time. Useful for diagnosing device-specific failure clusters (e.g. a single iPad with a broken offer config).",
+   "fieldname": "device_id",
+   "fieldtype": "Data",
+   "label": "Device ID",
+   "read_only": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "section_origin",
+   "fieldtype": "Section Break",
+   "label": "Origin"
+  },
+  {
+   "description": "P-11: posting_date snapshotted at enqueue time. Replay uses this, NOT today.",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Posting Date",
+   "read_only": 1,
+   "set_only_once": 1
+  },
+  {
+   "description": "offline_id of the POS Opening Shift this entry posts to. Required for invoices and closing entries — drives shift validation on replay.",
+   "fieldname": "shift_offline_id",
+   "fieldtype": "Data",
+   "label": "Shift Offline ID",
+   "read_only": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "col_break_origin",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "JSON array of offline_ids this entry depends on (e.g. closing depends on its sibling invoices). The local cashier outbox keeps tombstones until ALL parents resolve here, preserving the dependency graph.",
+   "fieldname": "parent_offline_ids",
+   "fieldtype": "Long Text",
+   "label": "Parent Offline IDs (JSON)",
+   "read_only": 1,
+   "set_only_once": 1
+  },
+  {
+   "description": "Build hash of the client that queued this entry. Lets ops correlate failures with a known-bad client version when a fleet-wide schema change rolls out.",
+   "fieldname": "client_build_hash",
+   "fieldtype": "Data",
+   "label": "Client Build Hash",
+   "read_only": 1,
+   "set_only_once": 1
+  },
+  {
+   "default": "1",
+   "description": "Schema version of the queued payload. Bumped when the offline_id contract changes server-side; recovery.retry refuses to replay if the server's expected version doesn't match.",
+   "fieldname": "schema_version",
+   "fieldtype": "Int",
+   "label": "Schema Version",
+   "read_only": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "section_error",
+   "fieldtype": "Section Break",
+   "label": "Last Error"
+  },
+  {
+   "description": "Stable category from the offline error taxonomy (`permission_error`, `accounting_period_closed`, `parent_not_ready`, `customer_missing`, etc). Drives the manager UI's per-category guidance.",
+   "fieldname": "error_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Error Category",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Attempts the scheduler made before classifying this entry as needs_review, plus any manager-driven retries here.",
+   "fieldname": "attempt_count",
+   "fieldtype": "Int",
+   "label": "Attempt Count",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_error",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_attempt_at",
+   "fieldtype": "Datetime",
+   "label": "Last Attempt At",
+   "read_only": 1
+  },
+  {
+   "description": "Server-supplied error detail from the failing replay. Truncated to a sensible length to keep the row under MariaDB row-size limits; the full traceback is in Error Log keyed by offline_id.",
+   "fieldname": "error_detail",
+   "fieldtype": "Long Text",
+   "label": "Error Detail",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_payload",
+   "fieldtype": "Section Break",
+   "label": "Payload"
+  },
+  {
+   "description": "Verbatim payload as the cashier device queued it. Immutable after handoff — this is the audit-grade record. If the manager ever needs to edit (phase 2), the working copy goes into `payload`; this field is never overwritten.",
+   "fieldname": "original_payload",
+   "fieldtype": "Long Text",
+   "label": "Original Payload (immutable)",
+   "read_only": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "description": "sha256 of original_payload at handoff time. Tamper detection — if this doesn't match recompute(original_payload), something has rewritten the doctype row outside the supported flow.",
+   "fieldname": "original_payload_hash",
+   "fieldtype": "Data",
+   "label": "Original Payload Hash",
+   "read_only": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "description": "Working copy used by recovery.retry. Identical to original_payload at handoff; phase 2 may allow targeted edits here. Edits are tracked via Activity rows and require reviewer_notes.",
+   "fieldname": "payload",
+   "fieldtype": "Long Text",
+   "label": "Working Payload",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "description": "sha256 of `payload`. If equal to original_payload_hash, the working copy hasn't been edited.",
+   "fieldname": "payload_hash",
+   "fieldtype": "Data",
+   "label": "Payload Hash",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_resolution",
+   "fieldtype": "Section Break",
+   "label": "Resolution"
+  },
+  {
+   "description": "Server doctype the resolved payload was inserted into (Sales Invoice, Customer, Stock Entry, etc). Populated when status transitions to Resolved.",
+   "fieldname": "resolved_doctype",
+   "fieldtype": "Link",
+   "label": "Resolved Doctype",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "description": "Resolved server document name. Dynamic Link target is `resolved_doctype` so this field can point to Sales Invoice, Customer, etc.",
+   "fieldname": "resolved_doc_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Resolved Doc Name",
+   "options": "resolved_doctype",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "P2-22 — when checked, the daily auto-archive job (P2-27) will skip this row regardless of age or terminal status. Use for entries under audit / dispute / legal subpoena. Only System Manager can flip the flag.",
+   "fieldname": "legal_hold",
+   "fieldtype": "Check",
+   "label": "Legal Hold",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "col_break_resolution",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Manager who acted (retry/void). Distinct from cashier_user — recovery actions are attributed to the manager, the underlying transaction stays attributed to the cashier.",
+   "fieldname": "reviewer_user",
+   "fieldtype": "Link",
+   "label": "Reviewer",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "description": "Free-form note required when voiding. Optional on retry.",
+   "fieldname": "reviewer_notes",
+   "fieldtype": "Small Text",
+   "label": "Reviewer Notes"
+  },
+  {
+   "description": "Required when legal_hold is checked — captures the reason (incident reference, audit case ID, dispute number) so the hold can be reconciled later. Stored verbatim; not redacted by archival.",
+   "fieldname": "legal_hold_reason",
+   "fieldtype": "Small Text",
+   "label": "Legal Hold Reason",
+   "depends_on": "eval:doc.legal_hold",
+   "mandatory_depends_on": "eval:doc.legal_hold"
+  },
+  {
+   "fieldname": "section_audit",
+   "fieldtype": "Section Break",
+   "label": "Audit Log"
+  },
+  {
+   "description": "Append-only audit trail. Every handoff, retry, void, and note action writes a row here. Rows are never edited or deleted.",
+   "fieldname": "activity",
+   "fieldtype": "Table",
+   "label": "Activity",
+   "options": "POSpire Offline Sync Review Activity",
+   "read_only": 1
+  },
+  {
+   "description": "Field-level edit history. Each manager-driven payload mutation writes one row per changed field with before/after values, the reviewer's reason, and editor identity. Distinct from Activity (action-level) — Edits describe WHAT changed inside the payload.",
+   "fieldname": "edits",
+   "fieldtype": "Table",
+   "label": "Edit History",
+   "options": "POSpire Offline Sync Review Edit",
+   "read_only": 1
+  }
+ ],
+ "in_create": 0,
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-05-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POSpire Offline Sync Review",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "offline_id",
+ "track_changes": 1
+}

@@ -1,14 +1,20 @@
 /**
- * Re-exports frappe-ui's call() function.
+ * DEPRECATED — this file is superseded by `./call.ts`.
  *
- * Usage in components:
- *   import { call } from "@/utils/call";
- *   const result = await call("pospire.pospire.api.posapp.get_items", args);
+ * Vite's resolver (see `frontend/vite.config.js`) is configured to prefer
+ * `.ts` over `.js` at the same base path, so every `import ... from
+ * "@/utils/call"` resolves to `call.ts`. This file is retained only to make
+ * the rollback easy if the TS wrapper needs to be temporarily disabled; it
+ * should be deleted once Phase 1 is merged to `version_16_dev`.
  *
- * BACKLOG: Evaluate replacing this thin wrapper with a direct
- * `import { call } from "frappe-ui"` in each component once the team
- * has done a thorough analysis of frappe-ui's full API surface and
- * whether any other frappe-ui utilities (createResource, etc.) should
- * be adopted across the codebase.
+ * The `eslint-disable` is a guard: this file is in the override exception
+ * list for `no-restricted-imports`, and we intentionally re-export the
+ * wrapped implementation here so that if Vite's resolution ever misbehaves
+ * and picks the `.js` we still get a working (if un-type-checked) wrapper.
  */
-export { call } from "frappe-ui";
+/* eslint-disable no-restricted-imports */
+
+// Explicit extension — forces Vite/esbuild to load the TS sibling instead
+// of re-resolving back to this file and forming a cycle.
+export * from "./call.ts";
+export { default } from "./call.ts";

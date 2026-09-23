@@ -1,0 +1,45 @@
+{
+ "actions": [],
+ "creation": "2026-07-15 00:00:00.000000",
+ "description": "Global layout for the POS shift dashboard. Widgets render in row order; disabled rows are hidden.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_layout",
+  "widgets"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_layout",
+   "fieldtype": "Section Break",
+   "label": "Dashboard Layout"
+  },
+  {
+   "fieldname": "widgets",
+   "fieldtype": "Table",
+   "label": "Widgets",
+   "options": "POS Dashboard Widget"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POS Dashboard Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC"
+}

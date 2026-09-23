@@ -1,0 +1,222 @@
+{
+ "actions": [],
+ "autoname": "format:OFFLINE-BCN-{YY}-{#######}",
+ "creation": "2026-04-28 00:00:00.000000",
+ "description": "Per-device 5-minute health beacon for the POSpire offline pipeline (B5). Source for the central observability dashboard (B6). Records auto-purge after 14 days; the latest row per device is kept indefinitely so a long-offline device's last-known state is still visible.",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "device_id",
+  "beacon_at",
+  "online",
+  "column_break_a",
+  "outlet",
+  "user",
+  "active_shift",
+  "section_queue",
+  "queue_depth",
+  "in_flight",
+  "needs_review",
+  "handed_off",
+  "column_break_b",
+  "oldest_minutes",
+  "oldest_handed_off_minutes",
+  "last_sync_at",
+  "last_sync_outcome",
+  "section_build",
+  "sw_build_hash",
+  "spa_user_agent"
+ ],
+ "fields": [
+  {
+   "fieldname": "device_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Device ID",
+   "length": 64,
+   "reqd": 1,
+   "search_index": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "beacon_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Beacon At",
+   "reqd": 1,
+   "search_index": 1,
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "online",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Online",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "outlet",
+   "fieldtype": "Data",
+   "label": "Outlet",
+   "length": 140,
+   "in_standard_filter": 1,
+   "read_only": 1,
+   "description": "Free-form outlet/store identifier from the POS Profile."
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "active_shift",
+   "fieldtype": "Data",
+   "label": "Active Shift",
+   "length": 140,
+   "read_only": 1,
+   "description": "POS Opening Shift name (or OFFLINE-OPN-... if still queued)."
+  },
+  {
+   "fieldname": "section_queue",
+   "fieldtype": "Section Break",
+   "label": "Outbox Health"
+  },
+  {
+   "default": "0",
+   "fieldname": "queue_depth",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Queue Depth",
+   "non_negative": 1,
+   "read_only": 1,
+   "description": "Pending + retry-pending outbox rows."
+  },
+  {
+   "default": "0",
+   "fieldname": "in_flight",
+   "fieldtype": "Int",
+   "label": "In Flight",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "needs_review",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Needs Review",
+   "non_negative": 1,
+   "read_only": 1,
+   "description": "Local rows that failed terminally and have NOT yet been handed off to the server-side review queue. A non-zero value here for a device that's online means the handoff endpoint is unreachable or returning errors — investigate."
+  },
+  {
+   "default": "0",
+   "fieldname": "handed_off",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "With Manager",
+   "non_negative": 1,
+   "read_only": 1,
+   "description": "Local tombstone rows whose POSpire Offline Sync Review entry is still Pending Review / In Review / Retrying. The cashier is waiting for a manager to act."
+  },
+  {
+   "fieldname": "column_break_b",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "oldest_minutes",
+   "fieldtype": "Int",
+   "label": "Oldest Pending (min)",
+   "non_negative": 1,
+   "read_only": 1,
+   "description": "Age of the oldest pending row, null if queue is empty."
+  },
+  {
+   "fieldname": "oldest_handed_off_minutes",
+   "fieldtype": "Int",
+   "label": "Oldest With Manager (min)",
+   "non_negative": 1,
+   "read_only": 1,
+   "description": "Age of the oldest handed-off tombstone, null if none. Operational alert signal — entries with no resolution after a reasonable SLA need ops follow-up with the assigned managers."
+  },
+  {
+   "fieldname": "last_sync_at",
+   "fieldtype": "Datetime",
+   "label": "Last Sync At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_sync_outcome",
+   "fieldtype": "Select",
+   "label": "Last Sync Outcome",
+   "options": "\nsuccess\npartial\nfailure",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_build",
+   "fieldtype": "Section Break",
+   "label": "Client Build"
+  },
+  {
+   "fieldname": "sw_build_hash",
+   "fieldtype": "Data",
+   "label": "SW Build Hash",
+   "length": 32,
+   "read_only": 1,
+   "description": "vite-plugin-sw build hash. Helps spot devices on stale clients."
+  },
+  {
+   "fieldname": "spa_user_agent",
+   "fieldtype": "Data",
+   "label": "SPA User-Agent",
+   "length": 240,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-04-28 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POS Offline Beacon",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1,
+   "delete": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "share": 1
+  }
+ ],
+ "sort_field": "beacon_at",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

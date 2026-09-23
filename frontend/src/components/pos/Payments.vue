@@ -13,8 +13,8 @@
 				<div class="mb-4 blue-grey-lighten-5" v-if="invoice_doc">
 					<v-card variant="flat" class="mb-3 section-header">
 						<v-card-title class="section-header-title font-weight-bold">
-							<v-icon start size="20" color="#00BCD4">mdi-cash-multiple</v-icon>
-							<span style="color: #34495e">Payment Summary</span>
+							<v-icon start size="20" color="primary">mdi-cash-multiple</v-icon>
+							<span class="section-title-text">Payment Summary</span>
 						</v-card-title>
 					</v-card>
 					<v-row class="mb-2">
@@ -23,7 +23,7 @@
 								variant="outlined"
 								color="primary"
 								:label="__('Paid Amount')"
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								:model-value="formatCurrency(total_payments)"
 								readonly
@@ -36,7 +36,7 @@
 								variant="outlined"
 								color="primary"
 								:label="__(diff_lable)"
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								:model-value="formatCurrency(diff_payment)"
 								readonly
@@ -51,8 +51,8 @@
 				<div class="mb-4" v-if="diff_payment < 0 && !invoice_doc.is_return">
 					<v-card variant="flat" class="mb-3 section-header">
 						<v-card-title class="section-header-title font-weight-bold">
-							<v-icon start size="20" color="#00BCD4">mdi-cash-refund</v-icon>
-							<span style="color: #34495e">Change Details</span>
+							<v-icon start size="20" color="primary">mdi-cash-refund</v-icon>
+							<span class="section-title-text">Change Details</span>
 						</v-card-title>
 					</v-card>
 					<v-row>
@@ -61,7 +61,7 @@
 								variant="outlined"
 								color="primary"
 								:label="__('Paid Change')"
-								bg-color="white"
+								bg-color="surface"
 								v-model="paid_change"
 								@update:model-value="set_paid_change()"
 								:prefix="currencySymbol(invoice_doc.currency)"
@@ -77,7 +77,7 @@
 								variant="outlined"
 								color="primary"
 								:label="__('Credit Change')"
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								:model-value="formatCurrency(credit_change)"
 								readonly
@@ -94,8 +94,8 @@
 				<div class="mb-4" v-if="show_payment_methods">
 					<v-card variant="flat" class="mb-3 section-header">
 						<v-card-title class="section-header-title font-weight-bold">
-							<v-icon start size="20" color="#00BCD4">mdi-credit-card</v-icon>
-							<span style="color: #34495e">Payment Methods</span>
+							<v-icon start size="20" color="primary">mdi-credit-card</v-icon>
+							<span class="section-title-text">Payment Methods</span>
 						</v-card-title>
 					</v-card>
 					<v-row
@@ -109,7 +109,7 @@
 								variant="outlined"
 								color="primary"
 								:label="__(payment.mode_of_payment)"
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								v-model="payment.amount"
 								:rules="[isNumber]"
@@ -137,10 +137,9 @@
 								size="large"
 								rounded="md"
 								class="payment-method-btn"
-								style="color: #34495e; border-color: #e0e0e0"
 								@click="set_full_amount(payment.idx)"
 							>
-								<v-icon start size="20" color="#00BCD4">mdi-cash</v-icon>
+								<v-icon start size="20" color="primary">mdi-cash</v-icon>
 								{{ payment.mode_of_payment }}
 							</v-btn>
 						</v-col>
@@ -190,29 +189,29 @@
 				</div>
 
 				<v-row
-					class="pyments px-1 py-0"
+					class="pyments loyalty-redemption-row px-1"
 					v-if="invoice_doc && available_pioints_amount > 0 && !invoice_doc.is_return"
 				>
-					<v-col cols="7">
+					<v-col cols="12" sm="7" class="py-1">
 						<v-text-field
 							density="compact"
 							variant="outlined"
 							color="primary"
 							:label="__('Redeem Loyalty Points')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							v-model="loyalty_amount"
 							type="number"
 							:prefix="currencySymbol(invoice_doc.currency)"
 						></v-text-field>
 					</v-col>
-					<v-col cols="5">
+					<v-col cols="12" sm="5" class="py-1">
 						<v-text-field
 							density="compact"
 							variant="outlined"
 							color="primary"
 							:label="__('You can redeem upto')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="formatFloat(available_pioints_amount)"
 							:prefix="currencySymbol(invoice_doc.currency)"
@@ -237,7 +236,7 @@
 							disabled
 							color="primary"
 							:label="__('Redeemed Customer Credit')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							v-model="redeemed_customer_credit"
 							type="number"
@@ -250,7 +249,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('You can redeem credit upto')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="formatCurrency(available_customer_credit)"
 							:prefix="currencySymbol(invoice_doc.currency)"
@@ -267,7 +266,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('Net Total')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="formatCurrency(invoice_doc.net_total)"
 							readonly
@@ -280,7 +279,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('Tax and Charges')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="formatCurrency(invoice_doc.total_taxes_and_charges)"
 							readonly
@@ -293,7 +292,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('Total Amount')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="formatCurrency(invoice_doc.total)"
 							readonly
@@ -306,7 +305,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('Discount Amount')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="formatCurrency(invoice_doc.discount_amount)"
 							readonly
@@ -320,7 +319,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('Delivery Charge')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="
 								formatCurrency(invoice_doc.custom_delivery_charge_rate || 0)
@@ -336,7 +335,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('Grand Total')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="formatCurrency(invoice_doc.grand_total)"
 							readonly
@@ -349,7 +348,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('Rounded Total')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							:model-value="formatCurrency(invoice_doc.rounded_total)"
 							readonly
@@ -374,7 +373,7 @@
 									readonly
 									variant="outlined"
 									density="compact"
-									bg-color="white"
+									bg-color="surface"
 									clearable
 									color="primary"
 									hide-details
@@ -404,7 +403,7 @@
 							:items="addresses"
 							item-title="address_title"
 							item-value="name"
-							bg-color="white"
+							bg-color="surface"
 							no-data-text="Address not found"
 							hide-details
 							:customFilter="addressFilter"
@@ -414,27 +413,27 @@
 							<template v-slot:item="{ props, item }">
 								<v-list-item v-bind="props">
 									<v-list-item-title class="text-primary text-subtitle-1">
-										<div v-html="item.raw.address_title"></div>
+										<div>{{ item.raw.address_title }}</div>
 									</v-list-item-title>
 									<v-list-item-title>
-										<div v-html="item.raw.address_line1"></div>
+										<div>{{ item.raw.address_line1 }}</div>
 									</v-list-item-title>
 									<v-list-item-subtitle
 										v-if="item.raw.custoaddress_line2mer_name"
 									>
-										<div v-html="item.raw.address_line2"></div>
+										<div>{{ item.raw.address_line2 }}</div>
 									</v-list-item-subtitle>
 									<v-list-item-subtitle v-if="item.raw.city">
-										<div v-html="item.raw.city"></div>
+										<div>{{ item.raw.city }}</div>
 									</v-list-item-subtitle>
 									<v-list-item-subtitle v-if="item.raw.state">
-										<div v-html="item.raw.state"></div>
+										<div>{{ item.raw.state }}</div>
 									</v-list-item-subtitle>
 									<v-list-item-subtitle v-if="item.raw.country">
-										<div v-html="item.raw.mobile_no"></div>
+										<div>{{ item.raw.mobile_no }}</div>
 									</v-list-item-subtitle>
 									<v-list-item-subtitle v-if="item.raw.address_type">
-										<div v-html="item.raw.address_type"></div>
+										<div>{{ item.raw.address_type }}</div>
 									</v-list-item-subtitle>
 								</v-list-item>
 							</template>
@@ -445,7 +444,7 @@
 							class="pa-0"
 							variant="outlined"
 							density="compact"
-							bg-color="white"
+							bg-color="surface"
 							clearable
 							color="primary"
 							auto-grow
@@ -466,7 +465,7 @@
 								:label="__('Purchase Order')"
 								variant="outlined"
 								density="compact"
-								bg-color="white"
+								bg-color="surface"
 								clearable
 								color="primary"
 								hide-details
@@ -515,8 +514,8 @@
 					>
 						<v-switch
 							v-model="is_write_off_change"
-							:color="is_write_off_change ? '#00BCD4' : '#BDBDBD'"
-							:base-color="is_write_off_change ? '#00BCD4' : '#BDBDBD'"
+							:color="is_write_off_change ? 'primary' : 'grey'"
+							:base-color="is_write_off_change ? 'primary' : 'grey'"
 							inset
 							dense
 							hide-details
@@ -535,8 +534,8 @@
 					>
 						<v-switch
 							v-model="is_credit_sale"
-							:color="is_credit_sale ? '#00BCD4' : '#BDBDBD'"
-							:base-color="is_credit_sale ? '#00BCD4' : '#BDBDBD'"
+							:color="is_credit_sale ? 'primary' : 'grey'"
+							:base-color="is_credit_sale ? 'primary' : 'grey'"
 							inset
 							dense
 							hide-details
@@ -552,8 +551,8 @@
 					<v-col cols="6" v-if="invoice_doc.is_return && pos_profile.use_cashback">
 						<v-switch
 							v-model="is_cashback"
-							:color="is_cashback ? '#00BCD4' : '#BDBDBD'"
-							:base-color="is_cashback ? '#00BCD4' : '#BDBDBD'"
+							:color="is_cashback ? 'primary' : 'grey'"
+							:base-color="is_cashback ? 'primary' : 'grey'"
 							inset
 							dense
 							hide-details
@@ -586,8 +585,8 @@
 					>
 						<v-switch
 							v-model="redeem_customer_credit"
-							:color="redeem_customer_credit ? '#00BCD4' : '#BDBDBD'"
-							:base-color="redeem_customer_credit ? '#00BCD4' : '#BDBDBD'"
+							:color="redeem_customer_credit ? 'primary' : 'grey'"
+							:base-color="redeem_customer_credit ? 'primary' : 'grey'"
 							inset
 							dense
 							hide-details
@@ -620,7 +619,7 @@
 								variant="outlined"
 								color="primary"
 								:label="__('Available Credit')"
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								:model-value="formatCurrency(row.total_credit)"
 								disabled
@@ -633,7 +632,7 @@
 								variant="outlined"
 								color="primary"
 								:label="__('Redeem Credit')"
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								type="number"
 								v-model="row.credit_to_redeem"
@@ -698,7 +697,7 @@
 								variant="outlined"
 								color="primary"
 								:label="__('Mobile Number')"
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								v-model="invoice_doc.contact_mobile"
 								type="number"
@@ -721,19 +720,24 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { call } from "@/utils/call";
+import { OfflineReturnDeferredError } from "@/utils/call-registry";
+import { uuidV4 } from "@/offline/db";
 import format from "@/utils/format";
 import hardwareUtils from "@/utils/hardwareUtils";
 import { toast } from "vue3-toastify"; // <-- make sure this is imported
 import { datetime } from "@/utils/datetime";
 import { playSound } from "@/utils/sounds";
 
+import busListeners from "@/utils/busListeners";
+import { loadSalesPersons, readStoredSalesPersons } from "@/utils/salesPersons";
 export default {
-	mixins: [format, hardwareUtils],
+	mixins: [format, hardwareUtils, busListeners],
 	data: () => ({
 		loading: false,
 		submittingPayment: false,
 		pos_profile: "",
+		pos_opening_shift: "",
 		invoice_doc: "",
 		loyalty_amount: 0,
 		today_date: datetime.now_date(),
@@ -758,6 +762,44 @@ export default {
 	}),
 
 		methods: {
+			// Run a contribution-ledger operation with a hard deadline.
+			//
+			// Every sale now touches IndexedDB on its critical path, which an
+			// ONLINE sale never did before the ledger existed. Dexie queues
+			// every operation behind `db.open()`, and an open can block
+			// INDEFINITELY rather than fail: a second POS tab still holding the
+			// previous schema version blocks the `version(2)` upgrade until it
+			// closes, and iOS/Safari stall IndexedDB on their own. A promise
+			// that never settles cannot be caught — the awaiting sale would
+			// simply stop, `submittingPayment` would never reset in a `finally`
+			// that never runs, and the Pay button would be dead until reload.
+			// The till must not freeze on a healthy network because of a
+			// bookkeeping write, so a timeout is treated exactly like any other
+			// ledger failure: warn, skip the contribution, sell.
+			async runLedgerOp(label, run) {
+				let timer = null;
+				const TIMEOUT = Symbol("ledger-timeout");
+				try {
+					const outcome = await Promise.race([
+						run(),
+						new Promise((resolve) => {
+							timer = setTimeout(() => resolve(TIMEOUT), 2000);
+						}),
+					]);
+					if (outcome === TIMEOUT) {
+						console.warn(
+							`[Payments] ${label} timed out; contribution skipped`,
+						);
+						return false;
+					}
+					return true;
+				} catch (err) {
+					console.warn(`[Payments] ${label} failed`, err);
+					return false;
+				} finally {
+					if (timer !== null) clearTimeout(timer);
+				}
+			},
 			parseSubmitData(raw) {
 				if (!raw) return {};
 				if (typeof raw === "object") return raw;
@@ -869,9 +911,6 @@ export default {
 				payment.amount = flt(payment.amount);
 				totalPayedAmount += payment.amount;
 			});
-			if (this.invoice_doc.is_return && totalPayedAmount == 0) {
-				this.invoice_doc.is_pos = 0;
-			}
 			if (this.customer_credit_dict.length) {
 				this.customer_credit_dict.forEach((row) => {
 					row.credit_to_redeem = flt(row.credit_to_redeem);
@@ -886,14 +925,163 @@ export default {
 			data["is_cashback"] = this.is_cashback;
 
 			const vm = this;
-			const r = await call("pospire.pospire.api.posapp.submit_invoice", {
-				data: data,
-				invoice: this.invoice_doc,
-			});
+			// forceQueue (T10): if the cart's customer was offline-created,
+			// the live posapp.submit_invoice can't resolve "OFFLINE-CUST-..."
+			// to a real customer link. Route through the offline endpoint
+			// instead — it pops customer_offline_id, looks up the synced
+			// customer, and substitutes the real name. forceQueue is a no-op
+			// when the registry entry isn't offline-capable.
+			const hasOfflineCustomer = !!this.invoice_doc?.customer_offline_id;
+
+			// One id for the whole sale. `call()` would generate this itself,
+			// but the ledger needs it BEFORE the request so the contribution
+			// can be staged first. Passing it as offlineIdempotencyKey makes
+			// the outbox row, the server's pos_offline_id, and the ledger key
+			// all the same value on both the live and queued paths.
+			const invoiceOfflineId = uuidV4();
+
+			// Stage the contribution before submitting. If the app dies between
+			// here and the confirm, the row survives as `pending` and the
+			// startup reconciliation resolves it against the server.
+			// Never let a ledger failure block the sale.
+			//
+			// Resolved at sale time rather than trusted off whichever
+			// `pos_opening_shift` object this component currently holds:
+			// `register_pos_profile` has emitters beyond Pos.vue's own stamped
+			// snapshot — its `pos_profile_updated` / `pendingProfileData`
+			// replays — that hand out a live `check_opening_shift` response the server
+			// never echoes `pospire_lifecycle_id` on and that never passes
+			// through `registerShiftLifecycle`. On a common warm-boot ordering
+			// one of those fires last, leaving `pospire_lifecycle_id` undefined
+			// on the object this component ends up holding even though a
+			// stamped durable row exists. `pos_offline_id` is the same id
+			// pre-sync, so it covers an offline-opened shift whose stamp just
+			// hasn't landed on this object; failing that, look the durable row
+			// up by server name — that goes straight to Dexie and is correct
+			// regardless of which transient object is in memory here.
+			let shiftLifecycleId =
+				this.pos_opening_shift?.pospire_lifecycle_id ||
+				this.pos_opening_shift?.pos_offline_id ||
+				null;
+			if (!shiftLifecycleId && this.pos_opening_shift?.name) {
+				// Also deadline-bounded: this is a Dexie read on the same
+				// critical path, with the same never-settles failure mode as
+				// the staging write below.
+				await this.runLedgerOp("findShiftByServerName", async () => {
+					const { findShiftByServerName } = await import("@/offline/shift-lifecycle");
+					const row = await findShiftByServerName(this.pos_opening_shift.name);
+					shiftLifecycleId = row?.offline_id || null;
+				});
+			}
+			if (!shiftLifecycleId) {
+				// No lifecycle id resolvable by any route. Skip rather than
+				// writing a row keyed to no shift: it would count toward
+				// nothing and could never be pruned. The close dialog falls
+				// back to the Phase 1 outbox scan for this shift.
+				console.warn(
+					"[Payments] no shift lifecycle id; skipping contribution staging",
+				);
+			} else {
+				await this.runLedgerOp("stageContribution", async () => {
+					const { stageContribution } = await import("@/offline/contribution-ledger");
+					await stageContribution({
+						invoiceOfflineId,
+						shiftLifecycleId,
+						invoice: this.invoice_doc,
+						cashMode:
+							(this.pos_profile && this.pos_profile.posa_cash_mode_of_payment) ||
+							"Cash",
+						precision: Number(window.sys_defaults?.currency_precision || 2),
+					});
+				});
+			}
+
+			// Un-stage on any failure exit below. `deriveExpectedByMop` sums
+			// pending rows into the shift total, so a row staged ahead of a
+			// submit that never landed would overstate the cashier's expected
+			// figure forever — reconciliation only ever confirms rows the
+			// server has, it never removes ones it doesn't. Safe to call even
+			// when staging was skipped or never ran: deleting a missing key is
+			// a no-op.
+			const discardStagedContribution = async () => {
+				await this.runLedgerOp("discardContribution", async () => {
+					const { discardContribution } = await import("@/offline/contribution-ledger");
+					await discardContribution(invoiceOfflineId);
+				});
+			};
+
+			let r = null;
+			try {
+				r = await call({
+					method: "pospire.pospire.api.posapp.submit_invoice",
+					args: {
+						data: data,
+						invoice: this.invoice_doc,
+					},
+					intent: "write",
+					forceQueue: hasOfflineCustomer,
+					offlineIdempotencyKey: invoiceOfflineId,
+				});
+			} catch (err) {
+				await discardStagedContribution();
+				if (err instanceof OfflineReturnDeferredError) {
+					toast.warning(
+						__("Sales Return requires an online connection in this phase."),
+					);
+					return;
+				}
+				toast.error(err && err.message ? err.message : "Error submitting invoice");
+				return;
+			}
 			if (!r) {
+				await discardStagedContribution();
 				toast.error("Error submitting invoice");
 				return;
 			}
+
+			// Offline-enqueue ack (see @/offline/types: OutboxEnqueueAck).
+			// Shape: { offline: true, offline_id, provisional_name, status: 'enqueued' }.
+			// This is NOT a failure — the server is unreachable and the outbox
+			// took custody of the write. We print a provisional receipt with the
+			// PENDING SYNC watermark and clear the cart so the cashier can ring
+			// the next sale.
+			if (r && r.offline === true && r.status === "enqueued") {
+				const provisionalName = r.provisional_name;
+				// Tag the invoice object in-memory so any consumer that fires
+				// off `set_last_invoice` / print paths can render the pending
+				// sync state. The server-side `name` is null until sync.
+				vm.invoice_doc.name = provisionalName;
+				vm.invoice_doc.pospire_pending_sync = true;
+				vm.invoice_doc.pospire_offline_id = r.offline_id;
+
+				await vm.runLedgerOp("confirmContribution", async () => {
+					const { confirmContribution } = await import("@/offline/contribution-ledger");
+					await confirmContribution(invoiceOfflineId);
+				});
+
+				if (print) {
+					vm.handleProvisionalPrint(vm.invoice_doc);
+				}
+				vm.customer_credit_dict = [];
+				vm.redeem_customer_credit = false;
+				vm.is_cashback =
+					vm.pos_profile && vm.pos_profile.use_cashback == 1 ? true : false;
+				vm.sales_person = "";
+				vm.eventBus.emit("set_last_invoice", provisionalName);
+				toast.info(`Queued ${provisionalName}. Will sync when online`);
+				playSound("submit");
+				vm.addresses = [];
+				vm.invoice_doc = "";
+				vm.eventBus.emit("clear_invoice", { submitted: true });
+				vm.back_to_invoice();
+				return;
+			}
+
+			await vm.runLedgerOp("confirmContribution", async () => {
+				const { confirmContribution } = await import("@/offline/contribution-ledger");
+				await confirmContribution(invoiceOfflineId);
+			});
+
 			if (print) {
 				vm.handlePrint(vm.invoice_doc.name);
 			}
@@ -940,6 +1128,81 @@ export default {
 				this.load_print_page(invoice_name); // fallback
 			}
 		},
+		/**
+		 * Provisional-receipt printer for offline-enqueued sales. The server
+		 * has not assigned a real invoice name yet, so printing via the
+		 * printview URL (which does a server lookup) would 404. Instead we
+		 * open a minimal HTML document rendered from the in-memory invoice
+		 * payload with an OFFLINE-<short_id> header and a "PENDING SYNC"
+		 * watermark. On reconnect, the reprint action in the receipt history
+		 * will print the final server-named receipt.
+		 *
+		 * See docs/offline/11-ui-ux.md §6 for the design contract.
+		 */
+		handleProvisionalPrint(invoice) {
+			try {
+				const win = window.open("", "ProvisionalReceipt");
+				if (!win) {
+					toast.warning("Pop-up blocked; provisional receipt not printed.");
+					return;
+				}
+				const lines = (invoice.items || [])
+					.map((it) => {
+						const name = it.item_name || it.item_code || "";
+						const qty = it.qty || 0;
+						const rate = it.rate || 0;
+						const amount = it.amount || qty * rate;
+						return (
+							'<tr>' +
+							'<td>' + String(name).replace(/</g, "&lt;") + '</td>' +
+							'<td style="text-align:right">' + qty + '</td>' +
+							'<td style="text-align:right">' + Number(rate).toFixed(2) + '</td>' +
+							'<td style="text-align:right">' + Number(amount).toFixed(2) + '</td>' +
+							'</tr>'
+						);
+					})
+					.join("");
+				const total = invoice.rounded_total || invoice.grand_total || 0;
+				const header = invoice.name || "OFFLINE-PENDING";
+				const html =
+					'<!doctype html><html><head><meta charset="utf-8">' +
+					'<title>' + header + '</title>' +
+					'<style>' +
+					'body{font-family:monospace;padding:12px;position:relative;}' +
+					'.wm{position:fixed;top:40%;left:0;right:0;text-align:center;font-size:48px;color:rgba(200,0,0,0.15);transform:rotate(-25deg);pointer-events:none;font-weight:700;letter-spacing:4px;}' +
+					'.hdr{font-weight:700;font-size:14px;border-bottom:2px dashed #333;padding-bottom:6px;margin-bottom:8px;}' +
+					'table{width:100%;border-collapse:collapse;font-size:12px;}' +
+					'th,td{padding:2px 4px;}' +
+					'.tot{border-top:1px dashed #333;margin-top:6px;padding-top:6px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;}' +
+					'.note{margin-top:12px;font-size:10px;color:#666;}' +
+					'</style></head><body>' +
+					'<div class="wm">PENDING SYNC</div>' +
+					'<div class="hdr">' + header + '</div>' +
+					'<table><thead><tr><th style="text-align:left">Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>' +
+					'<tbody>' + lines + '</tbody></table>' +
+					'<div class="tot"><span>Total</span><span>' + Number(total).toFixed(2) + '</span></div>' +
+					'<div class="note">This receipt will be replaced by the final receipt once synced.</div>' +
+					'</body></html>';
+				win.document.open();
+				win.document.write(html);
+				win.document.close();
+				// Give the browser a moment to lay out before triggering print.
+				win.addEventListener(
+					"load",
+					() => {
+						try {
+							win.print();
+						} catch (e) {
+							console.error("Provisional print trigger failed:", e);
+						}
+					},
+					true,
+				);
+			} catch (err) {
+				console.error("Provisional print failed:", err);
+				toast.error("Could not print provisional receipt.");
+			}
+		},
 		set_full_amount(idx) {
 			this.invoice_doc.payments.forEach((payment) => {
 				payment.amount =
@@ -949,6 +1212,16 @@ export default {
 			});
 		},
 		set_rest_amount(idx) {
+			const payment = this.invoice_doc.payments.find((row) => row.idx == idx);
+			if (!payment || payment.amount != 0) {
+				return;
+			}
+
+			if (!this.invoice_doc.name && this.diff_payment <= 0) {
+				this.set_full_amount(idx);
+				return;
+			}
+
 			this.invoice_doc.payments.forEach((payment) => {
 				if (payment.idx == idx && payment.amount == 0 && this.diff_payment > 0) {
 					payment.amount = this.diff_payment;
@@ -1058,9 +1331,16 @@ export default {
 			if (!vm.invoice_doc) {
 				return;
 			}
-			const r = await call("pospire.pospire.api.posapp.get_customer_addresses", {
-				customer: vm.invoice_doc.customer,
-			});
+			let r = null;
+			try {
+				r = await call("pospire.pospire.api.posapp.get_customer_addresses", {
+					customer: vm.invoice_doc.customer,
+				});
+			} catch {
+				// Offline: leave previously-loaded addresses in place; new
+				// address fetches resume on reconnect.
+				return;
+			}
 			if (r) {
 				vm.addresses = r;
 			} else {
@@ -1087,20 +1367,20 @@ export default {
 		},
 		async get_sales_person_names() {
 			const vm = this;
-			if (vm.pos_profile.posa_local_storage && localStorage.sales_persons_storage) {
-				vm.sales_persons = JSON.parse(localStorage.getItem("sales_persons_storage"));
+			const persist = !!vm.pos_profile.posa_local_storage;
+			if (persist) {
+				const stored = readStoredSalesPersons();
+				if (stored) vm.sales_persons = stored;
 			}
-			const r = await call("pospire.pospire.api.posapp.get_sales_person_names");
-			if (r) {
-				vm.sales_persons = r;
-				if (vm.pos_profile.posa_local_storage) {
-					localStorage.setItem("sales_persons_storage", "");
-					localStorage.setItem(
-						"sales_persons_storage",
-						JSON.stringify(r)
-					);
-				}
+			let r = null;
+			try {
+				r = await loadSalesPersons({ persist });
+			} catch {
+				// Offline: localStorage hydration above (if enabled) leaves a
+				// usable list. Otherwise the dropdown is empty until reconnect.
+				return;
 			}
+			if (r) vm.sales_persons = r;
 		},
 		salesPersonFilter(itemText, queryText, itemRow) {
 			const item = itemRow.raw;
@@ -1189,14 +1469,18 @@ export default {
 		},
 		async get_mpesa_modes() {
 			const vm = this;
-			const r = await call("pospire.pospire.api.m_pesa.get_mpesa_mode_of_payment", {
-				company: vm.pos_profile.company,
-			});
-			if (r) {
-				vm.mpesa_modes = r;
-			} else {
+			let r = null;
+			try {
+				r = await call("pospire.pospire.api.m_pesa.get_mpesa_mode_of_payment", {
+					company: vm.pos_profile.company,
+				});
+			} catch {
+				// Live-only lookup, and this runs on every shift open. Offline
+				// it threw an unhandled rejection on the opening path.
 				vm.mpesa_modes = [];
+				return;
 			}
+			vm.mpesa_modes = r || [];
 		},
 		is_mpesa_c2b_payment(payment) {
 			if (this.mpesa_modes.includes(payment.mode_of_payment) && payment.type == "Bank") {
@@ -1325,7 +1609,7 @@ export default {
 
 	mounted: function () {
 		this.$nextTick(function () {
-			this.eventBus.on("send_invoice_doc_payment", (payload) => {
+			this.onBus("send_invoice_doc_payment", (payload) => {
 				this.invoice_doc = payload.invoice_doc;
 				const default_payment = this.invoice_doc.payments.find(
 					(payment) => payment.default == 1
@@ -1352,8 +1636,17 @@ export default {
 				this.get_addresses();
 				this.get_sales_person_names();
 			});
-			this.eventBus.on("register_pos_profile", (data) => {
+			this.onBus("register_pos_profile", (data) => {
 				this.pos_profile = data.pos_profile;
+				// Best-effort only: `register_pos_profile` has emitters (Pos.vue's
+				// pos_profile_updated / pendingProfileData replays) that hand out
+				// a live check_opening_shift response never stamped with
+				// pospire_lifecycle_id, and any of them can be the last one to
+				// fire before a sale. submit_invoice does NOT trust this object's
+				// `pospire_lifecycle_id` alone — it falls back to `pos_offline_id`
+				// and then to a durable-row lookup by server name. Kept here only
+				// because pos_profile / cashback / mpesa below still need it.
+				this.pos_opening_shift = data.pos_opening_shift;
 				// Initialize is_cashback based on POS Profile setting
 				// If use_cashback is disabled (0), set is_cashback to false
 				// If use_cashback is enabled (1), keep it true (default)
@@ -1364,11 +1657,11 @@ export default {
 				}
 				this.get_mpesa_modes();
 			});
-			this.eventBus.on("add_the_new_address", (data) => {
+			this.onBus("add_the_new_address", (data) => {
 				this.addresses.push(data);
 				this.$forceUpdate();
 			});
-			this.eventBus.on("update_invoice_type", (data) => {
+			this.onBus("update_invoice_type", (data) => {
 				this.invoiceType = data;
 				if (this.invoice_doc && data != "Order") {
 					this.invoice_doc.posa_delivery_date = null;
@@ -1377,7 +1670,7 @@ export default {
 				}
 			});
 		});
-		this.eventBus.on("update_customer", (customer) => {
+		this.onBus("update_customer", (customer) => {
 			if (this.customer != customer) {
 				this.customer_credit_dict = [];
 				this.redeem_customer_credit = false;
@@ -1386,29 +1679,18 @@ export default {
 					this.pos_profile && this.pos_profile.use_cashback == 1 ? true : false;
 			}
 		});
-		this.eventBus.on("set_pos_settings", (data) => {
+		this.onBus("set_pos_settings", (data) => {
 			this.pos_settings = data;
 		});
-		this.eventBus.on("set_customer_info_to_edit", (data) => {
+		this.onBus("set_customer_info_to_edit", (data) => {
 			this.customer_info = data;
 		});
-		this.eventBus.on("set_mpesa_payment", (data) => {
+		this.onBus("set_mpesa_payment", (data) => {
 			this.set_mpesa_payment(data);
 		});
 	},
 	created() {
 		document.addEventListener("keydown", this.shortPay.bind(this));
-	},
-	beforeUnmount() {
-		this.eventBus.off("send_invoice_doc_payment");
-		this.eventBus.off("register_pos_profile");
-		this.eventBus.off("add_the_new_address");
-		this.eventBus.off("update_invoice_type");
-		this.eventBus.off("update_customer");
-		this.eventBus.off("set_pos_settings");
-		this.eventBus.off("set_customer_info_to_edit");
-		this.eventBus.off("update_invoice_coupons");
-		this.eventBus.off("set_mpesa_payment");
 	},
 
 	unmounted() {
@@ -1533,7 +1815,7 @@ export default {
 /* Section headers styling - scoped to payment page only */
 .section-header .v-card-title {
 	font-weight: 600 !important;
-	color: #34495e !important; /* Deep Slate - Design System */
+	color: var(--pospire-text-primary) !important;
 }
 
 .section-header-title {
@@ -1542,43 +1824,53 @@ export default {
 	padding-left: 0;
 	font-size: 1rem;
 	font-weight: 600;
-	background-color: #eceff1;
-	color: #34495e !important; /* Deep Slate - Design System */
+	background-color: var(--pospire-surface-soft);
+	color: var(--pospire-text-primary) !important;
 }
 
-.section-header-title .v-icon {
-	color: #00bcd4 !important; /* Vibrant Teal - Design System */
-	margin-right: 8px;
-}
+	.section-header-title .v-icon {
+		color: rgb(var(--v-theme-primary)) !important;
+		margin-right: 8px;
+	}
+
+	.section-title-text {
+		color: var(--pospire-text-primary);
+	}
 
 /* Payment Method Buttons - Design System Compliant */
 .payment-method-btn {
-	color: #34495e !important; /* Deep Slate */
-	border: 1px solid #e0e0e0 !important;
-	background-color: #ffffff !important;
+	color: var(--pospire-text-primary) !important;
+	border: 1px solid var(--pospire-border) !important;
+	background-color: var(--pospire-surface) !important;
 	font-weight: 600 !important;
 	text-transform: uppercase !important;
 	letter-spacing: 0.5px !important;
 	transition: all 0.2s ease !important;
 }
 
-.payment-method-btn:hover {
-	border-color: #00bcd4 !important;
-	background-color: rgba(0, 188, 212, 0.05) !important;
-	box-shadow: 0 2px 8px rgba(0, 188, 212, 0.2) !important;
-}
+	.payment-method-btn:hover {
+		border-color: rgb(var(--v-theme-primary)) !important;
+		background-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 10%, transparent) !important;
+		box-shadow: 0 2px 8px rgba(0, 188, 212, 0.2) !important;
+	}
 
 .payment-method-btn:active {
 	transform: scale(0.98) !important;
 }
 
-.payment-method-btn .v-icon {
-	color: #00bcd4 !important; /* Vibrant Teal for icons */
-}
+	.payment-method-btn .v-icon {
+		color: rgb(var(--v-theme-primary)) !important;
+	}
 
 /* Compact toggle switches for payment options */
 .small-switch {
 	transform: scale(0.85);
 	transform-origin: left center;
+}
+
+.loyalty-redemption-row {
+	align-items: flex-start;
+	margin-bottom: 16px;
+	row-gap: 8px;
 }
 </style>

@@ -1,4 +1,4 @@
-import { call } from "frappe-ui";
+import { call } from "@/utils/call";
 import { toast } from "vue3-toastify";
 import { __ } from "@/utils/translate";
 

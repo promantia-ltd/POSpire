@@ -36,13 +36,13 @@ body:has(.pos-page),
 
 /* Header & Navigation - scoped to POS pages only */
 body:has(.pos-page) .v-app-bar.v-toolbar {
-	background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
-	border-bottom: 1px solid #e2e8f0 !important;
+	background: var(--pospire-navbar-bg) !important;
+	border-bottom: 1px solid var(--pospire-border) !important;
 	box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08) !important;
 }
 
 body:has(.pos-page) .v-app-bar .v-toolbar__content {
-	padding: 0 1.5rem !important;
+	padding: 0 1.5rem 0 0 !important;
 }
 
 body:has(.pos-page) .v-app-bar .v-btn {
@@ -75,8 +75,8 @@ body:has(.pos-page) .v-app-bar .v-toolbar__title {
 
 /* Secondary navigation bar - scoped to POS pages only */
 body:has(.pos-page) .v-navigation-drawer {
-	background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
-	border-right: 1px solid #e2e8f0 !important;
+	background: var(--pospire-sidebar-bg) !important;
+	border-right: 1px solid var(--pospire-border) !important;
 }
 
 body:has(.pos-page) .v-navigation-drawer .v-list {
@@ -101,8 +101,8 @@ body:has(.pos-page) .v-navigation-drawer .v-list-item--active {
 
 /* Modern breadcrumb navigation - scoped to POS pages only */
 body:has(.pos-page) nav[role="navigation"] {
-	background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
-	border-bottom: 1px solid #cbd5e1 !important;
+	background: var(--pospire-surface-soft) !important;
+	border-bottom: 1px solid var(--pospire-border) !important;
 	padding: 0.75rem 1.5rem !important;
 }
 
@@ -111,7 +111,7 @@ body:has(.pos-page) nav[role="navigation"] .v-list {
 }
 
 body:has(.pos-page) nav[role="navigation"] .v-list-item {
-	background: rgba(255, 255, 255, 0.7) !important;
+	background: var(--pospire-surface) !important;
 	border-radius: 20px !important;
 	margin: 0 0.25rem !important;
 	padding: 0.5rem 1rem !important;
@@ -120,7 +120,7 @@ body:has(.pos-page) nav[role="navigation"] .v-list-item {
 }
 
 body:has(.pos-page) nav[role="navigation"] .v-list-item:hover {
-	background: rgba(255, 255, 255, 1) !important;
+	background: var(--pospire-hover-bg) !important;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 	transform: translateY(-1px);
 }
@@ -134,17 +134,17 @@ body:has(.pos-page) .enhanced-empty-state,
 	justify-content: center;
 	padding: 3rem 2rem;
 	text-align: center;
-	color: #64748b;
-	background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+	color: var(--empty-text-color);
+	background: var(--empty-bg-gradient);
 	border-radius: 12px;
-	border: 2px dashed #cbd5e1;
+	border: var(--empty-border);
 	margin: 2rem 0;
 }
 
 body:has(.pos-page) .enhanced-empty-state-icon,
 .pos-page .enhanced-empty-state-icon {
 	font-size: 4rem;
-	color: #94a3b8;
+	color: var(--pospire-text-faint);
 	margin-bottom: 1rem;
 }
 
@@ -152,22 +152,22 @@ body:has(.pos-page) .enhanced-empty-state-title,
 .pos-page .enhanced-empty-state-title {
 	font-size: 1.25rem;
 	font-weight: 600;
-	color: #475569;
+	color: var(--empty-title-color);
 	margin-bottom: 0.5rem;
 }
 
 body:has(.pos-page) .enhanced-empty-state-description,
 .pos-page .enhanced-empty-state-description {
 	font-size: 0.95rem;
-	color: #64748b;
+	color: var(--empty-text-color);
 	margin-bottom: 1.5rem;
 	max-width: 400px;
 }
 
 body:has(.pos-page) .enhanced-empty-state-action,
 .pos-page .enhanced-empty-state-action {
-	background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-	color: white;
+	background: var(--empty-btn-bg);
+	color: var(--empty-btn-color);
 	padding: 0.75rem 1.5rem;
 	border-radius: 8px;
 	text-decoration: none;
@@ -307,7 +307,7 @@ body:has(.pos-page) .pospire-section-title,
 .pos-page .section-header .v-card-title,
 .pos-page .section-header-title,
 .pos-page .pospire-section-title {
-	color: #34495e !important;
+	color: var(--pospire-text-primary) !important;
 	font-weight: 600 !important;
 	font-size: 1rem !important;
 	display: flex;
@@ -331,7 +331,7 @@ body:has(.pos-page) .section-header .text-primary,
 body:has(.pos-page) .section-header-title.text-primary,
 .pos-page .section-header .text-primary,
 .pos-page .section-header-title.text-primary {
-	color: #34495e !important;
+	color: var(--pospire-text-primary) !important;
 }
 
 /* Search Bar - SCOPED to POS pages */
@@ -343,8 +343,8 @@ body:has(.pos-page) .enhanced-search-container,
 
 body:has(.pos-page) .enhanced-search-input,
 .pos-page .enhanced-search-input {
-	background: white;
-	border: 2px solid #e2e8f0;
+	background: var(--pospire-surface);
+	border: 2px solid var(--pospire-border);
 	border-radius: 12px;
 	padding: 1rem 1rem 1rem 3rem;
 	font-size: 1rem;
@@ -399,7 +399,7 @@ body:has(.pos-page) .enhanced-item-card:hover,
 body:has(.pos-page) .enhanced-item-card.enhanced-out-of-stock,
 .pos-page .enhanced-item-card.enhanced-out-of-stock {
 	opacity: 0.6;
-	background: #f8f9fa;
+	background: var(--pospire-surface-soft);
 }
 
 body:has(.pos-page) .enhanced-item-image,
@@ -407,7 +407,7 @@ body:has(.pos-page) .enhanced-item-image,
 	position: relative;
 	overflow: hidden;
 	height: 140px;
-	background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+	background: var(--pospire-surface-soft);
 	flex-shrink: 0;
 }
 
@@ -430,7 +430,7 @@ body:has(.pos-page) .enhanced-item-badge,
 	top: 8px;
 	right: 8px;
 	background: rgba(34, 197, 94, 0.9);
-	color: white;
+	color: var(--pospire-clean-white);
 	padding: 4px 8px;
 	border-radius: 6px;
 	font-size: 0.75rem;
@@ -455,7 +455,7 @@ body:has(.pos-page) .enhanced-item-name,
 .pos-page .enhanced-item-name {
 	font-size: 0.9rem;
 	font-weight: 600;
-	color: #1e293b;
+	color: var(--pospire-text-primary);
 	margin-bottom: 0.5rem;
 	line-height: 1.3;
 	display: -webkit-box;
@@ -475,7 +475,7 @@ body:has(.pos-page) .enhanced-item-price,
 body:has(.pos-page) .enhanced-item-stock,
 .pos-page .enhanced-item-stock {
 	font-size: 0.8rem;
-	color: #6b7280;
+	color: var(--pospire-text-muted);
 	display: flex;
 	align-items: center;
 	gap: 0.25rem;
@@ -511,7 +511,7 @@ body:has(.pos-page) .enhanced-action-buttons,
 body:has(.pos-page) .enhanced-btn-primary,
 .pos-page .enhanced-btn-primary {
 	background: linear-gradient(135deg, #059669 0%, #047857 100%);
-	color: white;
+	color: var(--pospire-clean-white);
 	border: none;
 	border-radius: 8px;
 	padding: 0.75rem 1.5rem;
@@ -531,9 +531,9 @@ body:has(.pos-page) .enhanced-btn-primary:hover,
 
 body:has(.pos-page) .enhanced-btn-secondary,
 .pos-page .enhanced-btn-secondary {
-	background: white;
-	color: #374151;
-	border: 2px solid #e5e7eb;
+	background: var(--pospire-surface);
+	color: var(--pospire-text-primary);
+	border: 2px solid var(--pospire-border);
 	border-radius: 8px;
 	padding: 0.75rem 1.5rem;
 	font-weight: 600;
@@ -546,15 +546,16 @@ body:has(.pos-page) .enhanced-btn-secondary,
 
 body:has(.pos-page) .enhanced-btn-secondary:hover,
 .pos-page .enhanced-btn-secondary:hover {
-	border-color: #d1d5db;
-	background: #f9fafb;
+	border-color: var(--pospire-border);
+	background: var(--pospire-hover-bg);
+	color: var(--pospire-text-primary);
 	transform: translateY(-1px);
 }
 
 body:has(.pos-page) .enhanced-btn-danger,
 .pos-page .enhanced-btn-danger {
 	background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-	color: white;
+	color: var(--pospire-clean-white);
 	border: none;
 	border-radius: 8px;
 	padding: 0.75rem 1.5rem;
@@ -572,46 +573,6 @@ body:has(.pos-page) .enhanced-btn-danger:hover,
 	box-shadow: 0 8px 25px rgba(220, 38, 38, 0.25);
 }
 
-/* Cart/Invoice Panel - SCOPED to POS pages */
-body:has(.pos-page) .enhanced-cart-panel,
-.pos-page .enhanced-cart-panel {
-	background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%) !important;
-	border-radius: 16px !important;
-	border: 3px solid #3b82f6 !important;
-	overflow: hidden !important;
-	box-shadow: 0 12px 35px rgba(59, 130, 246, 0.15) !important;
-	transform: translateY(-2px) !important;
-}
-
-body:has(.pos-page) .enhanced-cart-panel .items,
-.pos-page .enhanced-cart-panel .items {
-	padding: 1rem 0.5rem;
-}
-
-body:has(.pos-page) .enhanced-cart-panel .v-data-table,
-.pos-page .enhanced-cart-panel .v-data-table {
-	background: transparent;
-}
-
-body:has(.pos-page) .enhanced-cart-panel .v-data-table th,
-.pos-page .enhanced-cart-panel .v-data-table th {
-	background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%) !important;
-	font-weight: 700 !important;
-	color: #1e40af !important;
-	border-bottom: 3px solid #3b82f6 !important;
-	font-size: 0.9rem !important;
-}
-
-body:has(.pos-page) .enhanced-cart-panel .v-data-table td,
-.pos-page .enhanced-cart-panel .v-data-table td {
-	border-bottom: 1px solid #f1f5f9 !important;
-}
-
-body:has(.pos-page) .enhanced-cart-panel .v-data-table tbody tr:hover,
-.pos-page .enhanced-cart-panel .v-data-table tbody tr:hover {
-	background: #f8fafc !important;
-}
-
 body:has(.pos-page) .enhanced-cart-header,
 .pos-page .enhanced-cart-header {
 	display: flex;
@@ -619,81 +580,24 @@ body:has(.pos-page) .enhanced-cart-header,
 	justify-content: space-between;
 	margin-bottom: 1.5rem;
 	padding-bottom: 1rem;
-	border-bottom: 2px solid #f1f5f9;
+	border-bottom: 2px solid var(--pospire-border);
 }
 
 body:has(.pos-page) .enhanced-cart-title,
 .pos-page .enhanced-cart-title {
 	font-size: 1.25rem;
 	font-weight: 700;
-	color: #1e293b;
+	color: var(--pospire-text-primary);
 }
 
 body:has(.pos-page) .enhanced-cart-count,
 .pos-page .enhanced-cart-count {
 	background: #3b82f6;
-	color: white;
+	color: var(--pospire-clean-white);
 	border-radius: 20px;
 	padding: 0.25rem 0.75rem;
 	font-size: 0.8rem;
 	font-weight: 600;
-}
-
-body:has(.pos-page) .enhanced-totals-section,
-.pos-page .enhanced-totals-section {
-	background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%) !important;
-	border-radius: 16px !important;
-	border: 3px solid #10b981 !important;
-	overflow: hidden !important;
-	box-shadow: 0 12px 35px rgba(16, 185, 129, 0.15) !important;
-	transform: translateY(-2px) !important;
-}
-
-body:has(.pos-page) .enhanced-totals-section .v-btn,
-.pos-page .enhanced-totals-section .v-btn {
-	border-radius: 12px !important;
-	font-weight: 700 !important;
-	text-transform: none !important;
-	letter-spacing: 0.025em !important;
-	transition: all 0.3s ease !important;
-	padding: 0.75rem 1.5rem !important;
-	font-size: 0.95rem !important;
-}
-
-body:has(.pos-page) .enhanced-totals-section .v-btn:hover,
-.pos-page .enhanced-totals-section .v-btn:hover {
-	transform: translateY(-3px) !important;
-	box-shadow: 0 10px 30px rgba(16, 185, 129, 0.25) !important;
-}
-
-/* Enhanced input fields in right panel - SCOPED to POS pages */
-body:has(.pos-page) .enhanced-cart-panel .v-text-field,
-body:has(.pos-page) .enhanced-totals-section .v-text-field,
-.pos-page .enhanced-cart-panel .v-text-field,
-.pos-page .enhanced-totals-section .v-text-field {
-	background: rgba(255, 255, 255, 0.8) !important;
-	border-radius: 8px !important;
-}
-
-body:has(.pos-page) .enhanced-cart-panel .v-text-field .v-field,
-body:has(.pos-page) .enhanced-totals-section .v-text-field .v-field,
-.pos-page .enhanced-cart-panel .v-text-field .v-field,
-.pos-page .enhanced-totals-section .v-text-field .v-field {
-	background: rgba(255, 255, 255, 0.9) !important;
-	border-radius: 8px !important;
-	border: 2px solid #e2e8f0 !important;
-}
-
-body:has(.pos-page) .enhanced-cart-panel .v-text-field .v-field:hover,
-body:has(.pos-page) .enhanced-totals-section .v-text-field .v-field:hover,
-.pos-page .enhanced-cart-panel .v-text-field .v-field:hover,
-.pos-page .enhanced-totals-section .v-text-field .v-field:hover {
-	border-color: var(--pospire-vibrant-teal) !important;
-}
-
-body:has(.pos-page) .enhanced-totals-section .v-btn.v-btn--size-large,
-.pos-page .enhanced-totals-section .v-btn.v-btn--size-large {
-	min-height: 48px;
 }
 
 body:has(.pos-page) .enhanced-total-row,
@@ -722,18 +626,18 @@ body:has(.pos-page) .enhanced-total-amount,
 /* Filter & View Controls - SCOPED to POS pages */
 body:has(.pos-page) .enhanced-controls,
 .pos-page .enhanced-controls {
-	background: white;
+	background: var(--pospire-surface);
 	border-radius: 12px;
 	padding: 1rem;
 	margin-bottom: 1rem;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-	border: 1px solid #f1f5f9;
+	border: 1px solid var(--pospire-border);
 }
 
 body:has(.pos-page) .enhanced-view-toggle,
 .pos-page .enhanced-view-toggle {
 	display: flex;
-	background: #f1f5f9;
+	background: var(--pospire-surface-soft);
 	border-radius: 8px;
 	padding: 4px;
 }
@@ -748,13 +652,13 @@ body:has(.pos-page) .enhanced-view-btn,
 	cursor: pointer;
 	transition: all 0.3s ease;
 	font-weight: 500;
-	color: #64748b;
+	color: var(--pospire-text-muted);
 }
 
 body:has(.pos-page) .enhanced-view-btn.active,
 .pos-page .enhanced-view-btn.active {
-	background: white;
-	color: #3b82f6;
+	background: var(--pospire-surface);
+	color: rgb(var(--v-theme-primary));
 	box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 	font-weight: 600;
 }
@@ -768,22 +672,22 @@ body:has(.pos-page) .enhanced-filter-chips,
 
 body:has(.pos-page) .enhanced-chip,
 .pos-page .enhanced-chip {
-	background: #eff6ff;
-	color: #3b82f6;
+	background: color-mix(in srgb, rgb(var(--v-theme-primary)) 10%, transparent);
+	color: rgb(var(--v-theme-primary));
 	padding: 0.5rem 1rem;
 	border-radius: 20px;
 	font-size: 0.85rem;
 	font-weight: 500;
-	border: 1px solid #dbeafe;
+	border: 1px solid color-mix(in srgb, rgb(var(--v-theme-primary)) 22%, var(--pospire-border));
 	cursor: pointer;
 	transition: all 0.3s ease;
 }
 
 body:has(.pos-page) .enhanced-chip.active,
 .pos-page .enhanced-chip.active {
-	background: #3b82f6;
-	color: white;
-	border-color: #3b82f6;
+	background: rgb(var(--v-theme-primary));
+	color: var(--pospire-clean-white);
+	border-color: rgb(var(--v-theme-primary));
 }
 
 body:has(.pos-page) .enhanced-chip:hover,
@@ -795,30 +699,30 @@ body:has(.pos-page) .enhanced-chip:hover,
 /* Data Tables - SCOPED to POS pages */
 body:has(.pos-page) .enhanced-data-table,
 .pos-page .enhanced-data-table {
-	background: white;
+	background: var(--pospire-surface);
 	border-radius: 12px;
 	overflow: hidden;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-	border: 1px solid #f1f5f9;
+	border: 1px solid var(--pospire-border);
 }
 
 body:has(.pos-page) .enhanced-table-header,
 .pos-page .enhanced-table-header {
-	background: #f8fafc;
+	background: var(--pospire-surface-soft);
 	font-weight: 600;
-	color: #374151;
-	border-bottom: 2px solid #e2e8f0;
+	color: var(--pospire-text-primary);
+	border-bottom: 2px solid var(--pospire-border);
 }
 
 body:has(.pos-page) .enhanced-table-row,
 .pos-page .enhanced-table-row {
-	border-bottom: 1px solid #f1f5f9;
+	border-bottom: 1px solid var(--pospire-border);
 	transition: all 0.2s ease;
 }
 
 body:has(.pos-page) .enhanced-table-row:hover,
 .pos-page .enhanced-table-row:hover {
-	background: #f8fafc;
+	background: var(--pospire-hover-bg);
 }
 
 /* Loading States - SCOPED to POS pages */
@@ -829,15 +733,15 @@ body:has(.pos-page) .enhanced-loading,
 	align-items: center;
 	justify-content: center;
 	padding: 3rem;
-	color: #64748b;
+	color: var(--pospire-text-muted);
 }
 
 body:has(.pos-page) .enhanced-spinner,
 .pos-page .enhanced-spinner {
 	width: 40px;
 	height: 40px;
-	border: 4px solid #e2e8f0;
-	border-top: 4px solid #3b82f6;
+	border: 4px solid var(--pospire-border);
+	border-top: 4px solid rgb(var(--v-theme-primary));
 	border-radius: 50%;
 	animation: enhanced-spin 1s linear infinite;
 	margin-bottom: 1rem;
@@ -858,7 +762,7 @@ body:has(.pos-page) .enhanced-notification,
 	position: fixed;
 	top: 20px;
 	right: 20px;
-	background: white;
+	background: var(--pospire-surface);
 	border-radius: 12px;
 	padding: 1rem 1.5rem;
 	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
@@ -903,7 +807,6 @@ body:has(.pos-page) .enhanced-notification.warning,
 	}
 
 	/* Reduce padding */
-	.enhanced-cart-panel,
 	.enhanced-controls {
 		padding: 8px !important;
 	}
@@ -947,12 +850,12 @@ body:has(.pos-page) .enhanced-notification.warning,
 	}
 
 	/* Compact table rows */
-	.pos-page .v-data-table :deep(tbody tr),
+	.pos-page .v-data-table tbody tr,
 	.pos-page .pospire-table tbody tr {
 		height: 36px !important;
 	}
 
-	.pos-page .v-data-table :deep(tbody td),
+	.pos-page .v-data-table tbody td,
 	.pos-page .pospire-table tbody td {
 		padding: 0 8px !important;
 		font-size: 12px !important;
@@ -980,10 +883,6 @@ body:has(.pos-page) .enhanced-notification.warning,
 		flex-wrap: wrap;
 	}
 
-	.enhanced-cart-panel {
-		padding: 12px;
-	}
-
 	/* Adjust product card grid */
 	.enhanced-item-image {
 		height: 120px;
@@ -996,7 +895,7 @@ body:has(.pos-page) .enhanced-notification.warning,
 	}
 
 	/* Table adjustments */
-	.pos-page .v-data-table :deep(tbody td),
+	.pos-page .v-data-table tbody td,
 	.pos-page .pospire-table tbody td {
 		padding: 0 10px !important;
 	}
@@ -1004,10 +903,6 @@ body:has(.pos-page) .enhanced-notification.warning,
 
 /* Medium: 14-15" Laptops (960px - 1279px) */
 @media (min-width: 960px) and (max-width: 1279px) {
-	.enhanced-cart-panel {
-		padding: 16px;
-	}
-
 	.enhanced-item-image {
 		height: 130px;
 	}
@@ -1024,10 +919,6 @@ body:has(.pos-page) .enhanced-notification.warning,
 
 /* Large: 17-19" Monitors (1280px - 1919px) */
 @media (min-width: 1280px) and (max-width: 1919px) {
-	.enhanced-cart-panel {
-		padding: 20px;
-	}
-
 	.enhanced-item-image {
 		height: 140px;
 	}
@@ -1040,10 +931,6 @@ body:has(.pos-page) .enhanced-notification.warning,
 
 /* Extra Large: 21-24" Monitors (1920px - 2559px) */
 @media (min-width: 1920px) and (max-width: 2559px) {
-	.enhanced-cart-panel {
-		padding: 24px;
-	}
-
 	.enhanced-item-image {
 		height: 160px;
 	}
@@ -1069,7 +956,7 @@ body:has(.pos-page) .enhanced-notification.warning,
 	}
 
 	/* Larger table rows */
-	.pos-page .v-data-table :deep(tbody tr),
+	.pos-page .v-data-table tbody tr,
 	.pos-page .pospire-table tbody tr {
 		height: 44px !important;
 	}
@@ -1077,10 +964,6 @@ body:has(.pos-page) .enhanced-notification.warning,
 
 /* Ultra-wide: 32"+ Monitors (>= 2560px) */
 @media (min-width: 2560px) {
-	.enhanced-cart-panel {
-		padding: 30px;
-	}
-
 	.enhanced-item-image {
 		height: 180px;
 	}
@@ -1120,18 +1003,18 @@ body:has(.pos-page) .enhanced-notification.warning,
 	}
 
 	/* Larger table rows */
-	.pos-page .v-data-table :deep(tbody tr),
+	.pos-page .v-data-table tbody tr,
 	.pos-page .pospire-table tbody tr {
 		height: 48px !important;
 	}
 
-	.pos-page .v-data-table :deep(tbody td),
+	.pos-page .v-data-table tbody td,
 	.pos-page .pospire-table tbody td {
 		font-size: 15px !important;
 		padding: 0 16px !important;
 	}
 
-	.pos-page .v-data-table :deep(thead th),
+	.pos-page .v-data-table thead th,
 	.pos-page .pospire-table thead th {
 		font-size: 13px !important;
 		height: 48px !important;
@@ -1145,14 +1028,6 @@ body:has(.pos-page) .enhanced-notification.warning,
 	/* Optimize for squarer screens - more vertical space usage */
 	.enhanced-item-image {
 		height: 150px;
-	}
-}
-
-/* 16:10 Aspect Ratio (Some POS displays) */
-@media (min-aspect-ratio: 1.5/1) and (max-aspect-ratio: 1.65/1) {
-	/* Balanced layout */
-	.enhanced-cart-panel {
-		max-height: calc(100vh - 100px);
 	}
 }
 
@@ -1194,7 +1069,7 @@ body:has(.pos-page) .enhanced-notification.warning,
 	}
 
 	/* Larger table rows for touch */
-	.pos-page .v-data-table :deep(tbody tr),
+	.pos-page .v-data-table tbody tr,
 	.pos-page .pospire-table tbody tr {
 		height: 48px !important;
 	}
@@ -1222,11 +1097,6 @@ body:has(.pos-page) .enhanced-notification.warning,
 		flex: 0 0 100% !important;
 	}
 
-	/* Adjust heights for portrait */
-	.enhanced-cart-panel {
-		max-height: 50vh;
-		overflow-y: auto;
-	}
 }
 
 /* Landscape Orientation */
@@ -1236,16 +1106,12 @@ body:has(.pos-page) .enhanced-notification.warning,
 		height: 56px !important;
 	}
 
-	.pos-page .enhanced-cart-panel {
-		padding: 8px 12px !important;
-	}
-
 	.pos-page .btn-primary-action {
 		height: 38px !important;
 		min-height: 38px !important;
 	}
 
-	.pos-page .v-data-table :deep(tbody tr),
+	.pos-page .v-data-table tbody tr,
 	.pos-page .pospire-table tbody tr {
 		height: 36px !important;
 	}
@@ -1404,7 +1270,7 @@ body:has(.pos-page) .enhanced-scrollbar::-webkit-scrollbar-thumb:hover,
 	align-items: center !important; /* vertical centering */
 	justify-content: space-between !important;
 	width: 100%;
-	background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+	background: var(--pospire-surface-soft) !important;
 }
 
 .pos-page .compact-pagination .v-pagination__list {
@@ -1427,7 +1293,7 @@ body:has(.pos-page) .enhanced-scrollbar::-webkit-scrollbar-thumb:hover,
 }
 
 .pos-page .pos-navbar {
-	background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+	background: var(--pospire-navbar-bg) !important;
 }
 /* .pos-page-root {  }
 .pos-dialog-header {  }
@@ -1435,14 +1301,6 @@ body:has(.pos-page) .enhanced-scrollbar::-webkit-scrollbar-thumb:hover,
 .pos-content-header {  }
 .pos-content-table {  }
 .pos-footer-card {  } */
-
-/* Enhanced Modal Legacy Classes - Override with new design - SCOPED to POS pages */
-body:has(.pos-page) .enhanced-modal-header,
-.pos-page .enhanced-modal-header {
-	background: var(--pospire-clean-white) !important;
-	border-bottom: 2px solid var(--pospire-border-gray) !important;
-	padding: 20px 24px !important;
-}
 
 body:has(.pos-page) .enhanced-add-section,
 .pos-page .enhanced-add-section {
@@ -1479,15 +1337,15 @@ body:has(.pos-page) .enhanced-empty-state,
 .pos-page .enhanced-empty-state {
 	text-align: center;
 	padding: 48px 24px;
-	background: var(--pospire-light-gray);
+	background: var(--empty-bg-gradient);
 	border-radius: 8px;
-	border: 2px dashed var(--pospire-border-gray);
+	border: var(--empty-border);
 }
 
 body:has(.pos-page) .enhanced-empty-state-title,
 .pos-page .enhanced-empty-state-title {
 	font: var(--pospire-font-headline);
-	color: var(--pospire-deep-slate);
+	color: var(--empty-title-color);
 	margin-top: 16px;
 	margin-bottom: 8px;
 }
@@ -1495,7 +1353,7 @@ body:has(.pos-page) .enhanced-empty-state-title,
 body:has(.pos-page) .enhanced-empty-state-description,
 .pos-page .enhanced-empty-state-description {
 	font: var(--pospire-font-body-regular);
-	color: var(--pospire-text-secondary);
+	color: var(--empty-text-color);
 	line-height: 1.6;
 }
 
@@ -1540,15 +1398,17 @@ body:has(.pos-page) .v-dialog > .v-overlay__content > .v-card,
 		0 0 0 1px rgba(0, 188, 212, 0.1) !important;
 	animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 	overflow: hidden;
-	background: #ffffff !important;
+	background: var(--pospire-surface) !important;
+	color: var(--pospire-text-primary) !important;
 }
 
 /* Modal header styling - SCOPED to POS pages */
 body:has(.pos-page) .pospire-modal-header,
 body:has(.pos-page) .v-dialog .v-card > .v-card-title,
 .pos-page .v-dialog .v-card > .v-card-title {
-	background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%) !important;
-	border-bottom: 1px solid #e2e8f0 !important;
+	background: var(--pospire-surface) !important;
+	border-bottom: 1px solid var(--pospire-border) !important;
+	color: var(--pospire-text-primary) !important;
 	padding: 20px 24px !important;
 	display: flex;
 	align-items: center;
@@ -1564,7 +1424,7 @@ body:has(.pos-page) .v-dialog .v-card > .v-card-title > span,
 	font-family: "Inter", sans-serif !important;
 	font-size: 1.25rem !important;
 	font-weight: 600 !important;
-	color: #34495e !important;
+	color: var(--pospire-text-primary) !important;
 	letter-spacing: -0.025em;
 	margin: 0;
 	line-height: 1.4;
@@ -1573,8 +1433,8 @@ body:has(.pos-page) .v-dialog .v-card > .v-card-title > span,
 /* Override text-primary in modal titles - SCOPED to POS pages */
 body:has(.pos-page) .v-dialog .v-card .text-primary,
 .pos-page .v-dialog .v-card .text-primary {
-	color: #34495e !important;
-	-webkit-text-fill-color: #34495e !important;
+	color: var(--pospire-text-primary) !important;
+	-webkit-text-fill-color: var(--pospire-text-primary) !important;
 }
 
 /* Modal body styling - SCOPED to POS pages */
@@ -1582,18 +1442,18 @@ body:has(.pos-page) .pospire-modal-body,
 body:has(.pos-page) .v-dialog .v-card > .v-card-text,
 .pos-page .v-dialog .v-card > .v-card-text {
 	padding: 24px !important;
-	color: #64748b !important;
+	color: var(--pospire-text-secondary) !important;
 	font-size: 0.95rem !important;
 	line-height: 1.6 !important;
-	background: #ffffff;
+	background: var(--pospire-surface);
 }
 
 /* Modal actions/footer styling - SCOPED to POS pages */
 body:has(.pos-page) .pospire-modal-actions,
 body:has(.pos-page) .v-dialog .v-card > .v-card-actions,
 .pos-page .v-dialog .v-card > .v-card-actions {
-	background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
-	border-top: 1px solid #e2e8f0 !important;
+	background: var(--pospire-surface-soft) !important;
+	border-top: 1px solid var(--pospire-border) !important;
 	padding: 16px 24px !important;
 	gap: 12px;
 }
@@ -1608,11 +1468,11 @@ body:has(.pos-page)
 .pos-page .v-dialog .v-card-actions .v-btn[color="grey-darken-1"],
 .pos-page .v-dialog .v-card-actions .v-btn:not([variant="elevated"]):not(.btn-primary-action) {
 	background: transparent !important;
-	color: #64748b !important;
+	color: var(--pospire-text-secondary) !important;
 	font-weight: 500 !important;
 	text-transform: none !important;
 	letter-spacing: 0 !important;
-	border: 1px solid #e2e8f0 !important;
+	border: 1px solid var(--pospire-border) !important;
 	border-radius: 8px !important;
 	padding: 8px 20px !important;
 	min-height: 40px !important;
@@ -1630,9 +1490,9 @@ body:has(.pos-page)
 	.v-dialog
 	.v-card-actions
 	.v-btn:not([variant="elevated"]):not(.btn-primary-action):hover {
-	background: #f1f5f9 !important;
-	color: #34495e !important;
-	border-color: #cbd5e1 !important;
+	background: var(--pospire-hover-bg) !important;
+	color: var(--pospire-text-primary) !important;
+	border-color: var(--pospire-border) !important;
 }
 
 /* Modal action buttons - Primary/Confirm - SCOPED to POS pages */
@@ -1733,8 +1593,8 @@ body:has(.pos-page) .v-dialog .v-card-actions .v-btn.btn-danger:hover,
 }
 
 .pos-page .pospire-modal-close:hover {
-	background: #f1f5f9;
-	color: #475569;
+	background: var(--pospire-hover-bg);
+	color: var(--pospire-text-primary);
 }
 
 /* Fullscreen/Large modal adjustments - SCOPED to POS pages */
@@ -1811,8 +1671,9 @@ body:has(.pos-page) .btn-secondary:hover:not(:disabled),
 body:has(.pos-page) .v-btn.btn-secondary:hover:not(:disabled),
 .pos-page .btn-secondary:hover:not(:disabled),
 .pos-page .v-btn.btn-secondary:hover:not(:disabled) {
-	background: #ebebeb !important;
-	border-color: #d0d0d0 !important;
+	background: var(--pospire-hover-bg) !important;
+	border-color: var(--pospire-border) !important;
+	color: var(--pospire-text-primary) !important;
 	transform: translateY(-1px);
 }
 
@@ -2261,6 +2122,25 @@ body:has(.pos-page) .btn-toggle.active,
 	--pospire-border-medium: #718096; /* Medium grey - secondary border */
 	--pospire-text-secondary: #757575;
 	--pospire-text-light: #8c8c8c;
+	--pospire-app-bg: #f5f7fa;
+	--pospire-surface: #ffffff;
+	--pospire-surface-soft: #f8fafc;
+	--pospire-surface-muted: #f1f5f9;
+	--pospire-border: #e2e8f0;
+	--pospire-border-subtle: #f1f5f9;
+	--pospire-text-primary: #0f172a;
+	--pospire-text-main: #334155;
+	--pospire-text-muted: #64748b;
+	--pospire-text-faint: #94a3b8;
+	--pospire-hover-bg: #f1f5f9;
+	--pospire-card-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+	--pospire-navbar-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+	--pospire-sidebar-bg: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+	--pospire-sidebar-header-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+	--pospire-chart-grid: #e2e8f0;
+	--pospire-chart-tooltip-bg: #0f172a;
+	--pospire-chart-tooltip-text: #ffffff;
+	--pospire-table-bar-track: #eef2f7;
 
 	/* Typography */
 	--pospire-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -2461,6 +2341,257 @@ body:has(.pos-page) .btn-toggle.active,
 	/* Spring Physics (for transforms) */
 	--spring-snappy: cubic-bezier(0.5, 1.5, 0.8, 1); /* Quick snap back */
 	--spring-gentle: cubic-bezier(0.4, 1.2, 0.6, 1); /* Soft bounce */
+}
+
+html.pospire-theme-switching *,
+html.pospire-theme-switching *::before,
+html.pospire-theme-switching *::after {
+	transition: none !important;
+	animation-duration: 0s !important;
+	animation-delay: 0s !important;
+}
+
+.v-theme--dark {
+	--pospire-clean-white: #111827;
+	--pospire-deep-slate: #e5e7eb;
+	--pospire-light-gray: #0f172a;
+	--pospire-medium-gray: #64748b;
+	--pospire-border-gray: #334155;
+	--pospire-border-dark: #64748b;
+	--pospire-border-medium: #475569;
+	--pospire-text-secondary: #cbd5e1;
+	--pospire-text-light: #cbd5e1;
+	--pospire-app-bg: #0f172a;
+	--pospire-surface: #111827;
+	--pospire-surface-soft: #1e293b;
+	--pospire-surface-muted: #263244;
+	--pospire-border: #334155;
+	--pospire-border-subtle: #273449;
+	--pospire-text-primary: #f8fafc;
+	--pospire-text-main: #e2e8f0;
+	--pospire-text-muted: #cbd5e1;
+	--pospire-text-faint: #cbd5e1;
+	--pospire-dark-text: var(--pospire-text-primary);
+	--pospire-muted-text: var(--pospire-text-muted);
+	--pospire-hover-bg: rgba(148, 163, 184, 0.14);
+	--pospire-card-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+	--pospire-navbar-bg: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+	--pospire-sidebar-bg: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+	--pospire-sidebar-header-bg: linear-gradient(135deg, #1e293b 0%, #273449 100%);
+	--pospire-chart-grid: #334155;
+	--pospire-chart-tooltip-bg: #e2e8f0;
+	--pospire-chart-tooltip-text: #0f172a;
+	--pospire-table-bar-track: #263244;
+	--pospire-gradient-card: linear-gradient(180deg, #111827 0%, #1e293b 100%);
+	--pospire-gradient-background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+	--sidebar-bg: var(--pospire-sidebar-bg);
+	--sidebar-header-bg: var(--pospire-sidebar-header-bg);
+	--hover-bg: var(--pospire-hover-bg);
+	--hover-bg-dark: rgba(148, 163, 184, 0.2);
+	--card-bg: var(--pospire-gradient-card);
+	--section-bg: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+	--subsection-bg: linear-gradient(135deg, #111827 0%, #172033 100%);
+	--difference-bg: linear-gradient(135deg, #164e63 0%, #0f766e 100%);
+	--border-light: var(--pospire-border);
+	--border-subsection: #475569;
+	--border-difference: #22d3ee;
+	--text-main: var(--pospire-text-main);
+	--text-sub: var(--pospire-text-muted);
+	--text-subsection: var(--pospire-text-muted);
+	--icon-section-bg: rgba(0, 188, 212, 0.16);
+	--icon-subsection-bg: rgba(167, 139, 250, 0.16);
+	--modal-bg: var(--pospire-surface-soft);
+	--add-section-bg: var(--pospire-surface-soft);
+	--empty-bg-gradient: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+	--empty-text-color: var(--pospire-text-muted);
+	--empty-title-color: var(--pospire-text-primary);
+	--itemselect-color-bg-card: var(--pospire-surface);
+	--itemselect-color-bg-container: var(--pospire-app-bg);
+	--itemselect-color-bg-empty: var(--pospire-surface-muted);
+	--itemselect-color-border: var(--pospire-border);
+	--itemselect-color-text-main: var(--pospire-text-primary);
+	--itemselect-color-text-muted: var(--pospire-text-muted);
+	--itemselect-color-text-secondary: var(--pospire-text-faint);
+	--itemselect-gradient-card: var(--pospire-gradient-card);
+	--itemselect-gradient-empty: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+	--offersmodal-color-text-main: var(--pospire-text-primary);
+	--offersmodal-color-text-muted: var(--pospire-text-muted);
+	--offersmodal-color-border: var(--pospire-border);
+	--offersmodal-color-bg: var(--pospire-app-bg);
+	--offersmodal-color-bg-card: var(--pospire-surface);
+}
+
+.v-theme--dark .v-application,
+.v-theme--dark .v-main {
+	background: var(--pospire-app-bg) !important;
+	color: var(--pospire-text-main);
+}
+
+.v-theme--dark .v-app-bar.v-toolbar,
+.v-theme--dark .modern-header {
+	background: var(--pospire-navbar-bg) !important;
+	border-color: var(--pospire-border) !important;
+	box-shadow: var(--pospire-card-shadow) !important;
+}
+
+.v-theme--dark .v-navigation-drawer,
+.v-theme--dark .modern-sidebar {
+	background: var(--pospire-sidebar-bg) !important;
+	border-color: var(--pospire-border) !important;
+}
+
+.v-theme--dark .pos-page,
+.v-theme--dark .payments-page,
+.v-theme--dark .v-main,
+.v-theme--dark .test-pos,
+.v-theme--dark .invoice-section {
+	background: var(--pospire-app-bg) !important;
+	color: var(--pospire-text-main) !important;
+}
+
+.v-theme--dark .pos-page .v-card,
+.v-theme--dark .modern-payments-card,
+.v-theme--dark .modern-totals-card,
+.v-theme--dark .modern-section-card,
+.v-theme--dark .modern-subsection-card,
+.v-theme--dark .pos-footer-section,
+.v-theme--dark .payment-summary-section,
+.v-theme--dark .payment-methods-section,
+.v-theme--dark .change-details-section,
+.v-theme--dark .cards,
+.v-theme--dark .selection,
+.v-theme--dark .pospire-modal,
+.v-theme--dark .v-dialog .v-card {
+	background: var(--pospire-surface) !important;
+	color: var(--pospire-text-main) !important;
+	border-color: var(--pospire-border) !important;
+	box-shadow: var(--pospire-card-shadow) !important;
+}
+
+.v-theme--dark .modern-payments-content,
+.v-theme--dark .customer-section-wrapper,
+.v-theme--dark .invoices-section-wrapper,
+.v-theme--dark .totals-content,
+.v-theme--dark .difference-section,
+.v-theme--dark .subsection-header,
+.v-theme--dark .section-header,
+.v-theme--dark .pos-scrollable-content,
+.v-theme--dark .v-table,
+.v-theme--dark .v-data-table {
+	background: var(--pospire-surface) !important;
+	color: var(--pospire-text-main) !important;
+}
+
+.v-theme--dark .v-table thead,
+.v-theme--dark .v-data-table thead,
+.v-theme--dark .v-data-table-header,
+.v-theme--dark .v-table tbody tr:hover,
+.v-theme--dark .v-data-table tbody tr:hover {
+	background: var(--pospire-surface-soft) !important;
+}
+
+.v-theme--dark .v-table th,
+.v-theme--dark .v-table td,
+.v-theme--dark .v-data-table th,
+.v-theme--dark .v-data-table td,
+.v-theme--dark .v-divider {
+	border-color: var(--pospire-border) !important;
+	color: var(--pospire-text-main) !important;
+}
+
+.v-theme--dark .section-main-title,
+.v-theme--dark .subsection-text,
+.v-theme--dark .pospire-modal-title,
+.v-theme--dark .company-name,
+.v-theme--dark .client-brand-name,
+.v-theme--dark .brand-name-primary,
+.v-theme--dark .brand-pos,
+.v-theme--dark .brand-pos-modern,
+.v-theme--dark .pospire-pos {
+	color: var(--pospire-text-primary) !important;
+	-webkit-text-fill-color: currentColor !important;
+}
+
+.v-theme--dark .section-subtitle,
+.v-theme--dark .page-info,
+.v-theme--dark .company-type,
+.v-theme--dark .powered-by-text,
+.v-theme--dark .brand-name-accent,
+.v-theme--dark .pospire-pire,
+.v-theme--dark .nav-text,
+.v-theme--dark .menu-button,
+.v-theme--dark .modern-nav-icon {
+	color: var(--pospire-text-muted) !important;
+}
+
+.v-theme--dark .v-field,
+.v-theme--dark .v-input,
+.v-theme--dark .v-select,
+.v-theme--dark .v-autocomplete,
+.v-theme--dark .v-text-field,
+.v-theme--dark .v-textarea {
+	color: var(--pospire-text-main) !important;
+}
+
+.v-theme--dark .v-field {
+	background: var(--pospire-surface-soft) !important;
+	border-color: var(--pospire-border) !important;
+}
+
+.v-theme--dark .v-field__input,
+.v-theme--dark .v-label,
+.v-theme--dark .v-selection-control .v-label {
+	color: var(--pospire-text-main) !important;
+}
+
+.v-theme--dark .pos-page .text-grey,
+.v-theme--dark .pos-page .text-grey-lighten-1,
+.v-theme--dark .pos-page .text-grey-darken-1,
+.v-theme--dark .pos-page .text-grey-darken-2,
+.v-theme--dark .pos-page .text-medium-emphasis,
+.v-theme--dark .payments-page .text-grey,
+.v-theme--dark .payments-page .text-grey-lighten-1,
+.v-theme--dark .payments-page .text-grey-darken-1,
+.v-theme--dark .payments-page .text-grey-darken-2,
+.v-theme--dark .payments-page .text-medium-emphasis {
+	color: var(--pospire-text-main) !important;
+}
+
+.v-theme--dark .user-chip,
+.v-theme--dark .user-chip .v-chip__content,
+.v-theme--dark .user-chip .v-icon {
+	color: var(--pospire-text-primary) !important;
+}
+
+.v-theme--dark .nav-icon-container,
+.v-theme--dark .menu-button:hover,
+.v-theme--dark .modern-nav-icon:hover,
+.v-theme--dark .nav-item:hover {
+	background: var(--pospire-hover-bg) !important;
+	color: var(--pospire-text-primary) !important;
+}
+
+.v-theme--dark .nav-icon,
+.v-theme--dark .nav-item:hover .nav-icon {
+	color: var(--pospire-text-muted) !important;
+}
+
+.v-theme--dark .brand-container-modern {
+	background: color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent) !important;
+	border-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 28%, var(--pospire-border)) !important;
+}
+
+.v-theme--dark .client-logo,
+.v-theme--dark .company-avatar {
+	background: var(--pospire-surface-soft) !important;
+	border-color: var(--pospire-border) !important;
+}
+
+.v-theme--dark .bg-white,
+.v-theme--dark .bg-grey-lighten-5,
+.v-theme--dark .blue-grey-lighten-5 {
+	background: var(--pospire-surface) !important;
+	color: var(--pospire-text-main) !important;
 }
 
 /* Keyframe Animations */
@@ -2883,10 +3014,8 @@ body:has(.pos-page) .v-btn:active:not(:disabled),
 
 /* Primary action buttons - subtle glow on hover - SCOPED to POS pages */
 body:has(.pos-page) .v-btn.bg-primary:hover:not(:disabled),
-body:has(.pos-page) .v-btn[style*="00BCD4"]:hover:not(:disabled),
 body:has(.pos-page) .pospire-btn-primary:hover:not(:disabled),
 .pos-page .v-btn.bg-primary:hover:not(:disabled),
-.pos-page .v-btn[style*="00BCD4"]:hover:not(:disabled),
 .pos-page .pospire-btn-primary:hover:not(:disabled) {
 	box-shadow: 0 4px 15px rgba(0, 188, 212, 0.35);
 }
@@ -4005,11 +4134,11 @@ body:has(.pos-page) .v-dialog .v-card-title,
 body:has(.pos-page) .v-dialog .enhanced-modal-header,
 .pos-page .v-dialog .v-card-title,
 .pos-page .v-dialog .enhanced-modal-header {
-	background: var(--pospire-clean-white) !important;
-	border-bottom: 2px solid var(--pospire-border-gray) !important;
+	background: var(--pospire-surface) !important;
+	border-bottom: 2px solid var(--pospire-border) !important;
 	padding: 20px 24px !important;
 	font: var(--pospire-font-headline) !important;
-	color: var(--pospire-deep-slate) !important;
+	color: var(--pospire-text-primary) !important;
 }
 
 /* Icon in Dialog Title - Moderate size, inline - SCOPED to POS pages */
@@ -4022,13 +4151,27 @@ body:has(.pos-page) .v-dialog .enhanced-modal-header .v-icon,
 	margin-right: 8px !important;
 }
 
+body:has(.pos-page) .v-dialog .v-card-title .v-btn,
+body:has(.pos-page) .v-dialog .enhanced-modal-header .v-btn,
+.pos-page .v-dialog .v-card-title .v-btn,
+.pos-page .v-dialog .enhanced-modal-header .v-btn {
+	color: var(--pospire-text-primary) !important;
+}
+
+body:has(.pos-page) .v-dialog .v-card-title .v-btn:hover,
+body:has(.pos-page) .v-dialog .enhanced-modal-header .v-btn:hover,
+.pos-page .v-dialog .v-card-title .v-btn:hover,
+.pos-page .v-dialog .enhanced-modal-header .v-btn:hover {
+	background: var(--pospire-hover-bg) !important;
+}
+
 /* Dialog Text/Body - SCOPED to POS pages */
 body:has(.pos-page) .v-dialog .v-card-text,
 .pos-page .v-dialog .v-card-text {
 	padding: 24px !important;
-	background: var(--pospire-clean-white) !important;
+	background: var(--pospire-surface) !important;
 	font: var(--pospire-font-body-regular) !important;
-	color: var(--pospire-deep-slate) !important;
+	color: var(--pospire-text-primary) !important;
 	line-height: 1.6 !important;
 }
 
@@ -4037,8 +4180,8 @@ body:has(.pos-page) .v-dialog .v-card-actions,
 body:has(.pos-page) .v-dialog .enhanced-modal-actions,
 .pos-page .v-dialog .v-card-actions,
 .pos-page .v-dialog .enhanced-modal-actions {
-	background: #f8f9fa !important;
-	border-top: 2px solid var(--pospire-border-gray) !important;
+	background: var(--pospire-surface-soft) !important;
+	border-top: 2px solid var(--pospire-border) !important;
 	padding: 16px 24px !important;
 	gap: 12px !important;
 	display: flex !important;
@@ -4110,8 +4253,8 @@ body:has(.pos-page) .v-dialog .v-card-actions .v-btn[variant="text"]:hover,
 body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[variant="text"]:hover,
 .pos-page .v-dialog .v-card-actions .v-btn[variant="text"]:hover,
 .pos-page .v-dialog .enhanced-modal-actions .v-btn[variant="text"]:hover {
-	background: rgba(0, 0, 0, 0.05) !important;
-	color: var(--pospire-deep-slate) !important;
+	background: var(--pospire-hover-bg) !important;
+	color: var(--pospire-text-primary) !important;
 }
 
 /* Danger Dialog Button (DELETE, REMOVE, etc.) - SCOPED to POS pages */
@@ -4133,22 +4276,14 @@ body:has(.pos-page) .v-dialog .enhanced-modal-actions .v-btn[color="error"]:hove
 	transform: translateY(-1px);
 }
 
-/* Custom Modal Header (with class) - SCOPED to POS pages */
-body:has(.pos-page) .pospire-modal-header,
-body:has(.pos-page) .v-dialog .v-card-title.pospire-modal-header,
-.pos-page .pospire-modal-header,
-.pos-page .v-dialog .v-card-title.pospire-modal-header {
-	background: var(--pospire-gradient-card) !important;
-	border-bottom: 1px solid var(--pospire-border-gray) !important;
-}
-
 /* Custom Modal Body (with class) - SCOPED to POS pages */
 body:has(.pos-page) .pospire-modal-body,
 body:has(.pos-page) .v-dialog .v-card-text.pospire-modal-body,
 .pos-page .pospire-modal-body,
 .pos-page .v-dialog .v-card-text.pospire-modal-body {
 	padding: 24px !important;
-	background: var(--pospire-clean-white) !important;
+	background: var(--pospire-surface) !important;
+	color: var(--pospire-text-primary) !important;
 }
 
 /* Custom Modal Actions (with class) - SCOPED to POS pages */
@@ -4156,8 +4291,8 @@ body:has(.pos-page) .pospire-modal-actions,
 body:has(.pos-page) .v-dialog .v-card-actions.pospire-modal-actions,
 .pos-page .pospire-modal-actions,
 .pos-page .v-dialog .v-card-actions.pospire-modal-actions {
-	background: var(--pospire-light-gray) !important;
-	border-top: 1px solid var(--pospire-border-gray) !important;
+	background: var(--pospire-surface-soft) !important;
+	border-top: 1px solid var(--pospire-border) !important;
 	padding: 16px 24px !important;
 }
 
@@ -4358,17 +4493,17 @@ body:has(.pos-page) .v-dialog.info .enhanced-modal-card,
 
 /* Data Tables - SCOPED to POS pages */
 
-/* Table Headers - Per Design: Background #F7F7F7 - SCOPED */
-body:has(.pos-page) .v-data-table :deep(thead th),
-body:has(.pos-page) .v-table :deep(thead th),
-.pos-page .v-data-table :deep(thead th),
-.pos-page .v-table :deep(thead th),
+/* Table Headers - SCOPED */
+body:has(.pos-page) .v-data-table thead th,
+body:has(.pos-page) .v-table thead th,
+.pos-page .v-data-table thead th,
+.pos-page .v-table thead th,
 .pos-page .pospire-table thead th {
 	font: var(--pospire-font-body-medium) !important;
-	color: var(--pospire-deep-slate) !important;
-	background: #f7f7f7 !important;
+	color: var(--pospire-text-primary) !important;
+	background: var(--pospire-surface-soft) !important;
 	height: 40px !important;
-	border-bottom: 1px solid var(--pospire-border-gray) !important;
+	border-bottom: 1px solid var(--pospire-border) !important;
 	padding: 0 12px !important;
 	white-space: nowrap !important;
 	text-transform: uppercase !important;
@@ -4378,52 +4513,52 @@ body:has(.pos-page) .v-table :deep(thead th),
 }
 
 /* Table Rows - SCOPED */
-body:has(.pos-page) .v-data-table :deep(tbody tr),
-body:has(.pos-page) .v-table :deep(tbody tr),
-.pos-page .v-data-table :deep(tbody tr),
-.pos-page .v-table :deep(tbody tr),
+body:has(.pos-page) .v-data-table tbody tr,
+body:has(.pos-page) .v-table tbody tr,
+.pos-page .v-data-table tbody tr,
+.pos-page .v-table tbody tr,
 .pos-page .pospire-table tbody tr {
 	height: 40px !important;
 	transition: background-color 0.15s ease !important;
 }
 
-/* Alternating Row Backgrounds - Per Design: Default #FFFFFF, Alternate #FAFAFF - SCOPED */
-body:has(.pos-page) .v-data-table :deep(tbody tr:nth-child(even)),
-body:has(.pos-page) .v-table :deep(tbody tr:nth-child(even)),
-.pos-page .v-data-table :deep(tbody tr:nth-child(even)),
-.pos-page .v-table :deep(tbody tr:nth-child(even)),
+/* Alternating Row Backgrounds - SCOPED */
+body:has(.pos-page) .v-data-table tbody tr:nth-child(even),
+body:has(.pos-page) .v-table tbody tr:nth-child(even),
+.pos-page .v-data-table tbody tr:nth-child(even),
+.pos-page .v-table tbody tr:nth-child(even),
 .pos-page .pospire-table tbody tr:nth-child(even) {
-	background: #fafaff !important;
+	background: var(--pospire-surface-soft) !important;
 }
 
-body:has(.pos-page) .v-data-table :deep(tbody tr:nth-child(odd)),
-body:has(.pos-page) .v-table :deep(tbody tr:nth-child(odd)),
-.pos-page .v-data-table :deep(tbody tr:nth-child(odd)),
-.pos-page .v-table :deep(tbody tr:nth-child(odd)),
+body:has(.pos-page) .v-data-table tbody tr:nth-child(odd),
+body:has(.pos-page) .v-table tbody tr:nth-child(odd),
+.pos-page .v-data-table tbody tr:nth-child(odd),
+.pos-page .v-table tbody tr:nth-child(odd),
 .pos-page .pospire-table tbody tr:nth-child(odd) {
-	background: var(--pospire-clean-white) !important;
+	background: var(--pospire-surface) !important;
 }
 
-/* Row Hover Effect - Per Design: Hover #E6F7FA - SCOPED */
-body:has(.pos-page) .v-data-table :deep(tbody tr:hover),
-body:has(.pos-page) .v-table :deep(tbody tr:hover),
-.pos-page .v-data-table :deep(tbody tr:hover),
-.pos-page .v-table :deep(tbody tr:hover),
+/* Row Hover Effect - SCOPED */
+body:has(.pos-page) .v-data-table tbody tr:hover,
+body:has(.pos-page) .v-table tbody tr:hover,
+.pos-page .v-data-table tbody tr:hover,
+.pos-page .v-table tbody tr:hover,
 .pos-page .pospire-table tbody tr:hover {
-	background: #e6f7fa !important;
+	background: var(--pospire-hover-bg) !important;
 	cursor: pointer !important;
 }
 
 /* Table Cells - Per Design: 12px horizontal padding - SCOPED */
-body:has(.pos-page) .v-data-table :deep(tbody td),
-body:has(.pos-page) .v-table :deep(tbody td),
-.pos-page .v-data-table :deep(tbody td),
-.pos-page .v-table :deep(tbody td),
+body:has(.pos-page) .v-data-table tbody td,
+body:has(.pos-page) .v-table tbody td,
+.pos-page .v-data-table tbody td,
+.pos-page .v-table tbody td,
 .pos-page .pospire-table tbody td {
 	font: var(--pospire-font-body-regular) !important;
-	color: var(--pospire-deep-slate) !important;
+	color: var(--pospire-text-main) !important;
 	padding: 0 12px !important;
-	border-bottom: 1px solid var(--pospire-border-gray) !important;
+	border-bottom: 1px solid var(--pospire-border) !important;
 }
 
 /* Table Borders - SCOPED */
@@ -4432,41 +4567,41 @@ body:has(.pos-page) .v-table,
 .pos-page .v-data-table,
 .pos-page .v-table,
 .pos-page .pospire-table {
-	border: 1px solid var(--pospire-border-gray) !important;
+	border: 1px solid var(--pospire-border) !important;
 	border-radius: 8px !important;
 	overflow: hidden !important;
 }
 
 /* Table Footer - SCOPED */
-body:has(.pos-page) .v-data-table :deep(tfoot th),
-body:has(.pos-page) .v-data-table :deep(tfoot td),
-body:has(.pos-page) .v-table :deep(tfoot th),
-body:has(.pos-page) .v-table :deep(tfoot td),
-.pos-page .v-data-table :deep(tfoot th),
-.pos-page .v-data-table :deep(tfoot td),
-.pos-page .v-table :deep(tfoot th),
-.pos-page .v-table :deep(tfoot td),
+body:has(.pos-page) .v-data-table tfoot th,
+body:has(.pos-page) .v-data-table tfoot td,
+body:has(.pos-page) .v-table tfoot th,
+body:has(.pos-page) .v-table tfoot td,
+.pos-page .v-data-table tfoot th,
+.pos-page .v-data-table tfoot td,
+.pos-page .v-table tfoot th,
+.pos-page .v-table tfoot td,
 .pos-page .pospire-table tfoot th,
 .pos-page .pospire-table tfoot td {
 	font: var(--pospire-font-body-medium) !important;
-	color: var(--pospire-deep-slate) !important;
-	background: var(--pospire-light-gray) !important;
+	color: var(--pospire-text-primary) !important;
+	background: var(--pospire-surface-soft) !important;
 	height: 40px !important;
-	border-top: 2px solid var(--pospire-border-gray) !important;
+	border-top: 2px solid var(--pospire-border) !important;
 	padding: 0 16px !important;
 }
 
 /* Empty State - SCOPED */
-body:has(.pos-page) .v-data-table :deep(.v-data-table__empty),
-.pos-page .v-data-table :deep(.v-data-table__empty),
+body:has(.pos-page) .v-data-table .v-data-table__empty,
+.pos-page .v-data-table .v-data-table__empty,
 .pos-page .pospire-table-empty {
 	padding: 48px 24px !important;
 	text-align: center !important;
 }
 
 /* Data table empty state icon - SCOPED to POS pages */
-body:has(.pos-page) .v-data-table :deep(.v-data-table__empty) .v-icon,
-.pos-page .v-data-table :deep(.v-data-table__empty) .v-icon {
+body:has(.pos-page) .v-data-table .v-data-table__empty .v-icon,
+.pos-page .v-data-table .v-data-table__empty .v-icon {
 	font-size: 48px !important;
 	color: var(--pospire-text-secondary) !important;
 	opacity: 0.5 !important;
@@ -4479,23 +4614,23 @@ body:has(.pos-page) .v-data-table :deep(.v-data-table__empty) .v-icon,
 }
 
 /* Pagination - SCOPED to POS pages */
-body:has(.pos-page) .v-data-table :deep(.v-data-table-footer),
-.pos-page .v-data-table :deep(.v-data-table-footer) {
-	background: var(--pospire-light-gray) !important;
-	border-top: 2px solid var(--pospire-border-gray) !important;
+body:has(.pos-page) .v-data-table .v-data-table-footer,
+.pos-page .v-data-table .v-data-table-footer {
+	background: var(--pospire-surface-soft) !important;
+	border-top: 2px solid var(--pospire-border) !important;
 	padding: 8px 16px !important;
 	font: var(--pospire-font-body-regular) !important;
 }
 
-body:has(.pos-page) .v-data-table :deep(.v-data-table-footer__items-per-page),
-.pos-page .v-data-table :deep(.v-data-table-footer__items-per-page) {
+body:has(.pos-page) .v-data-table .v-data-table-footer__items-per-page,
+.pos-page .v-data-table .v-data-table-footer__items-per-page {
 	font: var(--pospire-font-body-regular) !important;
 }
 
-body:has(.pos-page) .v-data-table :deep(.v-data-table-footer__pagination),
-.pos-page .v-data-table :deep(.v-data-table-footer__pagination) {
+body:has(.pos-page) .v-data-table .v-data-table-footer__pagination,
+.pos-page .v-data-table .v-data-table-footer__pagination {
 	font: var(--pospire-font-body-medium) !important;
-	color: var(--pospire-deep-slate) !important;
+	color: var(--pospire-text-primary) !important;
 }
 
 /* Table Action Buttons */
@@ -4530,24 +4665,24 @@ body:has(.pos-page) .v-data-table :deep(.v-data-table-footer__pagination),
 }
 
 /* Dense/Compact Variant - SCOPED to POS pages */
-body:has(.pos-page) .v-data-table--density-compact :deep(thead th),
-.pos-page .v-data-table--density-compact :deep(thead th) {
+body:has(.pos-page) .v-data-table--density-compact thead th,
+.pos-page .v-data-table--density-compact thead th {
 	height: 36px !important;
 }
 
-body:has(.pos-page) .v-data-table--density-compact :deep(tbody tr),
-.pos-page .v-data-table--density-compact :deep(tbody tr) {
+body:has(.pos-page) .v-data-table--density-compact tbody tr,
+.pos-page .v-data-table--density-compact tbody tr {
 	height: 36px !important;
 }
 
 /* Loading State - SCOPED to POS pages */
-body:has(.pos-page) .v-data-table :deep(.v-data-table-progress),
-.pos-page .v-data-table :deep(.v-data-table-progress) {
+body:has(.pos-page) .v-data-table .v-data-table-progress,
+.pos-page .v-data-table .v-data-table-progress {
 	height: 2px !important;
 }
 
-body:has(.pos-page) .v-data-table :deep(.v-data-table-progress .v-progress-linear),
-.pos-page .v-data-table :deep(.v-data-table-progress .v-progress-linear) {
+body:has(.pos-page) .v-data-table .v-data-table-progress .v-progress-linear,
+.pos-page .v-data-table .v-data-table-progress .v-progress-linear {
 	background: var(--pospire-vibrant-teal) !important;
 }
 
@@ -4571,11 +4706,18 @@ body:has(.pos-page) .page-body {
 	margin: 0 !important;
 }
 
-/* Override Vuetify's --v-layout-top on v-main for correct layout offset */
-/* Reduced to 48px to ensure footer borders are fully visible */
-.v-main:has(.pos-page) {
-	--v-layout-top: 48px !important;
-}
+/*
+ * NOTE: A previous version of this file forced --v-layout-top: 48px on
+ * .v-main:has(.pos-page) "to ensure footer borders are fully visible".
+ * That hack lied about the navbar height (real height: 72px, see
+ * Navbar.vue) and caused the navbar to overlay the top 24px of v-main's
+ * content area — invisible while there was nothing pinned to the top of
+ * v-main, but it clipped the OfflineBanner once we mounted it inside
+ * v-main as a status strip. Footer-border visibility is already handled
+ * locally by .pos-page's padding-bottom (see ~line 4625), so the
+ * override is redundant on top of being incorrect. We let Vuetify write
+ * the real navbar height into --v-layout-top now.
+ */
 
 /* Level 1: Page Container - Constrain to viewport */
 .pos-page {
@@ -4583,9 +4725,18 @@ body:has(.pos-page) .page-body {
 	margin: 0 !important;
 	margin-top: 0 !important;
 	padding: 0 !important;
-	/* Use viewport height minus navbar offset (48px) */
-	height: calc(100dvh - var(--v-layout-top, 48px));
-	max-height: calc(100dvh - var(--v-layout-top, 48px));
+	/*
+	 * Subtract navbar (--v-layout-top) AND offline banner (--pospire-banner-height,
+	 * set on <v-app> in App.vue — 0px hidden / 44px visible). Without the banner
+	 * term, the cart/invoice panel inside .pos-page extends past the viewport
+	 * and the banner clips it from underneath.
+	 */
+	height: calc(
+		100dvh - var(--v-layout-top, 48px) - var(--pospire-banner-height, 0px)
+	);
+	max-height: calc(
+		100dvh - var(--v-layout-top, 48px) - var(--pospire-banner-height, 0px)
+	);
 	overflow: hidden;
 	display: flex;
 	flex-direction: column;
@@ -4991,7 +5142,8 @@ body:has(.pos-page) .items-list-scroll::-webkit-scrollbar-thumb,
 
 /* Search wrapper needs solid background */
 .enhanced-items-container .enhanced-search-wrapper {
-	background: white;
+	background: var(--pospire-surface);
+	border-radius: var(--pospire-input-border-radius);
 	position: relative;
 	z-index: 10;
 }

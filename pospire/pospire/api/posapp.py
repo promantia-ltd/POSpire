@@ -4,6 +4,7 @@
 
 import hashlib
 import json
+from collections import Counter
 from typing import Any
 
 import frappe
@@ -43,17 +44,32 @@ from erpnext.stock.doctype.batch.batch import (
 	get_batch_qty,
 )
 from erpnext.stock.get_item_details import get_item_details
+from erpnext.stock.stock_ledger import NegativeStockError
 from frappe import _
 from frappe.query_builder import Field
 from frappe.query_builder.functions import IfNull
-from frappe.utils import cstr, flt, getdate, nowdate
+from frappe.utils import cint, cstr, flt, getdate, nowdate
 from frappe.utils.background_jobs import enqueue
 
+from pospire.pospire.api.stock_reconcile import (
+	ensure_stock_for_invoice,
+	ensure_typed_batches_exist_for_invoice,
+)
 from pospire.pospire.doctype.delivery_charges.delivery_charges import (
 	get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
 from pospire.pospire.doctype.pos_coupon.pos_coupon import check_coupon_code
 from pospire.pospire.utils.pos_server_cache import CUSTOMERS_KEY_PREFIX, ITEMS_KEY_PREFIX
+
+
+def submit_sales_invoice(invoice_doc) -> bool:
+	"""Run pre-submit stock hooks and submit a draft Sales Invoice."""
+	if cint(invoice_doc.docstatus) != 0:
+		return False
+
+	ensure_stock_for_invoice(invoice_doc)
+	invoice_doc.submit()
+	return True
 
 
 def _make_pos_cache_key(prefix: str, *args) -> str:
@@ -70,7 +86,12 @@ def _make_pos_cache_key(prefix: str, *args) -> str:
 @frappe.whitelist()
 def get_opening_dialog_data() -> dict:
 	data = {}
-	data["companies"] = frappe.get_list("Company", limit_page_length=0, order_by="name")
+	data["companies"] = frappe.get_list(
+		"Company",
+		fields=["name", "company_logo"],
+		limit_page_length=0,
+		order_by="name",
+	)
 	data["pos_profiles_data"] = frappe.get_list(
 		"POS Profile",
 		filters={"disabled": 0},
@@ -84,10 +105,18 @@ def get_opening_dialog_data() -> dict:
 		pos_profiles_list.append(i.name)
 
 	payment_method_table = "POS Payment Method"
+	# Explicit field list, not fields=["*"]. This response is durable-cached
+	# client-side (unencrypted Dexie `metadata` table, see DURABLE_KEYS in
+	# frontend/src/offline/read-cache.ts) on the premise that it carries no
+	# PII. "*" on a child table also returns `owner`/`modified_by` (staff
+	# email addresses) and would silently re-introduce PII the moment this
+	# doctype gains a new field. Only "parent" (used below AND by both
+	# OpeningDialog consumers to match a profile) and "mode_of_payment"
+	# (the only other field either consumer reads) are needed.
 	data["payments_method"] = frappe.get_list(
 		payment_method_table,
 		filters={"parent": ["in", pos_profiles_list]},
-		fields=["*"],
+		fields=["parent", "mode_of_payment"],
 		limit_page_length=0,
 		order_by="parent",
 		ignore_permissions=True,
@@ -100,30 +129,36 @@ def get_opening_dialog_data() -> dict:
 	for profile in data["pos_profiles_data"]:
 		profile_doc = frappe.get_cached_doc("POS Profile", profile.name)
 
-		if profile_doc.get("custom_enable_cash_denominations"):
-			cash_mode = profile_doc.get("posa_cash_mode_of_payment") or "Cash"
-			denominations = []
-			for d in profile_doc.get("custom_denominations", []):
-				denominations.append(
-					{
-						"denomination": d.denomination,
-						"denomination_name": frappe.get_cached_value(
-							"POS Denomination",
-							d.denomination,
-							"denomination_name",
-						),
-						"denomination_value": d.denomination_value,
-						"currency": d.currency,
-						"display_order": d.display_order,
-					}
-				)
-			denominations.sort(key=lambda x: x.get("display_order") or 0)
-			if denominations:
-				data["denomination_config"][profile.name] = {
-					"enabled": True,
-					"cash_mode": cash_mode,
-					"denominations": denominations,
+		if not profile_doc.get("custom_enable_cash_denominations"):
+			continue
+
+		denominations = []
+		for d in profile_doc.get("custom_denominations", []):
+			denominations.append(
+				{
+					"denomination": d.denomination,
+					"denomination_name": frappe.get_cached_value(
+						"POS Denomination",
+						d.denomination,
+						"denomination_name",
+					),
+					"denomination_value": d.denomination_value,
+					"currency": d.currency,
+					"display_order": d.display_order,
 				}
+			)
+		denominations.sort(key=lambda x: x.get("display_order") or 0)
+
+		# Emit the policy even when `denominations` is empty. "Enabled but
+		# unconfigured" is a misconfiguration the cashier should see, not a
+		# reason to silently render the dialog as if denominations were off.
+		# Collapsing the two states is what forced the client to guess.
+		data["denomination_config"][profile.name] = {
+			"enabled": True,
+			"cash_mode": profile_doc.get("posa_cash_mode_of_payment") or "Cash",
+			"denominations": denominations,
+			"config_version": str(profile_doc.modified),
+		}
 
 	return data
 
@@ -153,6 +188,14 @@ def create_opening_voucher(
 		denomination_details = _load(denomination_details)
 		new_pos_opening.set("denomination_details", denomination_details)
 		_validate_denomination_total(new_pos_opening)
+
+	# P-12 / Q-2: snapshot the POS Profile offline flags onto the opening
+	# shift so submit-time handlers read them from the shift, never from the
+	# live profile. See docs/offline/12-server-side-changes.md §3 and the
+	# `snapshot_profile_flags_onto_opening_shift` helper.
+	from pospire.pospire.api.offline import snapshot_profile_flags_onto_opening_shift
+
+	snapshot_profile_flags_onto_opening_shift(new_pos_opening)
 
 	new_pos_opening.insert(ignore_permissions=True)
 
@@ -331,6 +374,23 @@ def get_items(
 				item_prices.setdefault(d.item_code, {})
 				item_prices[d.item_code][d.get("uom") or "None"] = d
 
+			# Per-item default tax template, forwarded for offline tax estimation
+			# and item-level re-derivation on sync.
+			item_tax_map = {}
+			for tax_row in frappe.get_all(
+				"Item Tax",
+				fields=["parent", "item_tax_template"],
+				filters=[
+					["parenttype", "=", "Item"],
+					["parent", "in", items],
+					[IfNull(Field("tax_category"), ""), "=", ""],
+					[IfNull(Field("valid_from"), "1900-01-01"), "<=", today],
+				],
+				order_by="valid_from asc",
+			):
+				# ascending order -> latest valid row wins
+				item_tax_map[tax_row.parent] = tax_row.item_tax_template
+
 			for item in items_data:
 				item_code = item.item_code
 				item_price = {}
@@ -366,7 +426,7 @@ def get_items(
 										}
 									)
 				serial_no_data = []
-				if search_serial_no:
+				if item.has_serial_no and (search_serial_no or pos_profile.get("posa_auto_stock_reconcile")):
 					serial_no_data = frappe.get_all(
 						"Serial No",
 						filters={
@@ -404,6 +464,7 @@ def get_items(
 							"batch_no_data": batch_no_data or [],
 							"attributes": attributes or "",
 							"item_attributes": item_attributes or "",
+							"item_tax_template": item_tax_map.get(item_code),
 						}
 					)
 					result.append(row)
@@ -438,6 +499,50 @@ def get_items(
 		return items
 
 	return _get_items(pos_profile, price_list, item_group, search_value, customer)
+
+
+@frappe.whitelist()
+def get_offline_tax_config(pos_profile: str | dict) -> dict:
+	"""Tax config snapshot the client caches for offline tax estimation.
+
+	Returns the POS Profile's invoice-level tax rows plus a map of Item Tax
+	Templates for per-item overrides.
+	"""
+	# Unlike the other pos_profile APIs, this one takes a bare POS Profile *name*,
+	# which is not JSON -- feeding it to _load() unconditionally raises and 500s.
+	# Only decode when the string actually looks like JSON.
+	if isinstance(pos_profile, str) and pos_profile.startswith(("{", '"')):
+		pos_profile = _load(pos_profile)
+	profile_name = pos_profile.get("name") if isinstance(pos_profile, dict) else pos_profile
+
+	sales_taxes = []
+	template_name = (
+		frappe.get_cached_value("POS Profile", profile_name, "taxes_and_charges") if profile_name else None
+	)
+	if template_name:
+		template = frappe.get_cached_doc("Sales Taxes and Charges Template", template_name)
+		for row in template.taxes:
+			sales_taxes.append(
+				{
+					"account_head": row.account_head,
+					"charge_type": row.charge_type,
+					"rate": flt(row.rate),
+				}
+			)
+
+	item_tax_templates: dict[str, list] = {}
+	for detail in frappe.get_all(
+		"Item Tax Template Detail",
+		fields=["parent", "tax_type", "tax_rate"],
+	):
+		item_tax_templates.setdefault(detail.parent, []).append(
+			{"account_head": detail.tax_type, "rate": flt(detail.tax_rate)}
+		)
+
+	return {
+		"sales_taxes_and_charges": sales_taxes,
+		"item_tax_templates": item_tax_templates,
+	}
 
 
 def get_item_group_condition(pos_profile):
@@ -603,6 +708,41 @@ def add_taxes_from_tax_template(item, parent_doc):
 				tax_row.db_insert()
 
 
+def _expand_offline_taxes(invoice_doc):
+	"""Re-derive the tax table for an offline-origin invoice.
+
+	Offline invoices reach submit_invoice with empty `taxes` (the live-only
+	update_invoice tax step was skipped), so without this they book zero tax.
+	Re-expand from the same sources the online flow uses. No-op when taxes are
+	already present (online) or no tax source is configured.
+	"""
+	if invoice_doc.get("taxes"):
+		return
+	template = None
+	if invoice_doc.get("pos_profile"):
+		template = frappe.get_cached_value("POS Profile", invoice_doc.pos_profile, "taxes_and_charges")
+	if template:
+		invoice_doc.taxes_and_charges = template
+		invoice_doc.set_taxes()
+	for item in invoice_doc.items:
+		add_taxes_from_tax_template(item, invoice_doc)
+	# Inclusive: flag rows so tax is extracted from the price, not added on top.
+	if invoice_doc.get("inclusive_tax"):
+		for tax in invoice_doc.get("taxes") or []:
+			tax.included_in_rate = 1
+			tax.included_in_print_rate = 1
+
+
+def _preserve_offline_generated_tax_rows(invoice_doc, invoice):
+	"""Keep ERPNext-generated tax rows from being cleared by offline payloads."""
+	if not invoice_doc.get("pos_offline_id") or not isinstance(invoice, dict):
+		return
+
+	for fieldname in ("taxes", "item_wise_tax_details"):
+		if fieldname in invoice and not invoice.get(fieldname):
+			invoice.pop(fieldname, None)
+
+
 @frappe.whitelist()
 def update_invoice_from_order(data: str | dict):
 	data = _load(data)
@@ -667,7 +807,9 @@ def update_invoice(data: str | dict):
 
 		# Step 1: Handle accounting dimensions (custom + standard)
 		try:
-			accounting_dimensions = get_accounting_dimensions(as_list=False, filters={"disabled": 0})
+			# ERPNext v16's get_accounting_dimensions() already filters disabled
+			# dimensions and no longer accepts a `filters` kwarg.
+			accounting_dimensions = get_accounting_dimensions(as_list=False)
 			accounting_dimensions_fields = [d.fieldname for d in accounting_dimensions]
 
 			# Include standard dimensions
@@ -849,16 +991,72 @@ def update_invoice(data: str | dict):
 	if invoice_doc.get("posting_date") and getdate(invoice_doc.posting_date) != today_date:
 		invoice_doc.set_posting_time = 1
 
+	ensure_typed_batches_exist_for_invoice(invoice_doc)
 	invoice_doc.save()
 	return invoice_doc
 
 
 @frappe.whitelist()
-def submit_invoice(invoice: str | dict, data: str | dict) -> dict:
+def submit_invoice(invoice: str | dict, data: str | dict, offline_id: str | None = None) -> dict:
+	# C1 — cross-path idempotency. Frontend's `call()` wrapper stamps an
+	# `offline_id` UUID on EVERY offline-capable write before sending live.
+	# If the live POST commits server-side but the cashier's network drops
+	# before the response arrives, `call()` enqueues a retry under the same
+	# offline_id. Without this guard, the retry would insert a SECOND doc,
+	# duplicating the receipt. Mirroring the offline endpoint's idempotency
+	# check here closes that race.
+	if offline_id:
+		from pospire.pospire.api.offline import _existing_by_offline_id
+
+		existing = _existing_by_offline_id("Sales Invoice", offline_id)
+		if existing:
+			doc = frappe.get_doc("Sales Invoice", existing)
+			if cint(doc.docstatus) == 1:
+				return {
+					"name": doc.name,
+					"status": doc.docstatus,
+					"was_already_submitted": True,
+				}
+			# docstatus=0 / draft from a prior partial submit — fall through
+			# and re-run the posapp logic against this existing doc instead
+			# of the one named in `invoice`. The idempotent draft case is
+			# rare (live partial replays) but symmetric with offline.py's
+			# resume-from-draft branch.
+			invoice = _load(invoice) if isinstance(invoice, str | dict) else invoice
+			if isinstance(invoice, dict):
+				invoice["name"] = doc.name
+
 	data = _load(data)
 	invoice = _load(invoice)
 	invoice_doc = frappe.get_doc("Sales Invoice", invoice.get("name"))
+	# Stamp the offline_id onto the doc so the offline replay endpoint's
+	# `_existing_by_offline_id` lookup finds this row on a network-error
+	# retry. Live writes that didn't get an offline_id (legacy callers) are
+	# unaffected.
+	if offline_id and not invoice_doc.get("pos_offline_id"):
+		invoice_doc.pos_offline_id = offline_id
+	_preserve_offline_generated_tax_rows(invoice_doc, invoice)
 	invoice_doc.update(invoice)
+	# Belt-and-braces floor on item rate. The client clamps before sending
+	# (see Invoice.vue::clamp_item_rate), but a stale tab, replayed offline
+	# row, or third-party caller could still hand us a row where a stacked
+	# offer's discount drove `rate` below 0. ERPNext's `validate_qty` (in
+	# erpnext/controllers/status_updater.py) refuses to submit such a doc
+	# unless `Selling Settings.allow_negative_rates_for_items` is on. The
+	# Pospire policy is "an offer can take a line down to free, never below"
+	# — so we clamp here rather than flip a global flag that would let any
+	# line go negative without further guardrails.
+	for item in invoice_doc.items:
+		if flt(item.discount_percentage) > 100:
+			item.discount_percentage = 100
+		price_list_rate = flt(item.price_list_rate)
+		if price_list_rate > 0 and flt(item.discount_amount) > price_list_rate:
+			item.discount_amount = price_list_rate
+		if flt(item.rate) < 0:
+			item.rate = 0
+			# Recompute amount so rounded totals stay coherent — leaving
+			# the old (negative) amount would skew grand_total downstream.
+			item.amount = flt(item.qty) * flt(item.rate)
 	if invoice.get("posa_delivery_date"):
 		invoice_doc.update_stock = 0
 	mop_cash_list = [
@@ -921,11 +1119,15 @@ def submit_invoice(invoice: str | dict, data: str | dict) -> dict:
 				invoice_doc.is_pos = 0
 				is_payment_entry = 1
 
+	# Re-expand taxes for offline-origin invoices (no-op online).
+	_expand_offline_taxes(invoice_doc)
+
 	set_batch_nos_for_bundels(invoice_doc, "warehouse", throw=True)
 
 	invoice_doc.flags.ignore_permissions = True
 	frappe.flags.ignore_account_permission = True
 	invoice_doc.posa_is_printed = 1
+	ensure_typed_batches_exist_for_invoice(invoice_doc)
 	invoice_doc.save()
 
 	if data.get("due_date"):
@@ -962,7 +1164,10 @@ def submit_invoice(invoice: str | dict, data: str | dict) -> dict:
 				},
 			)
 	else:
-		invoice_doc.submit()
+		try:
+			submit_sales_invoice(invoice_doc)
+		except NegativeStockError as e:
+			frappe.throw(str(e), title=_("Insufficient Stock"))
 		if invoice_doc.is_return and invoice_doc.return_against and not is_cashback:
 			original_invoice = frappe.get_doc("Sales Invoice", invoice_doc.return_against)
 			custom_delivery_charge = flt(original_invoice.get("custom_delivery_charge_rate") or 0)
@@ -1012,8 +1217,14 @@ def redeeming_customer_credit(invoice_doc, data, is_payment_entry, total_cash, c
 			cost_center = frappe.get_value("Company", invoice_doc.company, "cost_center")
 		if not cost_center:
 			frappe.throw(_("Cost Center is not set in pos profile {}").format(invoice_doc.pos_profile))
+		# snapshot already-booked entries so a retry skips them without collapsing equal rows
+		booked_journal_entries = _booked_customer_credit_journal_counter(invoice_doc)
 		for row in data.get("customer_credit_dict"):
 			if row["type"] == "Invoice" and row["credit_to_redeem"]:
+				journal_key = (row.get("credit_origin"), flt(row.get("credit_to_redeem")))
+				if booked_journal_entries.get(journal_key, 0) > 0:
+					booked_journal_entries[journal_key] -= 1
+					continue
 				outstanding_invoice = frappe.get_doc("Sales Invoice", row["credit_origin"])
 
 				jv_doc = frappe.get_doc(
@@ -1055,8 +1266,18 @@ def redeeming_customer_credit(invoice_doc, data, is_payment_entry, total_cash, c
 				jv_doc.submit()
 
 	if is_payment_entry and total_cash > 0:
-		for payment in payments:
-			if not payment.amount:
+		# snapshot already-booked entries so a retry skips them without collapsing equal rows
+		booked_payment_entries = _booked_customer_credit_payment_counter(invoice_doc)
+		for payment in payments or []:
+			if not flt(payment.get("amount")):
+				continue
+			payment_key = (
+				payment.get("account"),
+				payment.get("mode_of_payment"),
+				flt(payment.get("amount")),
+			)
+			if booked_payment_entries.get(payment_key, 0) > 0:
+				booked_payment_entries[payment_key] -= 1
 				continue
 			payment_entry_doc = frappe.get_doc(
 				{
@@ -1065,19 +1286,19 @@ def redeeming_customer_credit(invoice_doc, data, is_payment_entry, total_cash, c
 					"payment_type": "Receive",
 					"party_type": "Customer",
 					"party": invoice_doc.customer,
-					"paid_amount": payment.amount,
-					"received_amount": payment.amount,
+					"paid_amount": payment.get("amount"),
+					"received_amount": payment.get("amount"),
 					"paid_from": invoice_doc.debit_to,
-					"paid_to": payment.account,
+					"paid_to": payment.get("account"),
 					"company": invoice_doc.company,
-					"mode_of_payment": payment.mode_of_payment,
+					"mode_of_payment": payment.get("mode_of_payment"),
 					"reference_no": invoice_doc.posa_pos_opening_shift,
 					"reference_date": today,
 				}
 			)
 
 			payment_reference = {
-				"allocated_amount": payment.amount,
+				"allocated_amount": payment.get("amount"),
 				"due_date": data.get("due_date"),
 				"reference_doctype": "Sales Invoice",
 				"reference_name": invoice_doc.name,
@@ -1090,6 +1311,72 @@ def redeeming_customer_credit(invoice_doc, data, is_payment_entry, total_cash, c
 			payment_entry_doc.submit()
 
 
+def _booked_customer_credit_journal_counter(invoice_doc) -> Counter:
+	"""Count redemption journal entries already booked for this invoice, by (origin, amount)."""
+	credit_lines = frappe.get_all(
+		"Journal Entry Account",
+		filters={
+			"reference_type": "Sales Invoice",
+			"reference_name": invoice_doc.name,
+			"party_type": "Customer",
+			"party": invoice_doc.customer,
+			"docstatus": 1,
+		},
+		fields=["parent", "credit_in_account_currency"],
+	)
+	if not credit_lines:
+		return Counter()
+
+	parent_amounts = {row.parent: flt(row.credit_in_account_currency) for row in credit_lines}
+	debit_lines = frappe.get_all(
+		"Journal Entry Account",
+		filters={
+			"parent": ["in", list(parent_amounts)],
+			"reference_type": "Sales Invoice",
+			"party_type": "Customer",
+			"party": invoice_doc.customer,
+			"docstatus": 1,
+		},
+		fields=["parent", "reference_name", "debit_in_account_currency"],
+	)
+
+	counter = Counter()
+	for row in debit_lines:
+		amount = parent_amounts.get(row.parent)
+		if amount is not None and flt(row.debit_in_account_currency) == amount:
+			counter[(row.reference_name, amount)] += 1
+	return counter
+
+
+def _booked_customer_credit_payment_counter(invoice_doc) -> Counter:
+	"""Count payment entries already booked for this invoice, by (account, mode, paid_amount)."""
+	references = frappe.get_all(
+		"Payment Entry Reference",
+		filters={
+			"reference_doctype": "Sales Invoice",
+			"reference_name": invoice_doc.name,
+			"docstatus": 1,
+		},
+		fields=["parent"],
+	)
+	parents = list({row.parent for row in references})
+	if not parents:
+		return Counter()
+
+	entries = frappe.get_all(
+		"Payment Entry",
+		filters={
+			"name": ["in", parents],
+			"docstatus": 1,
+			"payment_type": "Receive",
+			"party_type": "Customer",
+			"party": invoice_doc.customer,
+		},
+		fields=["paid_to", "mode_of_payment", "paid_amount"],
+	)
+	return Counter((e.paid_to, e.mode_of_payment, flt(e.paid_amount)) for e in entries)
+
+
 def submit_in_background_job(kwargs):
 	invoice = kwargs.get("invoice")
 	invoice_doc = kwargs.get("invoice_doc")
@@ -1100,8 +1387,9 @@ def submit_in_background_job(kwargs):
 	payments = kwargs.get("payments")
 
 	invoice_doc = frappe.get_doc("Sales Invoice", invoice)
-	invoice_doc.submit()
-	redeeming_customer_credit(invoice_doc, data, is_payment_entry, total_cash, cash_account, payments)
+	submit_sales_invoice(invoice_doc)
+	if data.get("redeemed_customer_credit"):
+		redeeming_customer_credit(invoice_doc, data, is_payment_entry, total_cash, cash_account, payments)
 
 
 @frappe.whitelist()
@@ -1184,8 +1472,24 @@ def get_draft_invoices(pos_opening_shift: str) -> list:
 
 @frappe.whitelist()
 def delete_invoice(invoice: str) -> str:
-	if frappe.get_value("Sales Invoice", invoice, "posa_is_printed"):
+	invoice_details = frappe.db.get_value(
+		"Sales Invoice",
+		invoice,
+		["posa_is_printed", "posa_pos_opening_shift"],
+		as_dict=True,
+	)
+	if invoice_details and invoice_details.posa_is_printed:
 		frappe.throw(_("This invoice {0} cannot be deleted").format(invoice))
+	pos_opening_shift = invoice_details.posa_pos_opening_shift if invoice_details else None
+	if pos_opening_shift:
+		frappe.db.sql(
+			"""
+			UPDATE `tabPOS Opening Shift`
+			SET custom_cancelled_count = COALESCE(custom_cancelled_count, 0) + 1
+			WHERE name = %s
+			""",
+			(pos_opening_shift,),
+		)
 	frappe.delete_doc("Sales Invoice", invoice, force=1)
 	return _("Invoice {0} Deleted").format(invoice)
 
@@ -1277,6 +1581,7 @@ def get_item_detail(
 	today = nowdate()
 	item_code = item.get("item_code")
 	batch_no_data = []
+	serial_no_data = []
 	if warehouse and item.get("has_batch_no"):
 		batch_list = get_batch_qty(warehouse=warehouse, item_code=item_code)
 		if batch_list:
@@ -1295,6 +1600,16 @@ def get_item_detail(
 								"manufacturing_date": batch_doc.manufacturing_date,
 							}
 						)
+	if warehouse and item.get("has_serial_no"):
+		serial_no_data = frappe.get_all(
+			"Serial No",
+			filters={
+				"item_code": item_code,
+				"status": "Active",
+				"warehouse": warehouse,
+			},
+			fields=["name as serial_no"],
+		)
 
 	item["selling_price_list"] = price_list
 
@@ -1308,6 +1623,7 @@ def get_item_detail(
 		res["actual_qty"] = get_stock_availability(item_code, warehouse)
 	res["max_discount"] = max_discount
 	res["batch_no_data"] = batch_no_data
+	res["serial_no_data"] = serial_no_data
 	return res
 
 
@@ -1344,7 +1660,19 @@ def create_customer(
 	customer_type: str | None = None,
 	gender: str | None = None,
 	method: str = "create",
+	offline_id: str | None = None,
 ) -> dict | None:
+	# C1 — cross-path idempotency. Live + queued retries share the same
+	# `offline_id` so a network-failure replay must not insert a second
+	# Customer.
+	if offline_id and method == "create":
+		from pospire.pospire.api.offline import _existing_by_offline_id
+
+		existing = _existing_by_offline_id("Customer", offline_id)
+		if existing:
+			doc = frappe.get_doc("Customer", existing)
+			return {"name": doc.name, "customer_name": doc.customer_name}
+
 	pos_profile = _load(pos_profile_doc)
 	if method == "create":
 		is_exist = frappe.db.exists("Customer", {"customer_name": customer_name})
@@ -1371,6 +1699,11 @@ def create_customer(
 				customer.territory = territory
 			else:
 				customer.territory = "All Territories"
+			# Stamp offline_id so a network-failure replay (or the offline
+			# endpoint's own dedup) finds this row instead of inserting a
+			# duplicate.
+			if offline_id:
+				customer.pos_offline_id = offline_id
 			customer.save()
 			return {"name": customer.name}
 		else:

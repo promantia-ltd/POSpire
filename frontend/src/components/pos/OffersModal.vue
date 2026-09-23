@@ -80,10 +80,13 @@
 												>
 													Description:
 												</div>
+												<!-- See PosOffers.vue note: `pre-line` preserves
+												     cashier-visible newlines without rendering
+												     stored HTML (XSS guard at render time). -->
 												<div
 													class="text-body-2"
-													v-html="handleNewLine(item.description)"
-												></div>
+													style="white-space: pre-line"
+												>{{ item.description }}</div>
 											</v-col>
 											<v-col
 												v-if="item.offer == 'Give Product'"
@@ -131,8 +134,9 @@
 <script>
 import { toast } from "vue3-toastify";
 import format from "@/utils/format";
+import busListeners from "@/utils/busListeners";
 export default {
-	mixins: [format],
+	mixins: [format, busListeners],
 	props: {
 		modelValue: {
 			type: Boolean,
@@ -326,22 +330,22 @@ export default {
 	},
 	created: function () {
 		this.$nextTick(function () {
-			this.eventBus.on("register_pos_profile", (data) => {
+			this.onBus("register_pos_profile", (data) => {
 				this.pos_profile = data.pos_profile;
 			});
 		});
-		this.eventBus.on("update_customer", (customer) => {
+		this.onBus("update_customer", (customer) => {
 			if (this.customer != customer) {
 				this.offers = [];
 			}
 		});
-		this.eventBus.on("update_pos_offers", (data) => {
+		this.onBus("update_pos_offers", (data) => {
 			this.updatePosOffers(data);
 		});
-		this.eventBus.on("update_discount_percentage_offer_name", (data) => {
+		this.onBus("update_discount_percentage_offer_name", (data) => {
 			this.discount_percentage_offer_name = data.value;
 		});
-		this.eventBus.on("set_all_items", (data) => {
+		this.onBus("set_all_items", (data) => {
 			this.allItems = data;
 		});
 	},

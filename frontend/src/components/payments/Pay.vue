@@ -1,10 +1,15 @@
 <template>
-	<div fluid>
+	<div fluid class="payments-page">
 		<v-row v-show="!dialog">
 			<v-col md="8" cols="12" class="pb-2 pr-0">
 				<v-card
 					class="modern-payments-card mx-auto mt-3 overflow-y-auto"
-					style="max-height: 94vh; height: 94vh"
+					:style="{
+					height:
+						'calc(100dvh - var(--v-layout-top, 48px) - var(--pospire-banner-height, 0px) - 24px)',
+					'max-height':
+						'calc(100dvh - var(--v-layout-top, 48px) - var(--pospire-banner-height, 0px) - 24px)',
+				}"
 				>
 					<!-- PaidInvoice dialog has no visible DOM footprint; placed outside layout divs -->
 					<PaidInvoice></PaidInvoice>
@@ -19,7 +24,7 @@
 							<div class="section-header mb-4">
 								<v-card class="modern-section-card" variant="flat">
 									<v-card-title class="section-title">
-										<v-icon class="section-icon" size="24" color="#00BCD4"
+										<v-icon class="section-icon" size="24" color="primary"
 											>mdi-file-document-outline</v-icon
 										>
 										<div class="section-text">
@@ -52,7 +57,7 @@
 										variant="outlined"
 										hide-details
 										clearable
-										bg-color="white"
+										bg-color="surface"
 										v-model="pos_profile_search"
 										:items="pos_profiles_list"
 										item-value="name"
@@ -80,7 +85,7 @@
 								<v-col md="3" cols="12">
 									<v-btn
 										block
-										color="#00BCD4"
+										color="primary"
 										class="text-white"
 										@click="get_outstanding_invoices"
 										>{{ __("Search") }}</v-btn
@@ -160,7 +165,7 @@
 						<div class="section-header mb-4">
 							<v-card class="modern-section-card" variant="flat">
 								<v-card-title class="section-title">
-									<v-icon class="section-icon" size="24" color="#00BCD4"
+									<v-icon class="section-icon" size="24" color="primary"
 										>mdi-credit-card-outline</v-icon
 									>
 									<div class="section-text">
@@ -241,7 +246,7 @@
 						<div class="section-header mb-4">
 							<v-card class="modern-section-card" variant="flat">
 								<v-card-title class="section-title">
-									<v-icon class="section-icon" size="24" color="#00BCD4"
+									<v-icon class="section-icon" size="24" color="primary"
 										>mdi-cellphone-nfc</v-icon
 									>
 									<div class="section-text">
@@ -269,7 +274,7 @@
 									variant="outlined"
 									color="primary"
 									:label="__('Search by Name')"
-									bg-color="white"
+									bg-color="surface"
 									hide-details
 									v-model="mpesa_search_name"
 									clearable
@@ -281,7 +286,7 @@
 									variant="outlined"
 									color="primary"
 									:label="__('Search by Mobile')"
-									bg-color="white"
+									bg-color="surface"
 									hide-details
 									v-model="mpesa_search_mobile"
 									clearable
@@ -291,7 +296,7 @@
 							<v-col md="3" cols="12">
 								<v-btn
 									block
-									color="#00BCD4"
+									color="primary"
 									class="text-white"
 									@click="get_draft_mpesa_payments_register"
 									>{{ __("Search") }}</v-btn
@@ -350,12 +355,17 @@
 			<v-col md="4" cols="12" class="pb-3">
 				<v-card
 					class="modern-totals-card mx-auto mt-3"
-					style="max-height: 94vh; height: 94vh"
+					:style="{
+					height:
+						'calc(100dvh - var(--v-layout-top, 48px) - var(--pospire-banner-height, 0px) - 24px)',
+					'max-height':
+						'calc(100dvh - var(--v-layout-top, 48px) - var(--pospire-banner-height, 0px) - 24px)',
+				}"
 				>
 					<div class="totals-header mb-4">
 						<v-card class="modern-section-card" variant="flat">
 							<v-card-title class="section-title">
-								<v-icon class="section-icon" size="24" color="#00BCD4"
+								<v-icon class="section-icon" size="24" color="primary"
 									>mdi-calculator</v-icon
 								>
 								<div class="section-text">
@@ -374,7 +384,7 @@
 									class="p-0 m-0"
 									density="compact"
 									color="primary"
-									bg-color="white"
+									bg-color="surface"
 									hide-details
 									:model-value="formatCurrency(total_selected_invoices)"
 									total_selected_invoices
@@ -394,7 +404,7 @@
 									class="p-0 m-0"
 									density="compact"
 									color="primary"
-									bg-color="white"
+									bg-color="surface"
 									hide-details
 									:model-value="formatCurrency(total_selected_payments)"
 									total_selected_payments
@@ -414,7 +424,7 @@
 									class="p-0 m-0"
 									density="compact"
 									color="primary"
-									bg-color="white"
+									bg-color="surface"
 									hide-details
 									:model-value="formatCurrency(total_selected_mpesa_payments)"
 									total_selected_mpesa_payments
@@ -452,7 +462,7 @@
 										class="p-0 m-0"
 										density="compact"
 										color="primary"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										v-model.number="method.amount"
 										@input="calculateDifference"
@@ -482,7 +492,7 @@
 										class="p-0 m-0"
 										density="compact"
 										color="primary"
-										bg-color="white"
+										bg-color="surface"
 										hide-details
 										:model-value="formatCurrency(total_of_diff)"
 										total_of_diff
@@ -495,7 +505,7 @@
 						</div>
 					</div>
 					<div class="pb-6 pr-6" style="position: absolute; bottom: 0; width: 100%">
-						<v-btn block color="#00BCD4" class="text-white" :loading="submittingPayment" :disabled="submittingPayment" @click="submit">
+						<v-btn block color="primary" class="text-white" :loading="submittingPayment" :disabled="submittingPayment" @click="submit">
 							{{ __("Submit") }}
 						</v-btn>
 					</div>
@@ -506,7 +516,7 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { call } from "@/utils/call";
 import { toast } from "vue3-toastify";
 
 import format from "@/utils/format";
@@ -515,8 +525,9 @@ import Customer from "@/components/pos/Customer.vue";
 import PaidInvoice from "@/components/pos/PaidInvoice.vue";
 import UpdateCustomer from "@/components/pos/UpdateCustomer.vue";
 
+import busListeners from "@/utils/busListeners";
 export default {
-	mixins: [format],
+	mixins: [format, busListeners],
 	data: function () {
 		return {
 			page: 1,
@@ -713,7 +724,6 @@ export default {
 		},
 
 		calculateDifference() {
-			console.log("New difference calculated:", this.total_of_diff);
 		},
 		async get_available_pos_profiles() {
 			if (!this.pos_profile.posa_allow_mpesa_reconcile_payments) return;
@@ -963,7 +973,7 @@ export default {
 	mounted: function () {
 		this.$nextTick(function () {
 			this.check_opening_entry();
-			this.eventBus.on("update_customer", (customer_name) => {
+			this.onBus("update_customer", (customer_name) => {
 				this.clear_all(true);
 				this.customer_name = customer_name;
 				this.fetch_customer_details();
@@ -971,14 +981,10 @@ export default {
 				this.get_unallocated_payments();
 				this.get_draft_mpesa_payments_register();
 			});
-			this.eventBus.on("fetch_customer_details", () => {
+			this.onBus("fetch_customer_details", () => {
 				this.fetch_customer_details();
 			});
 		});
-	},
-	beforeUnmount() {
-		this.eventBus.off("update_customer");
-		this.eventBus.off("fetch_customer_details");
 	},
 };
 </script>
@@ -1021,7 +1027,7 @@ export default {
 }
 
 .section-icon {
-	color: var(--icon-section, #00bcd4) !important;
+	color: var(--icon-section, rgb(var(--v-theme-primary))) !important;
 	background: var(--icon-section-bg, rgba(0, 188, 212, 0.1));
 	border-radius: 8px;
 	padding: 6px;

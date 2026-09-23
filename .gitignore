@@ -13,6 +13,11 @@ ISSUES.md
 pospire/public/dist/
 pospire/public/frontend/
 pospire/www/pospire.html
+# Service Worker assets — patched by frontend/vite-plugin-sw.js on prod build
+# and mirrored into the Frappe app's www/ directory. See pospire/www/sw.py
+# (and pospire/www/offline.html — copied verbatim, no Jinja content).
+pospire/www/sw.js
+pospire/www/offline.html
 yarn.lock
 
 # Local tarballs

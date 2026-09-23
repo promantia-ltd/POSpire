@@ -1,0 +1,91 @@
+{
+ "actions": [],
+ "creation": "2026-05-05 00:00:00.000000",
+ "description": "Append-only field-level edit row capturing each manager-driven payload mutation on a POSpire Offline Sync Review. Distinct from Activity (action-level audit) — Edit rows describe WHICH field changed and from-what to-what, so a side-by-side diff or compliance export can reconstruct the change history. Never edited or deleted post-create.",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "editor",
+  "edited_at",
+  "category",
+  "field_path",
+  "col_break_a",
+  "reason",
+  "before_value",
+  "after_value"
+ ],
+ "fields": [
+  {
+   "fieldname": "editor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Editor",
+   "options": "User",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "edited_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Edited At",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "description": "The error_category at the time of the edit — useful for filtering edits by what they were trying to fix (e.g. 'show me every accounting_period_closed edit').",
+   "fieldname": "category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Category",
+   "read_only": 1
+  },
+  {
+   "description": "JSON path of the field that changed, in dot+bracket notation (e.g. `posting_date`, `items[0].rate`). For top-level field edits this is just the field name.",
+   "fieldname": "field_path",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Field Path",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "description": "Value as it was before the edit, JSON-serialised. Truncated server-side to keep activity rows under the MariaDB row-size limit.",
+   "fieldname": "before_value",
+   "fieldtype": "Long Text",
+   "label": "Before",
+   "read_only": 1
+  },
+  {
+   "fieldname": "after_value",
+   "fieldtype": "Long Text",
+   "label": "After",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POSpire Offline Sync Review Edit",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "edited_at",
+ "sort_order": "DESC",
+ "states": []
+}

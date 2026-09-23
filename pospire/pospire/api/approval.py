@@ -6,7 +6,7 @@ import string
 
 import frappe
 from frappe import _
-from frappe.utils import add_to_date, now_datetime
+from frappe.utils import add_to_date, cint, now_datetime
 from werkzeug.security import check_password_hash, generate_password_hash
 
 _PIN_ATTEMPT_CACHE_PREFIX = "posa_pin_attempts"
@@ -189,6 +189,22 @@ def create_approval_request(
 	action_config = _get_action_config(pos_profile, action_type)
 	expiry_minutes = (action_config or {}).get("expiry_minutes") or 15
 
+	pin_ok = _flag_on((action_config or {}).get("pin_approval"))
+	remote_ok = _remote_available(pos_profile, action_config)
+	if not pin_ok and not remote_ok:
+		frappe.throw(
+			_(
+				"Approval is required but neither PIN nor remote approval is available. "
+				"Enable Allow PIN Approval or Allow Remote Approval on this action, "
+				"and Enable Remote Approval on the POS Profile."
+			)
+		)
+
+	if broadcast and remote_ok:
+		# Fail before insert so a broken remote config cannot leave a Pending request
+		# that nobody will ever see.
+		_require_remote_recipients(action_config or {}, selected_manager)
+
 	doc = frappe.get_doc(
 		{
 			"doctype": "POS Approval Request",
@@ -214,42 +230,54 @@ def create_approval_request(
 	)
 	doc.insert(ignore_permissions=True)
 
-	if broadcast and action_config and action_config.get("remote_approval"):
+	if broadcast and remote_ok:
 		_broadcast_request_to_managers(doc, action_config, selected_manager)
 
 	return doc.as_dict()
 
 
-def _broadcast_request_to_managers(
-	doc: frappe.model.document.Document,
-	action_config: dict,
-	selected_manager: str | None = None,
-) -> None:
-	"""Broadcast the approval request via WebSocket to the relevant manager(s).
+def _flag_on(value) -> bool:
+	return bool(cint(value))
 
-	If the cashier selected a specific manager, notify only that one.
-	Otherwise notify all managers with the configured approver role + active PIN.
-	"""
-	approver_role = action_config.get("approver_role")
-	if not approver_role:
-		return
 
+def _remote_available(pos_profile: str, action_config: dict | None) -> bool:
+	if not action_config or not _flag_on(action_config.get("remote_approval")):
+		return False
+	return bool(frappe.db.get_value("POS Profile", pos_profile, "posa_enable_remote_approval"))
+
+
+def _get_remote_recipients(action_config: dict, selected_manager: str | None = None) -> list[str]:
 	if selected_manager:
-		recipients = [selected_manager]
-	else:
-		# For remote approval notifications, include all users with the approver role
-		# (PIN is only required for PIN-based approval, not remote desk approval).
-		recipients = frappe.get_all(
-			"Has Role",
-			filters={"role": approver_role, "parenttype": "User"},
-			pluck="parent",
+		return [selected_manager]
+	approver_role = (action_config or {}).get("approver_role")
+	if not approver_role:
+		return []
+	return frappe.get_all(
+		"Has Role",
+		filters={"role": approver_role, "parenttype": "User"},
+		pluck="parent",
+	)
+
+
+def _require_remote_recipients(action_config: dict, selected_manager: str | None = None) -> list[str]:
+	approver_role = (action_config or {}).get("approver_role")
+	if not selected_manager and not approver_role:
+		frappe.throw(
+			_(
+				"Cannot send a remote approval request because this action has no Approver Role. "
+				"Ask a system manager to set one on the POS Profile."
+			)
 		)
-
+	recipients = _get_remote_recipients(action_config, selected_manager)
 	if not recipients:
-		return
+		frappe.throw(
+			_("Cannot send a remote approval request because no user has the role {0}.").format(approver_role)
+		)
+	return recipients
 
+
+def _publish_approval_to_users(doc: frappe.model.document.Document, recipients: list[str]) -> None:
 	cashier_name = frappe.db.get_value("User", doc.requested_by, "full_name") or doc.requested_by
-
 	message = {
 		"request_name": doc.name,
 		"action_type": doc.action_type,
@@ -263,13 +291,27 @@ def _broadcast_request_to_managers(
 		"pos_profile": doc.pos_profile,
 		"expires_at": str(doc.expires_at),
 	}
-
 	for manager_user in recipients:
 		frappe.publish_realtime(
 			event="pos_approval_request",
 			message=message,
 			user=manager_user,
 		)
+
+
+def _broadcast_request_to_managers(
+	doc: frappe.model.document.Document,
+	action_config: dict,
+	selected_manager: str | None = None,
+) -> None:
+	"""Broadcast the approval request via WebSocket to the relevant manager(s).
+
+	If the cashier selected a specific manager, notify only that one.
+	Otherwise notify all users with the configured approver role.
+	Raises if nobody can be notified — a silent no-op left cashiers waiting.
+	"""
+	recipients = _require_remote_recipients(action_config, selected_manager)
+	_publish_approval_to_users(doc, recipients)
 
 
 # ---------------------------------------------------------------------------
@@ -421,34 +463,15 @@ def notify_remote_manager(request_name: str, selected_manager: str | None = None
 		frappe.throw(_("Approval request {0} is no longer pending.").format(request_name))
 
 	action_config = _get_action_config(doc.pos_profile, doc.action_type) or {}
-	cashier_name = frappe.db.get_value("User", doc.requested_by, "full_name") or doc.requested_by
-
-	message = {
-		"request_name": doc.name,
-		"action_type": doc.action_type,
-		"item_code": doc.item_code,
-		"item_name": doc.item_name,
-		"original_value": doc.original_value,
-		"requested_value": doc.requested_value,
-		"value_field_label": doc.value_field_label,
-		"requested_by": doc.requested_by,
-		"requested_by_full_name": cashier_name,
-		"pos_profile": doc.pos_profile,
-		"expires_at": str(doc.expires_at),
-	}
-
-	if selected_manager:
-		frappe.publish_realtime(event="pos_approval_request", message=message, user=selected_manager)
-	else:
-		approver_role = action_config.get("approver_role")
-		recipients = (
-			frappe.get_all("Has Role", filters={"role": approver_role, "parenttype": "User"}, pluck="parent")
-			if approver_role
-			else []
+	if not _remote_available(doc.pos_profile, action_config):
+		frappe.throw(
+			_(
+				"Remote approval is not enabled for this action. Enable Allow Remote Approval "
+				"on the action and Enable Remote Approval on the POS Profile."
+			)
 		)
-		for user in recipients:
-			frappe.publish_realtime(event="pos_approval_request", message=message, user=user)
 
+	_broadcast_request_to_managers(doc, action_config, selected_manager)
 	return {"status": "notified"}
 
 

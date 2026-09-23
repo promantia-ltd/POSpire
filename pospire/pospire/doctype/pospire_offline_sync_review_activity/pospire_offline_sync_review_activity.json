@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "creation": "2026-05-05 00:00:00.000000",
+ "description": "Append-only audit row capturing every handoff / retry / void / note action on a POSpire Offline Sync Review. Never edited or deleted post-create — the row IS the audit trail.",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "actor",
+  "at",
+  "action",
+  "outcome",
+  "col_break_a",
+  "detail",
+  "prev_hash",
+  "entry_hash"
+ ],
+ "fields": [
+  {
+   "fieldname": "actor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Actor",
+   "options": "User",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "At",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Action",
+   "options": "handoff\nretry\nvoid\nnote",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "outcome",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Outcome",
+   "options": "ok\nerror\ninfo",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "detail",
+   "fieldtype": "Small Text",
+   "label": "Detail",
+   "read_only": 1
+  },
+  {
+   "description": "P2-21: sha256 hex of the previous activity row's entry_hash, or '0'*64 for the first row. Forms a tamper-evident chain — any post-hoc edit of an earlier row breaks every subsequent hash.",
+   "fieldname": "prev_hash",
+   "fieldtype": "Data",
+   "label": "Prev Hash",
+   "length": 64,
+   "read_only": 1
+  },
+  {
+   "description": "P2-21: sha256 hex of (prev_hash | actor | at | action | outcome | detail). Must equal the next row's prev_hash. The compliance export (P2-23) verifies this chain on read.",
+   "fieldname": "entry_hash",
+   "fieldtype": "Data",
+   "label": "Entry Hash",
+   "length": 64,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POSpire Offline Sync Review Activity",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

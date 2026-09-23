@@ -17,7 +17,7 @@
 							<v-text-field
 								color="primary"
 								:label="__('Order ID')"
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								v-model="order_name"
 								density="compact"
@@ -102,11 +102,12 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { call } from "@/utils/call";
 import format from "@/utils/format";
+import busListeners from "@/utils/busListeners";
 export default {
 	// props: ["draftsDialog"],
-	mixins: [format],
+	mixins: [format, busListeners],
 	data: () => ({
 		page: 1,
 		itemsPerPage: 5,
@@ -227,7 +228,7 @@ export default {
 		},
 	},
 	created: function () {
-		this.eventBus.on("open_orders", (data) => {
+		this.onBus("open_orders", (data) => {
 			this.clearSelected();
 			this.draftsDialog = true;
 			this.dialog_data = data;
@@ -235,7 +236,7 @@ export default {
 		});
 	},
 	mounted() {
-		this.eventBus.on("register_pos_profile", (data) => {
+		this.onBus("register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
 		});
 	},

@@ -93,14 +93,26 @@ class POSClosingShift(Document):
 		# If denominations not used, don't override manual closing amount
 		if not self.denomination_details:
 			return
-		total = 0
 
+		# The cash mode of payment is profile-configurable. Matching the literal
+		# "Cash" silently wrote the denomination total onto nothing whenever a
+		# site renamed it (e.g. "Cash - PL").
+		cash_mode = (
+			frappe.get_cached_value(
+				"POS Profile",
+				self.pos_profile,
+				"posa_cash_mode_of_payment",
+			)
+			or "Cash"
+		)
+
+		total = 0
 		for d in self.denomination_details:
 			d.closing_amount = (d.denomination_value or 0) * (d.closing_quantity or 0)
 			total += d.closing_amount
 
 		for p in self.payment_reconciliation:
-			if p.mode_of_payment == "Cash":
+			if p.mode_of_payment == cash_mode:
 				p.closing_amount = total
 
 	def on_submit(self):
@@ -333,6 +345,22 @@ def make_closing_shift_from_opening(opening_shift: str | dict):
 @frappe.whitelist()
 def submit_closing_shift(closing_shift: str | dict) -> str:
 	closing_shift = _load(closing_shift)
+
+	opening_shift = closing_shift.get("pos_opening_shift") if isinstance(closing_shift, dict) else None
+	if opening_shift:
+		existing = frappe.db.get_value(
+			"POS Closing Shift",
+			{"pos_opening_shift": opening_shift, "docstatus": 1},
+			"name",
+		)
+		if existing:
+			opening_doc = frappe.get_doc("POS Opening Shift", opening_shift)
+			if opening_doc.pos_closing_shift != existing or opening_doc.status == "Open":
+				opening_doc.pos_closing_shift = existing
+				opening_doc.set_status()
+				opening_doc.save()
+			return existing
+
 	closing_shift_doc = frappe.get_doc(closing_shift)
 	closing_shift_doc.flags.ignore_permissions = True
 	closing_shift_doc.save()

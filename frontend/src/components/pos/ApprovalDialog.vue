@@ -13,7 +13,7 @@
 					</div>
 				</v-card-title>
 				<v-card-text class="pospire-modal-body">
-					<div v-if="showValueSummary" class="mb-3 pa-2 rounded" style="background: #f5f5f5">
+					<div v-if="showValueSummary" class="approval-value-summary mb-3 pa-2 rounded">
 						<span v-if="valueFieldLabel" class="text-caption font-weight-medium">{{ valueFieldLabel }}: </span>
 						<span v-if="originalValue !== null" class="text-decoration-line-through text-medium-emphasis text-body-2">{{ formatSummaryValue(originalValue) }}</span>
 						<v-icon v-if="requestedValue !== null" size="14" class="mx-1">mdi-arrow-right</v-icon>
@@ -131,7 +131,7 @@
 					</div>
 				</v-card-title>
 				<v-card-text class="pospire-modal-body">
-					<div v-if="showValueSummary" class="mb-3 pa-2 rounded" style="background: #f5f5f5">
+					<div v-if="showValueSummary" class="approval-value-summary mb-3 pa-2 rounded">
 						<span v-if="valueFieldLabel" class="text-caption font-weight-medium">{{ valueFieldLabel }}: </span>
 						<span v-if="originalValue !== null" class="text-decoration-line-through text-medium-emphasis text-body-2">{{ formatSummaryValue(originalValue) }}</span>
 						<v-icon v-if="requestedValue !== null" size="14" class="mx-1">mdi-arrow-right</v-icon>
@@ -194,7 +194,7 @@
 					</div>
 				</v-card-title>
 				<v-card-text class="pospire-modal-body">
-					<div v-if="showValueSummary" class="mb-3 pa-2 rounded" style="background: #f5f5f5">
+					<div v-if="showValueSummary" class="approval-value-summary mb-3 pa-2 rounded">
 						<span v-if="valueFieldLabel" class="text-caption font-weight-medium">{{ valueFieldLabel }}: </span>
 						<span v-if="originalValue !== null" class="text-decoration-line-through text-medium-emphasis text-body-2">{{ formatSummaryValue(originalValue) }}</span>
 						<v-icon v-if="requestedValue !== null" size="14" class="mx-1">mdi-arrow-right</v-icon>
@@ -207,6 +207,26 @@
 				<v-card-actions class="pospire-modal-actions">
 					<v-spacer></v-spacer>
 					<v-btn class="pospire-modal-btn-secondary" @click="cancel">{{ __("Cancel Request") }}</v-btn>
+				</v-card-actions>
+			</template>
+
+			<!-- Misconfigured: no usable approval channel, or nobody to notify -->
+			<template v-else-if="step === 'misconfigured'">
+				<v-card-title class="pospire-modal-header">
+					<div class="pospire-modal-icon icon-danger">
+						<v-icon size="24">mdi-alert-circle-outline</v-icon>
+					</div>
+					<div>
+						<div class="pospire-modal-title">{{ __("Approval Not Configured") }}</div>
+						<div class="text-body-2">{{ actionLabel }}</div>
+					</div>
+				</v-card-title>
+				<v-card-text class="pospire-modal-body">
+					<p class="text-body-2">{{ config_error }}</p>
+				</v-card-text>
+				<v-card-actions class="pospire-modal-actions">
+					<v-spacer></v-spacer>
+					<v-btn class="pospire-modal-btn-secondary" @click="close(false)">{{ __("Close") }}</v-btn>
 				</v-card-actions>
 			</template>
 
@@ -232,7 +252,8 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { call } from "@/utils/call";
+import { resolveInitialApprovalStep } from "@/utils/approvalStep";
 import { toast } from "vue3-toastify";
 
 export default {
@@ -269,12 +290,13 @@ export default {
 			loading: false,
 			result: null,
 			resolved_by_name: null,
+			config_error: "",
 		};
 	},
 
 	computed: {
 		actionLabel() {
-			return this.itemName ? `${this.actionType} — ${this.itemName}` : this.actionType;
+			return this.itemName ? `${this.actionType}: ${this.itemName}` : this.actionType;
 		},
 		resultTitle() {
 			if (this.result === "Approved") return __("Approved");
@@ -306,11 +328,20 @@ export default {
 			this.selected_remote_manager = null;
 			this.pin_input = "";
 			this.resolution_note = "";
+			this.config_error = "";
 			this._stop_status_poll();
 
+			const planned = resolveInitialApprovalStep(this.actionConfig, this.remoteApprovalEnabled);
+			if (planned === "misconfigured") {
+				this.config_error = __(
+					"Approval is required but neither PIN nor remote approval is available. Ask a system manager to enable Allow PIN Approval or Allow Remote Approval on this POS Profile action.",
+				);
+				this.step = "misconfigured";
+				return;
+			}
+
 			try {
-				const { pin_approval, remote_approval } = this.actionConfig || {};
-				const both_modes = !!(pin_approval && remote_approval && this.remoteApprovalEnabled);
+				const both_modes = planned === "choose";
 
 				const r = await call("pospire.pospire.api.approval.create_approval_request", {
 					pos_profile: this.posProfile,
@@ -327,23 +358,12 @@ export default {
 				});
 				this.request_name = r.name;
 				window.frappe?.realtime?.on("pos_approval_resolved", this._on_resolved);
-				this._set_initial_step();
+				this.step = planned;
 				this._start_status_poll();
-			} catch {
-				toast.error(__("Failed to create approval request"));
-				this.close(false);
-			}
-		},
-
-		_set_initial_step() {
-			const { pin_approval, remote_approval } = this.actionConfig || {};
-			const remote_available = !!(remote_approval && this.remoteApprovalEnabled);
-			if (pin_approval && remote_available) {
-				this.step = "choose";
-			} else if (pin_approval) {
-				this.step = "pin";
-			} else {
-				this.step = "waiting";
+			} catch (e) {
+				this.config_error = this._server_error(e) || __("Failed to create approval request");
+				toast.error(this.config_error);
+				this.step = "misconfigured";
 			}
 		},
 
@@ -360,10 +380,22 @@ export default {
 					request_name: this.request_name,
 					selected_manager: this.selected_remote_manager || null,
 				});
-			} catch {
-				// non-fatal — fall through to waiting
+				this.step = "waiting";
+			} catch (e) {
+				this.config_error =
+					this._server_error(e) ||
+					__(
+						"Could not notify a manager. Check that this action has an Approver Role with at least one user.",
+					);
+				toast.error(this.config_error);
+				if (this.request_name) {
+					call("pospire.pospire.api.approval.cancel_approval_request", {
+						request_name: this.request_name,
+					}).catch(() => {});
+					this.request_name = null;
+				}
+				this.step = "misconfigured";
 			}
-			this.step = "waiting";
 		},
 
 		_start_status_poll() {
@@ -416,6 +448,14 @@ export default {
 				this.loading = false;
 				this.pin_input = "";
 			}
+		},
+
+		_server_error(e) {
+			const msgs = e?.messages;
+			if (Array.isArray(msgs) && msgs.length && typeof msgs[0] === "string" && msgs[0].trim()) {
+				return msgs[0];
+			}
+			return null;
 		},
 
 		_parse_pin_error(e) {
@@ -475,3 +515,10 @@ export default {
 	},
 };
 </script>
+
+<style scoped>
+.approval-value-summary {
+	background: var(--pospire-surface-soft);
+	color: var(--pospire-text-main);
+}
+</style>

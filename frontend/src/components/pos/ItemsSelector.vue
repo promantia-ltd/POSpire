@@ -11,7 +11,7 @@
 			<v-row class="items px-3 py-2">
 				<v-col class="pb-0 mb-2">
 					<div class="enhanced-search-wrapper">
-						<v-icon class="enhanced-search-icon" size="20" color="grey-darken-1"
+						<v-icon class="enhanced-search-icon" size="20"
 							>mdi-magnify</v-icon
 						>
 						<v-text-field
@@ -21,7 +21,7 @@
 							variant="outlined"
 							color="primary"
 							placeholder="Search by name, code, barcode, serial or batch number..."
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							v-model="debounce_search"
 							@keydown.esc="esc_event"
@@ -37,7 +37,7 @@
 						variant="outlined"
 						color="primary"
 						:label="__('QTY')"
-						bg-color="white"
+						bg-color="surface"
 						hide-details
 						v-model.number="qty"
 						type="number"
@@ -108,25 +108,32 @@
 									@click="add_item(item, idx)"
 									class="pospire-product-card hover-vibrant ripple-effect"
 									:class="{
-										'out-of-stock': item.actual_qty <= 0,
+										'out-of-stock':
+											stockContextReliable && item.actual_qty <= 0,
 										'item-selected': selectedItemIdx === idx,
 									}"
 								>
 									<!-- 1:1 Square Image Container -->
 									<div class="pospire-product-image-wrapper">
-										<v-img
-											:src="
-												item.image ||
-												'/assets/pospire/js/posapp/components/pos/placeholder-image.png'
-											"
+										<ItemImage
+											:src="item.image"
 											:aspect-ratio="1"
 											cover
 											class="pospire-product-image"
-										>
-										</v-img>
+										/>
 
-										<!-- Stock Badge Overlay -->
+										<!--
+											Stock Badge Overlay. Rendered only when the
+											stock numbers came from a recent online fetch
+											(stockContextReliable). While offline /
+											degraded the displayed actual_qty is whatever
+											was last hydrated from cache and would lie
+											about every item being OUT, so we drop the
+											badge entirely rather than mislead the
+											cashier. The card itself is still tappable.
+										-->
 										<div
+											v-if="stockContextReliable"
 											class="pospire-stock-badge"
 											:class="{
 												'badge-success': item.actual_qty > 5,
@@ -160,7 +167,10 @@
 										</div>
 
 										<!-- SUPPORT TEXT: 12px Regular -->
-										<div class="pospire-product-stock">
+										<div
+											v-if="stockContextReliable"
+											class="pospire-product-stock"
+										>
 											<span
 												class="stock-dot"
 												:class="{
@@ -227,28 +237,30 @@
 								:row-props="getRowProps"
 							>
 								<template v-slot:item.rate="{ item }">
-									<span class="font-weight-medium" style="color: #34495e"
+									<span class="item-rate-text font-weight-medium"
 										>{{ currencySymbol(item.currency) }}
 										{{ formatCurrency(item.rate) }}</span
 									>
 								</template>
 								<template v-slot:item.actual_qty="{ item }">
 									<span
+										v-if="stockContextReliable"
 										class="font-weight-medium"
 										:style="getStockColorStyle(item.actual_qty)"
 									>
 										{{ formatFloat(item.actual_qty) }}
 									</span>
+									<!--
+										Offline / degraded: drop the number entirely
+										rather than show a stale 0 next to every item.
+										Em-dash matches Frappe's "no value" convention.
+									-->
+									<span v-else class="text-medium-emphasis">—</span>
 								</template>
 								<template v-slot:item.item_name="{ item }">
 									<div class="d-flex align-center">
 										<v-avatar size="32" class="mr-2">
-											<v-img
-												:src="
-													item.image ||
-													'/assets/pospire/js/posapp/components/pos/placeholder-image.png'
-												"
-											></v-img>
+											<ItemImage :src="item.image" compact />
 										</v-avatar>
 										<div>
 											<div class="font-weight-medium">
@@ -361,23 +373,67 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { call, unwrapStale, MethodPolicyError } from "@/utils/call";
+import { UnregisteredMethod } from "@/utils/call-registry";
 import { toast } from "vue3-toastify";
+import { storeToRefs } from "pinia";
 import format from "@/utils/format";
 import { playSound } from "@/utils/sounds";
+import { useConnectivityStore } from "@/stores/connectivity";
 import _ from "lodash";
+import onScan from "onscan.js";
+import ItemImage from "./ItemImage.vue";
+import busListeners from "@/utils/busListeners";
 export default {
-	mixins: [format],
+	mixins: [format, busListeners],
+	components: { ItemImage },
+	setup() {
+		// Expose `connectionQuality` so the template and the customer
+		// watcher can gate on it. The stock badges (OUT / LOW / STOCK)
+		// only mean something when actual_qty came from a recent online
+		// fetch — while offline / degraded the displayed value is
+		// whatever localStorage cached, which a previous customer-switch
+		// fallback path could have populated as 0 across the board.
+		// Customer change is also gated: re-fetching get_items offline
+		// throws and used to leave the grid in a worse state than just
+		// keeping the last-known catalog.
+		const connectivity = useConnectivityStore();
+		const { connectionQuality } = storeToRefs(connectivity);
+		return { connectionQuality };
+	},
 	data: () => ({
 		pos_profile: "",
 		flags: {},
 		items_view: "list",
 		item_group: "ALL",
 		loading: false,
+		// True only once get_items_details has filled real quantities. Until
+		// then actual_qty is 0 by default, not by observation. Reset whenever a
+		// catalog or enrichment request starts, so a hung request cannot leave
+		// stale quantities looking authoritative.
+		stock_details_fresh: false,
+		// Monotonic token: only the newest enrichment response may mark the
+		// grid fresh, otherwise a slow earlier reply marks the wrong generation.
+		stock_request_seq: 0,
+		// Separate token for the catalog fetch itself. Two get_items() calls can
+		// resolve out of order, and without this an older response replaces the
+		// newer catalog and then launches enrichment for it — marking a stale
+		// item list fresh.
+		catalog_request_seq: 0,
 		items_group: ["ALL"],
 		items: [],
 		search: "",
 		first_search: "",
+		// What is physically in the search box right now.
+		//
+		// It has to be a separate, synchronously-written field. A scanner
+		// types straight into the DOM input, and `first_search` only catches
+		// up 200ms later via the debounce -- so while a scan is in flight
+		// Vuetify's model (which reads the bound value, not the element)
+		// believes the box is empty. Clearing then patches null over null,
+		// Vue skips the update as a no-op, and the scanner's characters stay
+		// in the element and accumulate into the next scan.
+		raw_search: "",
 		itemsPerPage: 1000,
 		offersCount: 0,
 		appliedOffersCount: 0,
@@ -400,10 +456,59 @@ export default {
 			}
 		},
 		customer() {
+			// When offline, a customer change can't usefully re-query the
+			// catalog: the customer-keyed cache entry will miss, and any
+			// fallback we attempted historically risked persisting bad
+			// data into localStorage — which then poisons every subsequent
+			// get_items hydration even after we reconnect. Skip the
+			// refetch in that state and keep the existing items list
+			// as-is. The connectionQuality watcher below handles the
+			// "customer was switched while offline, now back online"
+			// case by re-running get_items the moment we reconnect, so
+			// the grid catches up with the right customer-keyed prices
+			// and fresh actual_qty values then.
+			if (this.connectionQuality !== "online") {
+				return;
+			}
 			this.get_items();
+		},
+		/**
+		 * Refresh the catalog the instant we transition back to online.
+		 * The customer watcher's offline early-return means a customer
+		 * switch made while offline never triggered a refetch — so the
+		 * grid still has the previous customer's prices and possibly
+		 * stale actual_qty. Firing get_items() on reconnect closes that
+		 * gap: fresh stock numbers populate (and re-enable the OUT /
+		 * LOW / STOCK badges via stockContextReliable), and the current
+		 * customer's price-list-keyed cache entry is repopulated for
+		 * the next offline window.
+		 */
+		connectionQuality(newVal, oldVal) {
+			if (newVal === "online" && oldVal !== "online") {
+				this.get_items();
+			}
 		},
 		new_line() {
 			this.eventBus.emit("set_new_line", this.new_line);
+		},
+		/**
+		 * Auto-add on any exact barcode/serial/batch match, so a typed or
+		 * pasted code works without pressing Enter. This covers input the
+		 * hardware-scanner path does not: onScan rejects anything slower than
+		 * avgTimeByChar or shorter than minLength, i.e. everything a human
+		 * enters. enter_event() no-ops unless it finds an exact match and
+		 * clears first_search on a successful add, so this cannot loop or
+		 * double-fire on partial input.
+		 *
+		 * It cannot double-add a scan either: handle_scan() sets first_search
+		 * and calls enter_event() synchronously, so by the time this watcher
+		 * flushes, first_search is back to null and enter_event() bails.
+		 */
+		first_search(newValue) {
+			if (!newValue) {
+				return;
+			}
+			this.enter_event();
 		},
 	},
 
@@ -415,6 +520,15 @@ export default {
 			this.eventBus.emit("show_coupons", "true");
 		},
 		get_items() {
+			// Invalidate BEFORE the profile guard: an enrichment request started
+			// against the previous catalog must not survive this call and mark a
+			// newer grid fresh. Bumping the token supersedes any in-flight one.
+			this.stock_request_seq += 1;
+			this.stock_details_fresh = false;
+			// The token above stops a stale response being applied; this frees
+			// the connection it is still holding.
+			this.abortStockEnrichment();
+			const catalogSeq = ++this.catalog_request_seq;
 			if (!this.pos_profile) {
 				return;
 			}
@@ -437,10 +551,21 @@ export default {
 				!vm.pos_profile.pose_use_limit_search
 			) {
 				try {
-					vm.items = JSON.parse(localStorage.getItem("items_storage"));
+					// Defensive unwrap: a previous build wrote the
+					// StaleReadResult wrapper { data, stale, cachedAt } here
+					// instead of the bare items array. Strip it on read so
+					// devices already on the bad cache shape recover the next
+					// time they boot.
+					const hydrated = unwrapStale(
+						JSON.parse(localStorage.getItem("items_storage")),
+					);
+					vm.items = Array.isArray(hydrated) ? hydrated : [];
 					// Strip zero-stock items from the hydrated cache immediately so they
 					// are never shown, even before update_items_details returns.
-					if (vm.pos_profile.posa_display_items_in_stock) {
+					if (
+						vm.pos_profile.posa_display_items_in_stock &&
+						!vm.pos_profile.posa_auto_stock_reconcile
+					) {
 						vm.items = vm.items.filter((item) => item.actual_qty > 0);
 					}
 					this.eventBus.emit("set_all_items", vm.items);
@@ -448,6 +573,11 @@ export default {
 
 					// Immediately update stock for cached items
 					vm.$nextTick(() => {
+						// The token can move between queueing this callback and
+						// running it — a newer get_items() or an unmount, both of
+						// which bump it. Re-check rather than start work for a
+						// catalogue that is no longer current.
+						if (catalogSeq !== vm.catalog_request_seq) return;
 						if (
 							!vm.pos_profile.pose_use_limit_search &&
 							vm.filtered_items.length > 0
@@ -468,23 +598,38 @@ export default {
 				search_value: sr,
 				customer: vm.customer,
 			}).then((r) => {
+				// Superseded by a newer get_items(): dropping this response keeps
+				// an older catalog from replacing a newer one and then being
+				// enriched under a fresh token.
+				if (catalogSeq !== vm.catalog_request_seq) return;
 				if (r) {
-					vm.items = r;
+					// `get_items` is registered as offline:true with a TTL.
+					// On a stale-cache hit call() returns a StaleReadResult
+					// wrapper. Unwrap once and use the bare array everywhere
+					// — including the localStorage write below. Persisting the
+					// wrapper object would make subsequent boots set
+					// `vm.items = wrapper`, which breaks every downstream
+					// `.filter / .find / .forEach` on the items list.
+					const items = unwrapStale(r);
+					vm.items = Array.isArray(items) ? items : [];
 					vm.eventBus.emit("set_all_items", vm.items);
 					vm.loading = false;
 
-					// Update localStorage if enabled
+					// Update localStorage if enabled. Always store the
+					// unwrapped array, never the wrapper.
 					if (
 						vm.pos_profile.posa_local_storage &&
 						!vm.pos_profile.pose_use_limit_search
 					) {
 						try {
-							localStorage.setItem("items_storage", JSON.stringify(r));
+							localStorage.setItem("items_storage", JSON.stringify(items));
 						} catch (e) {}
 					}
 
 					// Immediately update stock quantities
 					vm.$nextTick(() => {
+						// Same re-check as the cached-hydration path above.
+						if (catalogSeq !== vm.catalog_request_seq) return;
 						if (
 							!vm.pos_profile.pose_use_limit_search &&
 							vm.filtered_items.length > 0
@@ -497,6 +642,11 @@ export default {
 						vm.enter_event();
 					}
 				}
+			}).catch(() => {
+				// Offline (OfflineReadUnavailable) or transport failure. The
+				// localStorage fallback above (if enabled) has already populated
+				// the grid; swallow so we don't surface an unhandled rejection.
+				vm.loading = false;
 			});
 		},
 		async get_items_groups() {
@@ -515,9 +665,22 @@ export default {
 				});
 			} else {
 				const vm = this;
-				const r = await call("pospire.pospire.api.posapp.get_items_groups", {});
-				if (r) {
-					r.forEach((element) => {
+				// `get_items_groups` is offline:true, so on a stale-cache hit
+				// call() returns a StaleReadResult wrapper. Unwrap before
+				// iterating, and swallow OfflineReadUnavailable on cold cache
+				// (cashier sees the empty group filter, which is benign — the
+				// fallback path above using pos_profile.item_groups is the
+				// preferred source when configured).
+				let groups = null;
+				try {
+					groups = unwrapStale(
+						await call("pospire.pospire.api.posapp.get_items_groups", {}),
+					);
+				} catch {
+					return;
+				}
+				if (Array.isArray(groups)) {
+					groups.forEach((element) => {
 						vm.items_group.push(element.name);
 					});
 				}
@@ -586,16 +749,30 @@ export default {
 			}
 		},
 
+		/**
+		 * Add the item the current search term exactly identifies, if any.
+		 *
+		 * Returns TRUE when an item was added, so callers (handle_scan in
+		 * particular) can tell a real miss from a no-op and report it.
+		 *
+		 * The comparisons run against a local `term` rather than `this.search`.
+		 * `this.search` is assigned as a side effect of evaluating the
+		 * `filtered_items` computed, so reading it here made the result depend
+		 * on when that computed last re-evaluated.
+		 */
 		enter_event() {
 			let match = false;
+			// Read filtered_items first: evaluating it is also what populates
+			// this.flags.serial_no / batch_no consulted further down.
 			if (!this.filtered_items.length || !this.first_search) {
-				return;
+				return match;
 			}
+			const term = this.get_search(this.first_search);
 			const qty = this.get_item_qty(this.first_search);
 			const new_item = { ...this.filtered_items[0] };
 			new_item.qty = flt(qty);
 			new_item.item_barcode.forEach((element) => {
-				if (this.search == element.barcode) {
+				if (term == element.barcode) {
 					new_item.uom = element.posa_uom;
 					match = true;
 				}
@@ -606,7 +783,7 @@ export default {
 				this.pos_profile.posa_search_serial_no
 			) {
 				new_item.serial_no_data.forEach((element) => {
-					if (this.search && element.serial_no == this.search) {
+					if (term && element.serial_no == term) {
 						new_item.to_set_serial_no = this.first_search;
 						match = true;
 					}
@@ -621,7 +798,7 @@ export default {
 				this.pos_profile.posa_search_batch_no
 			) {
 				new_item.batch_no_data.forEach((element) => {
-					if (this.search && element.batch_no == this.search) {
+					if (term && element.batch_no == term) {
 						new_item.to_set_batch_no = this.first_search;
 						new_item.batch_no = this.first_search;
 						match = true;
@@ -633,26 +810,85 @@ export default {
 			}
 			if (match) {
 				this.add_item(new_item);
-				this.search = null;
-				this.first_search = null;
-				this.debounce_search = null;
-				this.flags.serial_no = null;
-				this.flags.batch_no = null;
+				// reset_search() cancels the pending debounced write before
+				// clearing. The old code assigned `this.debounce_search = null`
+				// here, which went back through the 200ms debounce -- so the
+				// clear was itself deferred, and the next scan's keystrokes
+				// simply re-armed the timer and replaced it. That is why the
+				// previous code was still sitting in the box when the second
+				// scan arrived.
+				this.reset_search();
 				this.qty = 1;
-				this.$refs.debounce_search.focus();
+				this.$refs.debounce_search?.focus();
 			}
+			return match;
+		},
+		/**
+		 * Clear the search box now, not in 200ms. Cancelling `_applySearch`
+		 * first is the important part: without it a write scheduled from an
+		 * earlier keystroke lands after the clear and resurrects the term.
+		 */
+		reset_search() {
+			this._applySearch.cancel();
+			this.raw_search = "";
+			this.search = null;
+			this.first_search = null;
+			this.flags.serial_no = null;
+			this.flags.batch_no = null;
 		},
 		search_onchange() {
-			const vm = this;
-			if (vm.pos_profile.pose_use_limit_search) {
-				vm.get_items();
-			} else {
-				vm.enter_event();
+			// onScan is mid-burst, so this Enter is almost certainly the
+			// scanner's suffix key. Let the scan callback finish the job --
+			// running the manual path too would add the item twice, once now
+			// and once when handle_scan() fires. If the burst turns out to
+			// have been fast human typing, onScanError replays it.
+			if (this.scan_in_progress()) {
+				this._deferred_enter = true;
+				return;
 			}
+			this.run_search();
+		},
+		run_search() {
+			// Enter must act on what is in the box right now. Without the
+			// flush this ran against the previous term, because the current
+			// one was still sitting in the 200ms debounce.
+			this._applySearch.flush();
+			if (this.pos_profile.pose_use_limit_search) {
+				this.get_items();
+			} else {
+				this.enter_event();
+			}
+		},
+		/**
+		 * TRUE while onScan is accumulating characters -- i.e. between the
+		 * first character of a burst and the moment it is validated as a scan
+		 * (or rejected as typing). `firstCharTime` is set on the first
+		 * accumulated character and zeroed by onScan's own reinitialize.
+		 */
+		scan_in_progress() {
+			return !!document.scannerDetectionData?.vars?.firstCharTime;
+		},
+		/**
+		 * TRUE when `code` is a weighing-scale barcode.
+		 *
+		 * The emptiness check matters: posa_scale_barcode_start is an Int, so
+		 * an unset profile yields 0 (or null), and `"0812...".startsWith(0)`
+		 * is TRUE -- which silently truncated such a barcode to 7 characters
+		 * in get_search() and derived a nonsense weight from it in
+		 * get_item_qty(), so the item could never be matched.
+		 */
+		is_scale_barcode(code) {
+			const prefix = this.pos_profile?.posa_scale_barcode_start;
+			// 0 counts as unconfigured: as a prefix it would match every
+			// barcode beginning with a zero.
+			if (!code || !prefix) {
+				return false;
+			}
+			return code.startsWith(String(prefix));
 		},
 		get_item_qty(first_search) {
 			let scal_qty = Math.abs(this.qty);
-			if (first_search.startsWith(this.pos_profile.posa_scale_barcode_start)) {
+			if (this.is_scale_barcode(first_search)) {
 				let pesokg1 = first_search.substr(7, 5);
 				let pesokg;
 				if (pesokg1.startsWith("0000")) {
@@ -672,10 +908,7 @@ export default {
 		},
 		get_search(first_search) {
 			let search_term = "";
-			if (
-				first_search &&
-				first_search.startsWith(this.pos_profile.posa_scale_barcode_start)
-			) {
+			if (this.is_scale_barcode(first_search)) {
 				search_term = first_search.substr(0, 7);
 			} else {
 				search_term = first_search;
@@ -683,19 +916,118 @@ export default {
 			return search_term;
 		},
 		esc_event() {
-			this.search = null;
-			this.first_search = null;
+			this.reset_search();
 			this.qty = 1;
-			this.$refs.debounce_search.focus();
+			this.$refs.debounce_search?.focus();
 		},
-		async update_items_details(items) {
-			// set debugger
-			const vm = this;
-			const r = await call("pospire.pospire.api.posapp.get_items_details", {
-				pos_profile: vm.pos_profile,
-				items_data: items,
+		/**
+		 * Identity of a stock-enrichment request. Warehouse and profile are in
+		 * the key because the server resolves quantities against
+		 * `pos_profile.warehouse`, so the same item codes under a different
+		 * profile are a genuinely different question.
+		 */
+		stockEnrichmentKey(itemCodes) {
+			return JSON.stringify([
+				this.pos_profile?.name ?? "",
+				this.pos_profile?.warehouse ?? "",
+				itemCodes,
+			]);
+		},
+
+		/** Cancel the in-flight enrichment, if any. Safe to call unconditionally. */
+		abortStockEnrichment() {
+			if (!this._stockSlot) return;
+			this._stockSlot.controller.abort();
+			this._stockSlot = null;
+		},
+
+		/**
+		 * Single-slot in-flight coordinator for `get_items_details`.
+		 *
+		 * Deliberately NOT a result cache: stock, serial and batch data are
+		 * live-only (the method is `offline: false`), so once a request settles
+		 * the next one must go to the wire again. This only collapses requests
+		 * that overlap in time — the boot path fires two for the same catalogue
+		 * (the `filtered_items` watcher and the explicit post-fetch call), and
+		 * both are asking the identical question.
+		 *
+		 * An identical key joins the in-flight promise. Because a request can
+		 * run for seconds, a joiner may receive stock read slightly before it
+		 * asked; that is still a live read. An emitter wanting
+		 * invalidate-now semantics would need to force a new request rather
+		 * than join.
+		 */
+		requestStockDetails(key, itemCodes) {
+			if (this._stockSlot?.key === key) return this._stockSlot.promise;
+			// A different question supersedes the old one — free the socket
+			// rather than let a doomed response finish.
+			this.abortStockEnrichment();
+
+			const controller = new AbortController();
+			const slot = { key, controller, promise: null };
+			slot.promise = call({
+				method: "pospire.pospire.api.posapp.get_items_details",
+				// Required on the object form: unlike the positional form, it is
+				// NOT inferred from the registry, and validateIntent rejects the
+				// call outright when it disagrees.
+				intent: "read",
+				// Only `item_code` is read server-side; every other field is
+				// echoed straight back into the response, so sending whole rows
+				// puts the catalogue on the wire in both directions.
+				args: {
+					pos_profile: this.pos_profile,
+					items_data: itemCodes.map((item_code) => ({ item_code })),
+				},
+				abortSignal: controller.signal,
+			}).finally(() => {
+				// Only if we still own the slot: a newer request may have
+				// replaced it already.
+				if (this._stockSlot === slot) this._stockSlot = null;
 			});
+			this._stockSlot = slot;
+			return slot.promise;
+		},
+
+		async update_items_details(items) {
+			const vm = this;
+			// Quantities are unknown from the moment the request starts, not
+			// from the moment it fails.
+			const seq = ++vm.stock_request_seq;
+			vm.stock_details_fresh = false;
+			const itemCodes = [...new Set(items.map((i) => i.item_code))].sort();
+			if (!itemCodes.length) {
+				// An empty grid has no quantity that could be stale. The old
+				// code reached the same state via a pointless round trip that
+				// returned []; skip the wire, keep the flag. A request for the
+				// previous, non-empty grid is now answering a question nobody
+				// is asking, so drop it rather than let it run to completion.
+				vm.abortStockEnrichment();
+				vm.stock_details_fresh = true;
+				return;
+			}
+			let r = null;
+			try {
+				r = await vm.requestStockDetails(vm.stockEnrichmentKey(itemCodes), itemCodes);
+			} catch (err) {
+				// AbortError is expected supersession, not a failure — call.ts
+				// keeps it out of connectivity accounting. Offline is expected
+				// too: get_items_details is live-only, so it throws and
+				// get_items leaves actual_qty at 0, meaning the grid must report
+				// stock as unknown rather than render a confident "OUT".
+				//
+				// A policy error is neither. It means this call site disagrees
+				// with the registry and NO request was ever made — a bug that
+				// silently zeroes enrichment, which this catch would otherwise
+				// hide behind an indistinguishable "stock unknown" grid.
+				if (err instanceof MethodPolicyError || err instanceof UnregisteredMethod) {
+					console.error("[ItemsSelector] stock enrichment misconfigured", err);
+				}
+				return;
+			}
+			// Superseded by a newer request — its response owns the flag.
+			if (seq !== vm.stock_request_seq) return;
 			if (r) {
+				vm.stock_details_fresh = true;
 				items.forEach((item) => {
 					const updated_item = r.find(
 						(element) => element.item_code == item.item_code
@@ -718,7 +1050,10 @@ export default {
 				// get_items excludes zero-stock items server-side, but stock can
 				// deplete between the get_items call and this get_items_details
 				// response, leaving items in the list with actual_qty = 0.
-				if (vm.pos_profile.posa_display_items_in_stock) {
+				if (
+					vm.pos_profile.posa_display_items_in_stock &&
+					!vm.pos_profile.posa_auto_stock_reconcile
+				) {
 					vm.items = vm.items.filter((item) => item.actual_qty > 0);
 					vm.eventBus.emit("set_all_items", vm.items);
 				}
@@ -727,31 +1062,89 @@ export default {
 		update_cur_items_details() {
 			this.update_items_details(this.filtered_items);
 		},
-		scan_barcoud() {
-			const vm = this;
-			try {
-				onScan.attachTo(document, {
-					suffixKeyCodes: [],
-					keyCodeMapper: function (oEvent) {
-						oEvent.stopImmediatePropagation();
-						return onScan.decodeKeyEvent(oEvent);
-					},
-					onScan: function (sCode) {
-						setTimeout(() => {
-							vm.trigger_onscan(sCode);
-						}, 300);
-					},
-				});
-			} catch (error) {}
+		/**
+		 * Attach the hardware-scanner listener.
+		 *
+		 * onScan was previously referenced without ever being imported, so
+		 * `onScan.attachTo` threw a ReferenceError that the bare `catch {}`
+		 * swallowed -- no listener was attached and no scan was ever framed.
+		 * The only thing separating one scan from the next was the 200ms
+		 * search debounce, which two scans inside that window simply re-armed,
+		 * concatenating both codes into one unmatchable term.
+		 *
+		 * The old custom keyCodeMapper is gone: it called
+		 * stopImmediatePropagation() on every keydown reaching document, which
+		 * would have killed keyboard input app-wide had it ever run.
+		 */
+		attach_scanner() {
+			if (onScan.isAttachedTo(document)) {
+				onScan.detachFrom(document);
+			}
+			onScan.attachTo(document, {
+				// reactToPaste stays off: a pasted code already reaches
+				// first_search through v-model, and the watcher adds it. Also
+				// reacting here would add the item twice.
+				keyCodeMapper: (oEvent) => {
+					const decoded = onScan.decodeKeyEvent(oEvent);
+					if (decoded !== "") {
+						return decoded;
+					}
+					// decodeKeyEvent only covers letters, digits and keypad
+					// operators; it drops '-', '.', '/' and friends, which
+					// appear in Code 39 / Code 128 barcodes. Keep any single
+					// printable character so the framed code matches what the
+					// scanner actually emitted. Named keys ("Enter", "Shift")
+					// are longer than one character and stay filtered out.
+					return oEvent.key?.length === 1 ? oEvent.key : "";
+				},
+				onScan: (sCode) => this.handle_scan(sCode),
+				onScanError: () => {
+					// The burst was human typing, not a scan. If Enter arrived
+					// during it, search_onchange deferred to us -- run it now
+					// so manual search and the Enter-to-add shortcut still work.
+					if (this._deferred_enter) {
+						this._deferred_enter = false;
+						this.run_search();
+					}
+				},
+			});
 		},
-		trigger_onscan(sCode) {
-			if (this.filtered_items.length == 0) {
+		/**
+		 * Handle one framed scan. `sCode` is authoritative.
+		 *
+		 * The scanner's keystrokes also landed in the focused search box, so a
+		 * debounced write of that raw text is pending -- and after two quick
+		 * scans that text is both codes concatenated. Cancelling it and
+		 * writing sCode ourselves is what makes consecutive scans independent:
+		 * onScan reinitializes its accumulator after every scan, so each
+		 * callback carries exactly one code and runs to completion (adding the
+		 * item and clearing the box) before the next one can fire.
+		 */
+		handle_scan(sCode) {
+			this._deferred_enter = false;
+			this._applySearch.cancel();
+			if (!this.pos_profile) {
+				return;
+			}
+			// Show the framed code, replacing whatever raw characters the
+			// scanner typed into the element.
+			this.raw_search = sCode;
+			this.first_search = sCode;
+			if (this.pos_profile.pose_use_limit_search) {
+				// Limit-search profiles keep only the last server result in the
+				// grid, so the scanned code is not in filtered_items yet and
+				// enter_event() would report a false miss. get_items() re-queries
+				// with it and runs enter_event() itself once the response lands.
+				this.get_items();
+				return;
+			}
+			if (!this.enter_event()) {
 				toast.error(`No Item has this barcode "${sCode}"`);
 				playSound("error");
-			} else {
-				this.enter_event();
-				this.debounce_search = null;
-				this.search = null;
+				// Clear anyway. Leaving an unmatched code in the box meant the
+				// next scan appended to it and could never match either.
+				this.reset_search();
+				this.$refs.debounce_search?.focus();
 			}
 		},
 		generateWordCombinations(inputString) {
@@ -779,10 +1172,8 @@ export default {
 
 		// Enhanced UI helper methods
 		clearSearch() {
-			this.search = null;
-			this.first_search = null;
-			this.debounce_search = null;
-			this.$refs.debounce_search.focus();
+			this.reset_search();
+			this.$refs.debounce_search?.focus();
 		},
 
 		getStockColorClass(qty) {
@@ -800,6 +1191,25 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * True when the displayed actual_qty on items is from a
+		 * recent online fetch and can be trusted enough to render the
+		 * OUT / LOW / STOCK badges. False while offline or on degraded
+		 * connectivity, when the items array is whatever was last
+		 * hydrated from localStorage (or worse, from a stock-agnostic
+		 * fallback fetch that ran without warehouse-customer context).
+		 * Hiding the badges in those states avoids the cashier seeing
+		 * "OUT" on every item just because a customer switch missed
+		 * the cache.
+		 */
+		stockContextReliable() {
+			// Online is necessary but not sufficient: get_items always returns
+			// actual_qty 0 unless posa_display_items_in_stock is set, and only
+			// a successful get_items_details fills it in. Gating on
+			// connectivity alone showed "OUT" on every item after a reconnect,
+			// before the enrichment call had landed.
+			return this.connectionQuality === "online" && this.stock_details_fresh;
+		},
 		filtered_items() {
 			this.search = this.get_search(this.first_search);
 			if (!this.pos_profile.pose_use_limit_search) {
@@ -898,46 +1308,68 @@ export default {
 				return this.items.slice(0, 50);
 			}
 		},
+		/**
+		 * Typing latch for the search box. The setter is deliberately NOT a
+		 * `_.debounce(...)` literal any more: that built one shared debounced
+		 * function at module-evaluation time with no handle to cancel or flush
+		 * it, so nothing could stop a pending write from landing. The
+		 * per-instance `_applySearch` created in created() gives us
+		 * `.cancel()` (used by handle_scan / reset_search to drop a stale
+		 * write) and `.flush()` (used by run_search so Enter acts on what is
+		 * in the box right now, not on the previous value).
+		 */
 		debounce_search: {
 			get() {
-				return this.first_search;
+				return this.raw_search;
 			},
-			set: _.debounce(function (newValue) {
-				this.first_search = newValue;
-			}, 200),
+			set(newValue) {
+				// Written through immediately so the bound value always mirrors
+				// the element; only the *search* is debounced.
+				this.raw_search = newValue ?? "";
+				this._applySearch(newValue);
+			},
 		},
 	},
 
 	created: function () {
 		this.$nextTick(function () {});
-		this.eventBus.on("register_pos_profile", (data) => {
+		// Backs the `debounce_search` setter. Per-instance so its pending
+		// timer belongs to this component and can be cancelled on unmount.
+		this._applySearch = _.debounce((newValue) => {
+			this.first_search = newValue;
+		}, 200);
+		// Set when Enter arrives while onScan is still accumulating a code,
+		// so the manual search can be replayed from onScanError if the burst
+		// turns out to have been human typing rather than a scan.
+		this._deferred_enter = false;
+		this.onBus("register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
 			this.get_items();
 			this.get_items_groups();
 			this.items_view = this.pos_profile.posa_default_card_view ? "card" : "list";
 		});
-		this.eventBus.on("update_cur_items_details", () => {
+		this.onBus("update_cur_items_details", () => {
 			this.update_cur_items_details();
 		});
-		this.eventBus.on("update_offers_counters", (data) => {
+		this.onBus("update_offers_counters", (data) => {
 			this.offersCount = data.offersCount;
 			this.appliedOffersCount = data.appliedOffersCount;
 		});
-		this.eventBus.on("update_coupons_counters", (data) => {
+		this.onBus("update_coupons_counters", (data) => {
 			this.couponsCount = data.couponsCount;
 			this.appliedCouponsCount = data.appliedCouponsCount;
 		});
-		this.eventBus.on("update_customer_price_list", (data) => {
+		this.onBus("update_customer_price_list", (data) => {
 			this.customer_price_list = data;
 		});
-		this.eventBus.on("update_customer", (data) => {
+		this.onBus("update_customer", (data) => {
 			this.customer = data;
 		});
 
 		// Master-data invalidation: Pos.vue emits refresh_items when a
 		// backend change (Item disabled, price updated, etc.) requires the
 		// item catalog to be re-fetched.  Behavior respects pose_use_limit_search.
-		this.eventBus.on("refresh_items", () => {
+		this.onBus("refresh_items", () => {
 			const profile = this.pos_profile;
 			if (!profile) return;
 			// Clear stale localStorage so hydration does not serve old data.
@@ -960,18 +1392,30 @@ export default {
 	},
 
 	mounted() {
-		this.scan_barcoud();
+		this.attach_scanner();
 	},
 
 	beforeUnmount() {
-		this.eventBus.off("register_pos_profile");
-		this.eventBus.off("update_cur_items_details");
-		this.eventBus.off("update_offers_counters");
-		this.eventBus.off("update_coupons_counters");
-		this.eventBus.off("update_customer_price_list");
-		this.eventBus.off("update_customer");
-		this.eventBus.off("refresh_items");
+		// Drop the scanner listener and any pending search write, otherwise
+		// both keep firing into a dead component (and a remount would hit
+		// onScan's "already initialized" throw).
+		if (onScan.isAttachedTo(document)) {
+			onScan.detachFrom(document);
+		}
+		this._applySearch.cancel();
+
+		// Nothing left to apply the response to. Bus listeners are torn down by
+		// the busListeners mixin's own hook.
+		//
+		// Both tokens are bumped, not just the stock one: an in-flight
+		// get_items() is unaffected by abortStockEnrichment and would otherwise
+		// resolve into a dead component, mutate its state and schedule a fresh
+		// enrichment from the .then handler.
+		this.catalog_request_seq += 1;
+		this.stock_request_seq += 1;
+		this.abortStockEnrichment();
 	},
+
 };
 </script>
 
@@ -997,7 +1441,6 @@ export default {
 }
 
 /*
- * Scrollable areas for items list/grid
  * Height is handled by flexbox - DO NOT use viewport calc here!
  */
 .items-grid-scroll,
@@ -1029,6 +1472,8 @@ export default {
 
 .enhanced-search-wrapper {
 	position: relative;
+	background: var(--pospire-surface);
+	border-radius: var(--pospire-input-border-radius);
 }
 
 .enhanced-search-icon {
@@ -1037,10 +1482,16 @@ export default {
 	top: 50%;
 	transform: translateY(-50%);
 	z-index: 2;
+	color: var(--pospire-text-muted);
 }
 
 .enhanced-search-field :deep(.v-field__input) {
 	padding-left: 2.5rem !important;
+}
+
+.enhanced-search-field :deep(.v-field) {
+	background: var(--pospire-surface) !important;
+	overflow: hidden;
 }
 
 .enhanced-empty-state {
@@ -1174,6 +1625,10 @@ export default {
 .pospire-product-price {
 	font: var(--pospire-font-body-medium);
 	color: var(--pospire-vibrant-teal);
+}
+
+.item-rate-text {
+	color: var(--pospire-text-primary);
 }
 
 /* Product Stock */

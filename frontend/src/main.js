@@ -12,6 +12,8 @@ import router from "./router";
 import eventBus from "./utils/bus";
 import { __ } from "./utils/translate";
 import { flt, get_currency_symbol, get_number_format, format_number } from "./utils/numberFormat";
+import { registerServiceWorker } from "./offline/registerServiceWorker";
+import { getStoredTheme } from "./composables/useThemePreference";
 import App from "./App.vue";
 
 // Expose as window globals — matches Frappe's browser environment where these
@@ -24,6 +26,7 @@ window.format_number = format_number;
 
 const vuetify = createVuetify({
 	theme: {
+		defaultTheme: getStoredTheme(),
 		themes: {
 			light: {
 				colors: {
@@ -39,6 +42,24 @@ const vuetify = createVuetify({
 					golden: "#A68C59",
 					badge: "#F5528C",
 					customPrimary: "#085294",
+				},
+			},
+			dark: {
+				dark: true,
+				colors: {
+					background: "#0F172A",
+					surface: "#111827",
+					primary: "#00BCD4",
+					secondary: "#26C6DA",
+					accent: "#B39DDB",
+					success: "#66BB6A",
+					info: "#64B5F6",
+					warning: "#FFB74D",
+					error: "#EF5350",
+					orange: "#FF9800",
+					golden: "#C8A96A",
+					badge: "#F5528C",
+					customPrimary: "#38BDF8",
 				},
 			},
 		},
@@ -68,4 +89,7 @@ if (import.meta.env.DEV) {
 	});
 } else {
 	app.mount("#app");
+	// Register the Service Worker in production only. Failures are non-fatal —
+	// offline shell is a progressive enhancement, not a requirement.
+	registerServiceWorker();
 }

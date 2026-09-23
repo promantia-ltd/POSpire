@@ -3,14 +3,14 @@
 		<v-dialog v-model="paidDialog" max-width="900px" class="pospire-dialog" persistent>
 			<v-card class="pospire-modal" elevation="8">
 				<v-card-title class="pospire-modal-header">
-					<v-icon class="mr-3" size="28" color="#00BCD4"
+					<v-icon class="mr-3" size="28" color="primary"
 						>mdi-file-document-outline</v-icon
 					>
 					<div>
-						<div class="text-h6 font-weight-bold" style="color: #1e293b">
+						<div class="text-h6 font-weight-bold paid-invoice-title">
 							{{ __("Load Sales Invoice Items") }}
 						</div>
-						<div class="text-caption" style="color: #64748b">
+						<div class="text-caption paid-invoice-subtitle">
 							{{ __("All the items in the current invoices") }}
 						</div>
 					</div>
@@ -56,7 +56,7 @@
 					<v-spacer />
 					<v-btn
 						variant="elevated"
-						style="background-color: #00bcd4 !important; color: white !important"
+						color="primary"
 						@click="close_dialog"
 					>
 						{{ __("Close") }}
@@ -69,8 +69,9 @@
 
 <script>
 import format from "@/utils/format";
+import busListeners from "@/utils/busListeners";
 export default {
-	mixins: [format],
+	mixins: [format, busListeners],
 	data: () => ({
 		page: 1,
 		itemsPerPage: 5,
@@ -128,7 +129,7 @@ export default {
 		},
 	},
 	created: function () {
-		this.eventBus.on("open_paid", (data) => {
+		this.onBus("open_paid", (data) => {
 			this.paidDialog = true;
 			this.dialog_data = data;
 		});
@@ -144,21 +145,21 @@ export default {
 }
 
 .pospire-modal-header {
-	background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%) !important;
-	border-bottom: 2px solid #e2e8f0 !important;
+	background: var(--section-bg) !important;
+	border-bottom: 2px solid var(--pospire-border) !important;
 	padding: 20px 24px !important;
 	display: flex !important;
 	align-items: center !important;
 }
 
 .pospire-modal-body {
-	background: #ffffff !important;
+	background: var(--pospire-surface) !important;
 	padding: 24px !important;
 }
 
 .pospire-modal-actions {
-	background: #f8f9fa !important;
-	border-top: 2px solid #e2e8f0 !important;
+	background: var(--pospire-surface-soft) !important;
+	border-top: 2px solid var(--pospire-border) !important;
 	padding: 16px 24px !important;
 }
 
@@ -171,6 +172,14 @@ export default {
 }
 
 .page-info {
-	color: #64748b;
+	color: var(--pospire-text-muted);
+}
+
+.paid-invoice-title {
+	color: var(--pospire-text-primary);
+}
+
+.paid-invoice-subtitle {
+	color: var(--pospire-text-muted);
 }
 </style>

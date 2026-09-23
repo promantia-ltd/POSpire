@@ -1535,7 +1535,7 @@ export default {
 				(!this.pos_profile.posa_auto_set_batch && new_item.has_batch_no) ||
 				new_item.has_serial_no
 			) {
-				this.expanded.push(new_item);
+				this.expanded.push(new_item.posa_row_id);
 			}
 			// Sales Person
 			new_item.sales_person = "";
@@ -2564,7 +2564,8 @@ export default {
 			});
 			item.serial_no_selected_count = item.serial_no_selected.length;
 			if (item.serial_no_selected_count != item.stock_qty) {
-				item.qty = item.serial_no_selected_count;
+				const conversion_factor = flt(item.conversion_factor) || 1;
+				item.qty = item.serial_no_selected_count / conversion_factor;
 				this.calc_stock_qty(item, item.qty);
 				this.$forceUpdate();
 			}
@@ -2663,7 +2664,9 @@ export default {
 			if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
 				e.preventDefault();
 				this.expanded = [];
-				this.expanded.push(this.items[0]);
+				if (this.items[0]) {
+					this.expanded.push(this.items[0].posa_row_id);
+				}
 			}
 		},
 
@@ -3233,7 +3236,7 @@ export default {
 				(!this.pos_profile.posa_auto_set_batch && new_item.has_batch_no) ||
 				new_item.has_serial_no
 			) {
-				this.expanded.push(new_item);
+				this.expanded.push(new_item.posa_row_id);
 			}
 			this.update_item_detail(new_item);
 			return new_item;
@@ -3574,12 +3577,10 @@ export default {
 			// this.update_items_details(data_value);
 			if (data_value.length > 0) {
 				// Only update if item does not already have modified values
-				let expandedItem = this.items.find(
-					(i) => i.posa_row_id === data_value[0].posa_row_id
-				);
+				let expandedItem = this.items.find((i) => i.posa_row_id === data_value[0]);
 
 				if (expandedItem && !expandedItem.modified) {
-					this.update_item_detail(data_value[0]);
+					this.update_item_detail(expandedItem);
 				}
 			}
 		},

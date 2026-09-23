@@ -21,3 +21,17 @@ def validate_pos_profile(doc, method):
 					assortment_company, doc.company
 				)
 			)
+
+	_validate_approval_actions(doc)
+
+
+def _validate_approval_actions(doc):
+	"""Run the POS Approval Action rules from the parent.
+
+	Frappe never invokes a child DocType's validate() on parent save --
+	Document.run_before_save_methods() calls run_method("validate") on the parent
+	only, and run_method() does not cascade to children. Driving the child rules
+	from here is what makes them actually enforced on save.
+	"""
+	for row in doc.get("posa_approval_actions") or []:
+		row.validate()

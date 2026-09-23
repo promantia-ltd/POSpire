@@ -12,7 +12,7 @@
 							variant="outlined"
 							color="primary"
 							:label="__('Coupon')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							v-model="new_coupon"
 							class="mr-4"
@@ -70,10 +70,12 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { call } from "@/utils/call";
 import { toast } from "vue3-toastify";
+import busListeners from "@/utils/busListeners";
 
 export default {
+	mixins: [busListeners],
 	data: () => ({
 		loading: false,
 		pos_profile: "",
@@ -197,11 +199,11 @@ export default {
 
 	created: function () {
 		this.$nextTick(function () {
-			this.eventBus.on("register_pos_profile", (data) => {
+			this.onBus("register_pos_profile", (data) => {
 				this.pos_profile = data.pos_profile;
 			});
 		});
-		this.eventBus.on("update_customer", (customer) => {
+		this.onBus("update_customer", (customer) => {
 			if (this.customer != customer) {
 				const to_remove = [];
 				this.posa_coupons.forEach((el) => {
@@ -218,10 +220,10 @@ export default {
 			}
 			this.setActiveGiftCoupons();
 		});
-		this.eventBus.on("update_pos_coupons", (data) => {
+		this.onBus("update_pos_coupons", (data) => {
 			this.updatePosCoupons(data);
 		});
-		this.eventBus.on("set_pos_coupons", (data) => {
+		this.onBus("set_pos_coupons", (data) => {
 			this.posa_coupons = data;
 		});
 	},

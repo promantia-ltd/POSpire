@@ -26,7 +26,7 @@
 								color="primary"
 								label="Enter Coupon Code"
 								placeholder="Type or scan coupon code..."
-								bg-color="white"
+								bg-color="surface"
 								hide-details
 								v-model="new_coupon"
 								prepend-inner-icon="mdi-ticket-outline"
@@ -105,10 +105,12 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { call } from "@/utils/call";
 import { toast } from "vue3-toastify";
+import busListeners from "@/utils/busListeners";
 
 export default {
+	mixins: [busListeners],
 	props: {
 		modelValue: {
 			type: Boolean,
@@ -168,11 +170,20 @@ export default {
 				return;
 			}
 			const vm = this;
-			const r = await call("pospire.pospire.api.posapp.get_pos_coupon", {
-				coupon: new_coupon,
-				customer: vm.customer,
-				company: vm.pos_profile.company,
-			});
+			let r;
+			try {
+				r = await call("pospire.pospire.api.posapp.get_pos_coupon", {
+					coupon: new_coupon,
+					customer: vm.customer,
+					company: vm.pos_profile.company,
+				});
+			} catch (err) {
+				if (err && err.name === "OfflineReadUnavailable") {
+					toast.error(__("Coupon lookup requires an internet connection"));
+					return;
+				}
+				throw err;
+			}
 			if (r) {
 				const res = r;
 				if (res.msg != "Apply" || !res.coupon) {
@@ -193,16 +204,28 @@ export default {
 		},
 		async setActiveGiftCoupons() {
 			if (!this.customer) return;
-			const vm = this;
-			const r = await call("pospire.pospire.api.posapp.get_active_gift_coupons", {
-				customer: vm.customer,
-				company: vm.pos_profile.company,
-			});
-			if (r) {
-				const coupons = r;
-				coupons.forEach((coupon_code) => {
-					vm.add_coupon(coupon_code);
+			// Offline-created customers don't exist server-side yet, so this lookup
+			// can never return meaningful gift-coupon data.
+			if (typeof this.customer === "string" && this.customer.startsWith("OFFLINE-CUST-")) {
+				return;
+			}
+			try {
+				const vm = this;
+				const r = await call("pospire.pospire.api.posapp.get_active_gift_coupons", {
+					customer: vm.customer,
+					company: vm.pos_profile.company,
 				});
+				if (r) {
+					const coupons = r;
+					coupons.forEach((coupon_code) => {
+						vm.add_coupon(coupon_code);
+					});
+				}
+			} catch (err) {
+				// This read is marked offline:false in the call registry.
+				// When offline, silently skip instead of throwing from update_customer flow.
+				if (err && err.name === "OfflineReadUnavailable") return;
+				throw err;
 			}
 		},
 
@@ -245,11 +268,11 @@ export default {
 
 	created: function () {
 		this.$nextTick(function () {
-			this.eventBus.on("register_pos_profile", (data) => {
+			this.onBus("register_pos_profile", (data) => {
 				this.pos_profile = data.pos_profile;
 			});
 		});
-		this.eventBus.on("update_customer", (customer) => {
+		this.onBus("update_customer", (customer) => {
 			if (this.customer != customer) {
 				const to_remove = [];
 				this.posa_coupons.forEach((el) => {
@@ -266,10 +289,10 @@ export default {
 			}
 			this.setActiveGiftCoupons();
 		});
-		this.eventBus.on("update_pos_coupons", (data) => {
+		this.onBus("update_pos_coupons", (data) => {
 			this.updatePosCoupons(data);
 		});
-		this.eventBus.on("set_pos_coupons", (data) => {
+		this.onBus("set_pos_coupons", (data) => {
 			this.posa_coupons = data;
 		});
 	},

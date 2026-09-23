@@ -2,24 +2,42 @@ import frappe
 
 
 def after_install():
+	"""Run installation tasks."""
 	seed_default_denomination_data()
+	frappe.clear_cache()
+
+
+def after_migrate():
+	"""Refresh cached desk metadata after migrations."""
+	frappe.clear_cache()
 
 
 def fix_desktop_icon_on_boot(bootinfo):
-	"""Ensure POSpire Desktop Icon uses Workspace Sidebar, not External.
+	"""
+	Ensure the POSpire Desktop Icon uses Workspace Sidebar instead of External.
 
 	add_to_apps_screen creates the icon with link_type="External" on first desk
-	load. This hook corrects it so the icon navigates to /desk/pospire (workspace)
-	instead of opening /pospire in a new tab. Runs on every boot but is a no-op
-	once the icon is already correct.
+	load. This hook corrects it so the icon navigates to /desk/pospire instead
+	of opening /pospire in a new tab.
 	"""
 	icon = frappe.db.get_value(
 		"Desktop Icon",
 		{"label": "POSpire", "link_type": "External"},
 		"name",
 	)
+
 	if icon:
-		frappe.db.set_value("Desktop Icon", icon, {"link_type": "Workspace Sidebar", "link": None})
+		frappe.db.set_value(
+			"Desktop Icon",
+			icon,
+			{
+				"link_type": "Workspace Sidebar",
+				"link": None,
+			},
+		)
+
+		# Ensure subsequent boots pick up the updated icon.
+		frappe.clear_cache()
 
 
 def seed_default_denomination_data():
@@ -47,16 +65,19 @@ def seed_default_denomination_data():
 			for value in values:
 				name = f"{currency}-{int(value) if value % 1 == 0 else value}"
 
-				if not frappe.db.exists("POS Denomination", name):
-					doc = frappe.get_doc(
-						{
-							"doctype": "POS Denomination",
-							"denomination_name": f"{value} {currency} {denomination_type}",
-							"denomination_value": value,
-							"denomination_type": denomination_type,
-							"currency": currency,
-							"display_order": int(value) if value % 1 == 0 else 0,
-							"enabled": 1,
-						}
-					)
-					doc.insert(ignore_permissions=True)
+				if frappe.db.exists("POS Denomination", name):
+					continue
+
+				doc = frappe.get_doc(
+					{
+						"doctype": "POS Denomination",
+						"denomination_name": f"{value} {currency} {denomination_type}",
+						"denomination_value": value,
+						"denomination_type": denomination_type,
+						"currency": currency,
+						"display_order": int(value) if value % 1 == 0 else 0,
+						"enabled": 1,
+					}
+				)
+
+				doc.insert(ignore_permissions=True)

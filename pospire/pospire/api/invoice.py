@@ -464,7 +464,13 @@ def _get_submitted_approval_request(request_name: str, doc):
 	if request.pos_profile != doc.pos_profile:
 		frappe.throw(_("Approval request {0} belongs to a different POS Profile.").format(request_name))
 
-	if request.requested_by and request.requested_by != frappe.session.user:
+	# Offline submit path runs under a background-worker session, so the
+	# current `frappe.session.user` may not equal the cashier who approved the
+	# action. Prefer the invoice owner (snapshotted from the payload per P-5);
+	# fall back to the live session only when the doc has no owner yet
+	# (in-memory draft during online submit).
+	cashier = getattr(doc, "owner", None) or frappe.session.user
+	if request.requested_by and request.requested_by != cashier:
 		frappe.throw(_("Approval request {0} belongs to a different cashier.").format(request_name))
 
 	if request.invoice and doc.name and request.invoice != doc.name:
@@ -492,7 +498,15 @@ def validate_shift(doc):
 	if doc.posa_pos_opening_shift and doc.pos_profile and doc.is_pos:
 		# check if shift is open
 		shift = frappe.get_cached_doc("POS Opening Shift", doc.posa_pos_opening_shift)
-		if shift.status != "Open":
+		# Offline-replay relaxation: a queued invoice (carries pos_offline_id)
+		# arriving via offline.submit_invoice was authored when the shift was
+		# open (P-11 snapshot). If the shift has since been closed out-of-band,
+		# refusing here would orphan the sale forever. Strict-closure on the
+		# closing entry is the natural-path safeguard.
+		is_offline_replay = bool(
+			doc.get("pos_offline_id") and getattr(frappe.flags, "pospire_offline_replay", False)
+		)
+		if shift.status != "Open" and not is_offline_replay:
 			frappe.throw(_("POS Shift {0} is not open").format(shift.name))
 		# check if shift is for the same profile
 		if shift.pos_profile != doc.pos_profile:

@@ -15,6 +15,19 @@ const routes = [
 		name: "Payments",
 		component: () => import("@/pages/PaymentsPage.vue"),
 	},
+	{
+		path: "/dashboard",
+		name: "Dashboard",
+		component: () => import("@/pages/DashboardPage.vue"),
+	},
+	{
+		// B6 — central observability dashboard. Permissioned server-side
+		// (System Manager + Sales Manager). The route is open in the SPA
+		// because the API call returns 403 to anyone else.
+		path: "/observability",
+		name: "Observability",
+		component: () => import("@/pages/ObservabilityPage.vue"),
+	},
 ];
 
 const router = createRouter({

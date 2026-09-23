@@ -10,7 +10,7 @@
 						<v-text-field
 							color="primary"
 							:label="__('Full Name')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							v-model="full_name"
 							density="compact"
@@ -20,7 +20,7 @@
 						<v-text-field
 							color="primary"
 							:label="__('Mobile No')"
-							bg-color="white"
+							bg-color="surface"
 							hide-details
 							v-model="mobile_no"
 							density="compact"
@@ -75,8 +75,10 @@
 </template>
 
 <script>
-import { call } from "frappe-ui";
+import { call } from "@/utils/call";
+import busListeners from "@/utils/busListeners";
 export default {
+	mixins: [busListeners],
 	data: () => ({
 		dialog: false,
 		singleSelect: true,
@@ -154,7 +156,7 @@ export default {
 		},
 	},
 	created: function () {
-		this.eventBus.on("open_mpesa_payments", (data) => {
+		this.onBus("open_mpesa_payments", (data) => {
 			this.dialog = true;
 			this.full_name = "";
 			this.mobile_no = "";
@@ -164,9 +166,6 @@ export default {
 			this.dialog_data = "";
 			this.selected = [];
 		});
-	},
-	beforeUnmount() {
-		this.eventBus.off("open_mpesa_payments");
 	},
 };
 </script>

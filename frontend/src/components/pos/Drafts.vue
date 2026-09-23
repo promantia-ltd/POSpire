@@ -84,9 +84,10 @@
 <script>
 import format from "@/utils/format";
 import { toast } from "vue3-toastify";
+import busListeners from "@/utils/busListeners";
 export default {
 	// props: ["draftsDialog"],
-	mixins: [format],
+	mixins: [format, busListeners],
 	data: () => ({
 		page: 1,
 		itemsPerPage: 5,
@@ -153,7 +154,7 @@ export default {
 		},
 	},
 	created: function () {
-		this.eventBus.on("open_drafts", (data) => {
+		this.onBus("open_drafts", (data) => {
 			this.draftsDialog = true;
 			this.dialog_data = data;
 		});

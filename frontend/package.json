@@ -9,10 +9,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@mdi/font": "^7.0.0",
+    "chart.js": "^4",
+    "dexie": "^4.0.0",
     "frappe-ui": "^0.1.267",
     "lodash": "^4.17.21",
     "mitt": "3.0.1",
@@ -20,16 +26,23 @@
     "pinia": "^2.0.33",
     "scrypt-js": "^3.0.1",
     "vue": "^3.4.0",
+    "vue-chartjs": "^5",
     "vue-router": "^4.2.0",
     "vue3-toastify": "0.2.0",
     "vuetify": "3.6.14"
   },
   "devDependencies": {
     "@iconify/utils": "2.1.33",
+    "@pinia/testing": "^0.1.3",
+    "@playwright/test": "^1.45.0",
     "@vitejs/plugin-vue": "^4.2.3",
+    "@vitest/ui": "^1.6.0",
+    "fake-indexeddb": "^6.0.0",
+    "happy-dom": "^14.12.0",
     "unplugin-icons": "^0.21.0",
     "vite": "^5.0.0",
-    "vite-plugin-vuetify": "^2.0.0"
+    "vite-plugin-vuetify": "^2.0.0",
+    "vitest": "^1.6.0"
   },
   "overrides": {
     "@iconify/utils": "2.1.33"

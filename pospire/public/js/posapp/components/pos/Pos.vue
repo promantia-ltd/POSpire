@@ -72,6 +72,8 @@ export default {
 			pendingProfileData: null,
 			pendingMasterDataRefresh: { items: false, customers: false },
 			cartHasItems: false,
+			subscribedMasterDataRoom: false,
+			subscribedProfileName: null,
 		};
 	},
 
@@ -100,6 +102,7 @@ export default {
 				.then((r) => {
 					if (r.message) {
 						this.pos_profile = r.message.pos_profile;
+						this.subscribe_to_pos_realtime_rooms(this.pos_profile.name);
 						this.pos_opening_shift = r.message.pos_opening_shift;
 						this.get_offers(this.pos_profile.name);
 						this.eventBus.emit("register_pos_profile", r.message);
@@ -163,10 +166,39 @@ export default {
 				this.eventBus.emit("set_pos_settings", doc);
 			});
 		},
+		subscribe_to_pos_realtime_rooms(profileName) {
+			if (!frappe.realtime) return;
+
+			if (!this.subscribedMasterDataRoom) {
+				frappe.realtime.doctype_subscribe("POS Profile");
+				this.subscribedMasterDataRoom = true;
+			}
+
+			if (!profileName || this.subscribedProfileName === profileName) return;
+
+			if (this.subscribedProfileName) {
+				frappe.realtime.doc_unsubscribe("POS Profile", this.subscribedProfileName);
+			}
+			frappe.realtime.doc_subscribe("POS Profile", profileName);
+			this.subscribedProfileName = profileName;
+		},
+		unsubscribe_from_pos_realtime_rooms() {
+			if (!frappe.realtime) return;
+
+			if (this.subscribedProfileName) {
+				frappe.realtime.doc_unsubscribe("POS Profile", this.subscribedProfileName);
+				this.subscribedProfileName = null;
+			}
+			if (this.subscribedMasterDataRoom) {
+				frappe.realtime.doctype_unsubscribe("POS Profile");
+				this.subscribedMasterDataRoom = false;
+			}
+		},
 	},
 
 	mounted: function () {
 		this.$nextTick(function () {
+			this.subscribe_to_pos_realtime_rooms();
 			this.check_opening_entry();
 			this.get_pos_setting();
 			this.eventBus.on("close_opening_dialog", () => {
@@ -174,6 +206,7 @@ export default {
 			});
 			this.eventBus.on("register_pos_data", (data) => {
 				this.pos_profile = data.pos_profile;
+				this.subscribe_to_pos_realtime_rooms(this.pos_profile.name);
 				this.get_offers(this.pos_profile.name);
 				this.pos_opening_shift = data.pos_opening_shift;
 				this.eventBus.emit("register_pos_profile", data);
@@ -257,6 +290,7 @@ export default {
 						.then((r) => {
 							if (!r.message) return;
 							this.pos_profile = r.message.pos_profile;
+							this.subscribe_to_pos_realtime_rooms(this.pos_profile.name);
 							if (!this.cartHasItems) {
 								this.get_offers(r.message.pos_profile.name);
 								this.eventBus.emit("register_pos_profile", r.message);
@@ -312,6 +346,7 @@ export default {
 		this.eventBus.off("load_return_invoice");
 		this.eventBus.off("clear_invoice");
 		this.eventBus.off("cart_emptied");
+		this.unsubscribe_from_pos_realtime_rooms();
 		frappe.realtime.off("pos_profile_updated");
 		frappe.realtime.off("pos_master_data_invalidated");
 	},

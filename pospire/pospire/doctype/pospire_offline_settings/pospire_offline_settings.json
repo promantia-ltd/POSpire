@@ -1,0 +1,119 @@
+{
+ "actions": [],
+ "creation": "2026-04-28 00:00:00.000000",
+ "description": "Global runtime kill switch for the POSpire offline outbox path (D-29).",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_kill_switch",
+  "enabled",
+  "column_break_a",
+  "last_disabled_by",
+  "last_disabled_on",
+  "section_retention",
+  "recovery_archive_after_days",
+  "client_tombstone_retention_days",
+  "column_break_retention",
+  "client_handoff_stuck_threshold_cycles",
+  "section_notes",
+  "operator_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_kill_switch",
+   "fieldtype": "Section Break",
+   "label": "Kill Switch"
+  },
+  {
+   "default": "1",
+   "description": "Master switch for offline mode. When unchecked, all offline write enqueues throw OfflineDisabledError and the sync scheduler pauses. Existing queued entries remain untouched and resume when re-enabled.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Offline Enabled",
+   "reqd": 0
+  },
+  {
+   "fieldname": "column_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_disabled_by",
+   "fieldtype": "Link",
+   "label": "Last Disabled By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_disabled_on",
+   "fieldtype": "Datetime",
+   "label": "Last Disabled On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_retention",
+   "fieldtype": "Section Break",
+   "label": "Retention",
+   "description": "Phase 2 retention controls for the offline-sync recovery pipeline. Aggressive defaults are safe — every relevant audit chain is on the recovery row itself, which is preserved until the archive job runs."
+  },
+  {
+   "default": "90",
+   "description": "Number of days SINCE THE ROW WAS LAST MODIFIED (i.e. since it reached Resolved / Voided — that's the last time the row changes) after which it's auto-archived by the daily scheduled job. Setting 90 means 'archive Resolved/Voided rows that have sat untouched for 90 days'. Set to 0 to disable archival entirely (rows accumulate indefinitely). Legal-hold flagged rows are skipped regardless.",
+   "fieldname": "recovery_archive_after_days",
+   "fieldtype": "Int",
+   "label": "Recovery Archive After (days since last change)",
+   "non_negative": 1
+  },
+  {
+   "default": "14",
+   "description": "Number of days after which the cashier device's local outbox tombstones (status synced / voided) are garbage-collected by the in-cycle vacuum pass. Server-side data is unaffected. Set to 0 to disable client GC.",
+   "fieldname": "client_tombstone_retention_days",
+   "fieldtype": "Int",
+   "label": "Client Tombstone Retention (days)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_retention",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "10",
+   "description": "Number of consecutive failed handoff attempts (one per drain cycle) before the cashier client surfaces a 'handoff stuck' warning to its observability beacon. Helps ops spot devices whose recovery.handoff calls keep failing despite reachable connectivity. Set to 0 to disable the escalation flag.",
+   "fieldname": "client_handoff_stuck_threshold_cycles",
+   "fieldtype": "Int",
+   "label": "Client Handoff Stuck Threshold (cycles)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "section_notes",
+   "fieldtype": "Section Break",
+   "label": "Operator Notes"
+  },
+  {
+   "description": "Free-form notes left for ops while the switch is flipped (incident reference, planned re-enable time, etc.). Visible only to System Managers.",
+   "fieldname": "operator_notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-04-28 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "POSpire",
+ "name": "POSpire Offline Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
