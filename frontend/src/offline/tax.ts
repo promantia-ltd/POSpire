@@ -12,6 +12,11 @@ export interface SalesTaxRow {
 	account_head: string;
 	charge_type: string;
 	rate: number;
+	/** Added alongside pospire.pospire.api.posapp.get_offline_tax_config's
+	 *  per-row `description` (S6) — the same label an online tax line
+	 *  shows, so an offline receipt's tax lines read the same as online's
+	 *  instead of falling back to the bare account head. */
+	description?: string;
 }
 
 export interface ItemTaxDetail {
@@ -129,6 +134,12 @@ export function computeOfflineTax(
 		}
 	}
 
+	const descriptionByAccount = new Map(
+		config.sales_taxes_and_charges
+			.filter((r) => r.description)
+			.map((r) => [r.account_head, r.description as string]),
+	);
+
 	const taxes: OfflineTaxRow[] = [];
 	let totalTax = 0;
 	for (const [account_head, { rate, tax_amount }] of byAccount) {
@@ -136,7 +147,7 @@ export function computeOfflineTax(
 		totalTax += rounded;
 		taxes.push({
 			account_head,
-			description: account_head.split(" - ")[0],
+			description: descriptionByAccount.get(account_head) || account_head.split(" - ")[0],
 			charge_type: SUPPORTED_CHARGE_TYPE,
 			rate,
 			tax_amount: rounded,

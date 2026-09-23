@@ -1060,14 +1060,17 @@ export default {
 				});
 
 				if (print) {
-					vm.handleProvisionalPrint(vm.invoice_doc);
+					await vm.printReceipt({ invoice: vm.invoice_doc, offlineId: r.offline_id });
 				}
 				vm.customer_credit_dict = [];
 				vm.redeem_customer_credit = false;
 				vm.is_cashback =
 					vm.pos_profile && vm.pos_profile.use_cashback == 1 ? true : false;
 				vm.sales_person = "";
-				vm.eventBus.emit("set_last_invoice", provisionalName);
+				vm.eventBus.emit("set_last_invoice", {
+					name: provisionalName,
+					offline_id: r.offline_id,
+				});
 				toast.info(`Queued ${provisionalName}. Will sync when online`);
 				playSound("submit");
 				vm.addresses = [];
@@ -1083,7 +1086,7 @@ export default {
 			});
 
 			if (print) {
-				vm.handlePrint(vm.invoice_doc.name);
+				await vm.printReceipt({ invoice: vm.invoice_doc });
 			}
 			vm.customer_credit_dict = [];
 			vm.redeem_customer_credit = false;
@@ -1092,7 +1095,7 @@ export default {
 				vm.pos_profile && vm.pos_profile.use_cashback == 1 ? true : false;
 			vm.sales_person = "";
 
-			vm.eventBus.emit("set_last_invoice", vm.invoice_doc.name);
+			vm.eventBus.emit("set_last_invoice", { name: vm.invoice_doc.name, offline_id: null });
 			toast.success(`Invoice ${r.name} is Submited`);
 			//s
 			playSound("submit");
@@ -1114,95 +1117,10 @@ export default {
 			vm.back_to_invoice();
 			return;
 		},
-		async handlePrint(invoice_name) {
-			try {
-				await this.hardwareConfiguration(this.pos_profile.name).then((res) => {
-					if (res === true) {
-						this.custom_print(invoice_name);
-					} else {
-						this.load_print_page(invoice_name);
-					}
-				});
-			} catch (err) {
-				console.error("Hardware config check failed:", err);
-				this.load_print_page(invoice_name); // fallback
-			}
-		},
-		/**
-		 * Provisional-receipt printer for offline-enqueued sales. The server
-		 * has not assigned a real invoice name yet, so printing via the
-		 * printview URL (which does a server lookup) would 404. Instead we
-		 * open a minimal HTML document rendered from the in-memory invoice
-		 * payload with an OFFLINE-<short_id> header and a "PENDING SYNC"
-		 * watermark. On reconnect, the reprint action in the receipt history
-		 * will print the final server-named receipt.
-		 *
-		 * See docs/offline/11-ui-ux.md §6 for the design contract.
-		 */
-		handleProvisionalPrint(invoice) {
-			try {
-				const win = window.open("", "ProvisionalReceipt");
-				if (!win) {
-					toast.warning("Pop-up blocked; provisional receipt not printed.");
-					return;
-				}
-				const lines = (invoice.items || [])
-					.map((it) => {
-						const name = it.item_name || it.item_code || "";
-						const qty = it.qty || 0;
-						const rate = it.rate || 0;
-						const amount = it.amount || qty * rate;
-						return (
-							'<tr>' +
-							'<td>' + String(name).replace(/</g, "&lt;") + '</td>' +
-							'<td style="text-align:right">' + qty + '</td>' +
-							'<td style="text-align:right">' + Number(rate).toFixed(2) + '</td>' +
-							'<td style="text-align:right">' + Number(amount).toFixed(2) + '</td>' +
-							'</tr>'
-						);
-					})
-					.join("");
-				const total = invoice.rounded_total || invoice.grand_total || 0;
-				const header = invoice.name || "OFFLINE-PENDING";
-				const html =
-					'<!doctype html><html><head><meta charset="utf-8">' +
-					'<title>' + header + '</title>' +
-					'<style>' +
-					'body{font-family:monospace;padding:12px;position:relative;}' +
-					'.wm{position:fixed;top:40%;left:0;right:0;text-align:center;font-size:48px;color:rgba(200,0,0,0.15);transform:rotate(-25deg);pointer-events:none;font-weight:700;letter-spacing:4px;}' +
-					'.hdr{font-weight:700;font-size:14px;border-bottom:2px dashed #333;padding-bottom:6px;margin-bottom:8px;}' +
-					'table{width:100%;border-collapse:collapse;font-size:12px;}' +
-					'th,td{padding:2px 4px;}' +
-					'.tot{border-top:1px dashed #333;margin-top:6px;padding-top:6px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;}' +
-					'.note{margin-top:12px;font-size:10px;color:#666;}' +
-					'</style></head><body>' +
-					'<div class="wm">PENDING SYNC</div>' +
-					'<div class="hdr">' + header + '</div>' +
-					'<table><thead><tr><th style="text-align:left">Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>' +
-					'<tbody>' + lines + '</tbody></table>' +
-					'<div class="tot"><span>Total</span><span>' + Number(total).toFixed(2) + '</span></div>' +
-					'<div class="note">This receipt will be replaced by the final receipt once synced.</div>' +
-					'</body></html>';
-				win.document.open();
-				win.document.write(html);
-				win.document.close();
-				// Give the browser a moment to lay out before triggering print.
-				win.addEventListener(
-					"load",
-					() => {
-						try {
-							win.print();
-						} catch (e) {
-							console.error("Provisional print trigger failed:", e);
-						}
-					},
-					true,
-				);
-			} catch (err) {
-				console.error("Provisional print failed:", err);
-				toast.error("Could not print provisional receipt.");
-			}
-		},
+		// handlePrint()/handleProvisionalPrint() removed — superseded by
+		// hardwareUtils.js::printReceipt(), the single entry point for
+		// every online/offline x Hardware-Manager-on/off combination (see
+		// the flow table in docs/OFFLINE_RECEIPT_PRINTING_IMPLEMENTATION_PLAN.md §3).
 		set_full_amount(idx) {
 			this.invoice_doc.payments.forEach((payment) => {
 				payment.amount =
