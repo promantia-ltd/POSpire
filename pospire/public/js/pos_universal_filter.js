@@ -3,83 +3,81 @@ frappe.provide("frappe.pospire_filter");
 (function () {
 	const DASHBOARD_NAME = "POSpire Dashboard";
 	const WORKSPACE_NAME = "POSpire";
-	const REPORT_NAME = "POS Sales Trend by Terminal and Store";
 
-	frappe.pospire_filter._registry = [];
 	frappe.pospire_filter._selected = { company: null, pos_profile: null };
 
-	frappe.pospire_filter.reset_registry = function () {
-		frappe.pospire_filter._registry = [];
-	};
-
+	// Server-resolved starting company (pospire.boot._default_dashboard_company)
+	// takes priority over the site's default company, which may have no POS
+	// Profile at all and would otherwise leave the dashboard blank.
 	frappe.pospire_filter.get_company = function () {
 		return (
-			frappe.pospire_filter._selected.company || frappe.defaults.get_user_default("Company")
+			frappe.pospire_filter._selected.company ||
+			frappe.boot.pospire_dashboard_company ||
+			null
 		);
 	};
 
-	frappe.pospire_filter.get_pos_profile = function () {
-		return frappe.pospire_filter._selected.pos_profile || "%";
-	};
-
-	const original_make_widget = frappe.widget.make_widget;
-	frappe.widget.make_widget = function (opts) {
-		const widget = original_make_widget(opts);
-		try {
-			if (widget && (opts.widget_type === "chart" || opts.widget_type === "number_card")) {
-				frappe.pospire_filter._registry.push({ type: opts.widget_type, widget });
-				if (opts.widget_type === "chart") {
-					ensure_chart_render_is_awaitable(widget);
-				}
-			}
-		} catch (e) {
-			console.error("pos_universal_filter: widget registry push failed", e); // eslint-disable-line no-console
+	// A bare "%" LIKE pattern does not reliably match blank Link fields
+	// through Frappe's query builder (it doubles literal "%" characters
+	// before building the SQL LIKE clause), so "no profile selected" is
+	// expressed as an exhaustive "in" list instead: every POS Profile name
+	// that exists on the site (frappe.boot.pospire_pos_profile_names), plus
+	// blank. include_blank_always keeps blank in the list even when a
+	// profile IS selected, for doctypes like POS Offer where an
+	// unassigned/company-wide record should still count.
+	frappe.pospire_filter.get_pos_profile_filter_values = function (include_blank_always) {
+		const selected = frappe.pospire_filter._selected.pos_profile;
+		if (selected) {
+			return include_blank_always ? [selected, ""] : [selected];
 		}
-		return widget;
+		return [...(frappe.boot.pospire_pos_profile_names || []), ""];
 	};
 
-	let chart_render_patched = false;
-	function ensure_chart_render_is_awaitable(widget) {
-		if (chart_render_patched) return;
-		chart_render_patched = true;
-		const proto = Object.getPrototypeOf(widget);
-		const original_render = proto.render;
-		proto.render = function (...args) {
-			const result = original_render.apply(this, args);
-			if (this._pospire_resolve_refresh) {
-				const resolve = this._pospire_resolve_refresh;
-				this._pospire_resolve_refresh = null;
-				resolve();
-			}
-			return result;
-		};
+	function refresh_chart(widget, awaitable) {
+		delete widget.filters;
+		if (widget.chart_settings && widget.chart_settings.filters) {
+			delete widget.chart_settings.filters;
+			widget.save_chart_config_for_user({ filters: null });
+		}
+		delete widget.filter_group;
+
+		if (!awaitable) {
+			widget.refresh();
+			return null;
+		}
+
+		const done = new Promise((resolve) => {
+			widget._pospire_resolve_refresh = resolve;
+		});
+		widget.refresh();
+		return done;
 	}
 
-	async function apply_filters(selected) {
+	async function apply_filters(
+		selected,
+		{ chart_widgets = [], number_card_widgets = [], awaitable_charts = false } = {}
+	) {
 		frappe.pospire_filter._selected.company = selected.company;
 		frappe.pospire_filter._selected.pos_profile = selected.pos_profile || null;
 
-		const pending = frappe.pospire_filter._registry.map(({ type, widget }) => {
-			if (type === "chart" && widget.chart_doc) {
-				delete widget.filters;
-				if (widget.chart_settings && widget.chart_settings.filters) {
-					delete widget.chart_settings.filters;
-					widget.save_chart_config_for_user({ filters: null });
-				}
+		const pending = chart_widgets
+			.filter((widget) => widget && widget.chart_doc)
+			.map((widget) => refresh_chart(widget, awaitable_charts))
+			.filter(Boolean);
 
-				delete widget.filter_group;
-				const done = new Promise((resolve) => {
-					widget._pospire_resolve_refresh = resolve;
-				});
-				widget.refresh();
-				return done;
-			} else if (type === "number_card" && widget.card_doc) {
-				widget.refresh();
-			}
-			return null;
+		number_card_widgets
+			.filter((widget) => widget && widget.card_doc)
+			.forEach((widget) => widget.refresh());
+
+		await Promise.all(pending);
+
+		// Remembered so a reload (or coming back to this page later) starts
+		// on the same company instead of falling back to the site default —
+		// a per-user key, not Session Defaults, so this never touches the
+		// default company used on new Sales Invoices/Orders.
+		frappe.call("pospire.pospire.api.dashboard_filter.set_dashboard_company", {
+			company: selected.company,
 		});
-
-		await Promise.all(pending.filter(Boolean));
 	}
 
 	function make_link_control(df, $parent) {
@@ -165,9 +163,22 @@ frappe.provide("frappe.pospire_filter");
 	function attach_to_dashboard() {
 		const dashboard = frappe.dashboard;
 		if (!dashboard._pospire_filter_bar) {
-			const bar = build_dashboard_bar((company, pos_profile) =>
-				apply_filters({ company, pos_profile })
-			);
+			const bar = build_dashboard_bar((company, pos_profile) => {
+				const chart_widgets =
+					(dashboard.chart_group && dashboard.chart_group.widgets_list) || [];
+				const number_card_widgets =
+					(dashboard.number_card_group && dashboard.number_card_group.widgets_list) ||
+					[];
+				// No global patching needed here: the Dashboard page's own
+				// WidgetGroup already keeps a live widgets_list (same one
+				// its own "Refresh All" menu item uses), and none of its
+				// charts are the slow Report-type kind, so a plain
+				// fire-and-forget refresh() is enough.
+				return apply_filters(
+					{ company, pos_profile },
+					{ chart_widgets, number_card_widgets, awaitable_charts: false }
+				);
+			});
 
 			dashboard.container.parent().prepend(bar.$bar);
 			dashboard._pospire_filter_bar = bar;
@@ -176,7 +187,68 @@ frappe.provide("frappe.pospire_filter");
 		const bar = dashboard._pospire_filter_bar;
 		bar.$bar.show();
 		if (!bar.company_field.get_value()) {
-			bar.company_field.set_value(frappe.defaults.get_user_default("Company"));
+			bar.company_field.set_value(frappe.pospire_filter.get_company());
+		}
+	}
+
+	// The Workspace has no ready-made widgets_list — unlike the Dashboard
+	// page's WidgetGroup, its blocks don't keep a live registry anywhere. A
+	// capture via frappe.widget.make_widget is the only way to reach the
+	// rendered widget instances, so it's installed only while this specific
+	// workspace is open and torn down the moment the user navigates away —
+	// never left patched globally for the rest of the desk session.
+	let workspace_capture = null; // { original_make_widget, charts: [], number_cards: [] } | null
+	let chart_render_patch = null; // { proto, original_render } | null
+
+	function ensure_chart_render_is_awaitable(widget) {
+		if (chart_render_patch) return;
+		const proto = Object.getPrototypeOf(widget);
+		const original_render = proto.render;
+		proto.render = function (...args) {
+			const result = original_render.apply(this, args);
+			if (this._pospire_resolve_refresh) {
+				const resolve = this._pospire_resolve_refresh;
+				this._pospire_resolve_refresh = null;
+				resolve();
+			}
+			return result;
+		};
+		chart_render_patch = { proto, original_render };
+	}
+
+	function install_workspace_capture() {
+		if (workspace_capture) return;
+
+		const state = {
+			original_make_widget: frappe.widget.make_widget,
+			charts: [],
+			number_cards: [],
+		};
+		frappe.widget.make_widget = function (opts) {
+			const widget = state.original_make_widget(opts);
+			try {
+				if (widget && opts.widget_type === "chart") {
+					state.charts.push(widget);
+					ensure_chart_render_is_awaitable(widget);
+				} else if (widget && opts.widget_type === "number_card") {
+					state.number_cards.push(widget);
+				}
+			} catch (e) {
+				console.error("pos_universal_filter: widget capture failed", e); // eslint-disable-line no-console
+			}
+			return widget;
+		};
+		workspace_capture = state;
+	}
+
+	function uninstall_workspace_capture() {
+		if (!workspace_capture) return;
+		frappe.widget.make_widget = workspace_capture.original_make_widget;
+		workspace_capture = null;
+
+		if (chart_render_patch) {
+			chart_render_patch.proto.render = chart_render_patch.original_render;
+			chart_render_patch = null;
 		}
 	}
 
@@ -184,15 +256,28 @@ frappe.provide("frappe.pospire_filter");
 		if (frappe.workspace && frappe.workspace._pospire_filter_bar) {
 			frappe.workspace._pospire_filter_bar.$bar.hide();
 		}
+		uninstall_workspace_capture();
 	}
 
 	function attach_to_workspace() {
 		const workspace = frappe.workspace;
+		install_workspace_capture();
+
 		if (!workspace._pospire_filter_bar) {
 			const bar = build_dashboard_bar((company, pos_profile) =>
-				apply_filters({ company, pos_profile })
+				apply_filters(
+					{ company, pos_profile },
+					{
+						chart_widgets: workspace_capture.charts,
+						number_card_widgets: workspace_capture.number_cards,
+						awaitable_charts: true,
+					}
+				)
 			);
 
+			// workspace.js's prepare_container() builds `this.body` (the
+			// .layout-main-section) once per session and reuses it across
+			// every workspace switch, so prepending here is stable long-term.
 			workspace.body.prepend(bar.$bar);
 			workspace._pospire_filter_bar = bar;
 		}
@@ -200,31 +285,7 @@ frappe.provide("frappe.pospire_filter");
 		const bar = workspace._pospire_filter_bar;
 		bar.$bar.show();
 		if (!bar.company_field.get_value()) {
-			bar.company_field.set_value(frappe.defaults.get_user_default("Company"));
-		}
-	}
-
-	function detach_from_report() {
-		if (frappe.query_report && frappe.query_report._pospire_filter_bar) {
-			frappe.query_report._pospire_filter_bar.$bar.hide();
-		}
-	}
-
-	function attach_to_report() {
-		const report = frappe.query_report;
-		if (!report._pospire_filter_bar) {
-			const bar = build_dashboard_bar((company, pos_profile) =>
-				report.set_filter_value({ company, pos_profile: pos_profile || "" })
-			);
-
-			report.page.main.prepend(bar.$bar);
-			report._pospire_filter_bar = bar;
-		}
-
-		const bar = report._pospire_filter_bar;
-		bar.$bar.show();
-		if (!bar.company_field.get_value()) {
-			bar.company_field.set_value(frappe.defaults.get_user_default("Company"));
+			bar.company_field.set_value(frappe.pospire_filter.get_company());
 		}
 	}
 
@@ -238,30 +299,17 @@ frappe.provide("frappe.pospire_filter");
 		);
 	}
 
-	function is_pospire_report_route(route) {
-		return route[0] === "query-report" && route[1] === REPORT_NAME;
-	}
-
 	frappe.pospire_filter.setup_for_current_page = function () {
 		const route = frappe.get_route();
 		if (route[0] === "dashboard-view" && route[1] === DASHBOARD_NAME && frappe.dashboard) {
-			frappe.pospire_filter.reset_registry();
 			attach_to_dashboard();
 			detach_from_workspace();
-			detach_from_report();
 		} else if (is_pospire_workspace_route(route) && frappe.workspace) {
-			frappe.pospire_filter.reset_registry();
 			attach_to_workspace();
 			detach_from_dashboard();
-			detach_from_report();
-		} else if (is_pospire_report_route(route) && frappe.query_report) {
-			attach_to_report();
-			detach_from_dashboard();
-			detach_from_workspace();
 		} else {
 			detach_from_dashboard();
 			detach_from_workspace();
-			detach_from_report();
 		}
 	};
 

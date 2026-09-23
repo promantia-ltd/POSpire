@@ -77,6 +77,123 @@ def _remove_workspace_layout_gap(pages):
 		page["content"] = json.dumps(blocks)
 
 
+def _eligible_dashboard_companies():
+	"""
+	Companies with at least one active POS Profile, narrowed to what the
+	current user can actually access.
+
+	frappe.get_all() on Company applies the session user's own permissions
+	(including any User Permission restrictions), so this covers "the user
+	can access" for free — no explicit permission check needed here.
+	"""
+
+	companies_with_pos_profile = frappe.get_all(
+		"POS Profile", filters={"disabled": 0}, pluck="company", distinct=True
+	)
+
+	if not companies_with_pos_profile:
+		return set()
+
+	permitted = frappe.get_all("Company", filters={"name": ["in", companies_with_pos_profile]}, pluck="name")
+
+	return set(permitted)
+
+
+def _default_dashboard_company():
+	"""
+	Pick the company the POSpire Dashboard/Workspace filter bar should show
+	before the user ever clicks Apply — falling back to the site default
+	company (frappe.defaults.get_user_default("Company")) breaks on sites
+	where that company has no POS Profile, leaving the dashboard blank.
+
+	Tries each of these in order, using the first one that names a company
+	in _eligible_dashboard_companies():
+	    1. The company the user picked last time (see set_dashboard_company()
+	       in pospire.pospire.api.dashboard_filter).
+	    2. The user's default Company.
+	    3. The company of the user's most recent POS Opening Shift.
+	    4. The company of a POS Profile assigned to the user (the one
+	       marked default, if there's more than one).
+	    5. The company of the site's most recent POS Opening Shift overall
+	       — covers Administrator / head-office users with no shifts of
+	       their own.
+	    6. The global default company, else the first eligible company by
+	       name.
+	Returns None if no company is eligible at all — callers must handle
+	that by showing an empty/zero state, not by throwing.
+
+	POS Opening Shift is used for "most recent activity" instead of Sales
+	Invoice throughout — it's a much smaller table.
+	"""
+
+	eligible = _eligible_dashboard_companies()
+
+	if not eligible:
+		return None
+
+	user = frappe.session.user
+
+	saved = frappe.db.get_value(
+		"DefaultValue", {"parent": user, "defkey": "pospire_dashboard_company"}, "defvalue"
+	)
+	if saved and saved in eligible:
+		return saved
+
+	user_default = frappe.defaults.get_user_default("Company", user)
+	if user_default and user_default in eligible:
+		return user_default
+
+	last_own_shift = frappe.get_all(
+		"POS Opening Shift",
+		filters={"user": user, "docstatus": 1},
+		fields=["company"],
+		order_by="period_start_date desc",
+		limit_page_length=1,
+		pluck="company",
+	)
+	if last_own_shift and last_own_shift[0] in eligible:
+		return last_own_shift[0]
+
+	assigned_profiles = frappe.get_all(
+		"POS Profile User", filters={"user": user}, fields=["parent", "default"]
+	)
+	if assigned_profiles:
+		profile_company = {
+			p.name: p.company
+			for p in frappe.get_all(
+				"POS Profile",
+				filters={"name": ["in", [row.parent for row in assigned_profiles]]},
+				fields=["name", "company"],
+			)
+		}
+		# Rows marked `default` first, then whatever else is assigned, so a
+		# default pointing at an ineligible/inaccessible company still falls
+		# through to another assigned profile instead of skipping this step
+		# entirely.
+		ordered_rows = [row for row in assigned_profiles if row.default] + assigned_profiles
+		for row in ordered_rows:
+			company = profile_company.get(row.parent)
+			if company and company in eligible:
+				return company
+
+	latest_site_shift = frappe.get_all(
+		"POS Opening Shift",
+		filters={"docstatus": 1},
+		fields=["company"],
+		order_by="period_start_date desc",
+		limit_page_length=1,
+		pluck="company",
+	)
+	if latest_site_shift and latest_site_shift[0] in eligible:
+		return latest_site_shift[0]
+
+	global_default = frappe.defaults.get_global_default("company")
+	if global_default and global_default in eligible:
+		return global_default
+
+	return sorted(eligible)[0]
+
+
 def extend_bootinfo(bootinfo):
 	"""
 	Layer 1
@@ -96,6 +213,14 @@ def extend_bootinfo(bootinfo):
 	Layer 4
 	    Expose blocked DocType route slugs so pos_core_route_guard.js can
 	    block direct navigation to them (e.g. "pos-invoice").
+
+	Layer 5
+	    Give the POSpire Dashboard/Workspace filter bar a sane starting
+	    Company (pospire_dashboard_company) instead of the site's default
+	    company, which may have no POS Profile at all — and the full list
+	    of POS Profile names (pospire_pos_profile_names) so that filter bar
+	    can express "no POS Profile selected" as a real, always-true filter
+	    condition rather than a SQL wildcard (see pos_universal_filter.js).
 	"""
 
 	bootinfo["core_pos_blocked_routes"] = sorted(BLOCKED_DOCTYPE_ROUTES)
@@ -131,6 +256,18 @@ def extend_bootinfo(bootinfo):
 
 	if workspaces:
 		_remove_workspace_layout_gap(workspaces.get("pages"))
+
+	if user and frappe.session.user != "Guest":
+		# Never let a bug here break login/boot for every desk page — this
+		# feature is additive, same principle as pos_universal_filter.js's
+		# own try/catch around its page-change handler.
+		try:
+			bootinfo["pospire_dashboard_company"] = _default_dashboard_company()
+		except Exception:
+			frappe.log_error(title="pospire: default dashboard company resolution failed")
+			bootinfo["pospire_dashboard_company"] = None
+
+		bootinfo["pospire_pos_profile_names"] = frappe.get_all("POS Profile", pluck="name")
 
 
 # `getpage` must remain guest-callable because it overrides the guest-accessible
