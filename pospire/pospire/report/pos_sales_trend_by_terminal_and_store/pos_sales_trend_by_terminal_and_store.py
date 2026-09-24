@@ -41,6 +41,8 @@ def get_permitted_invoice_names(filters):
 		"company": filters.company,
 		"posting_date": ["between", [filters.from_date, filters.to_date]],
 	}
+	if filters.get("pos_profile"):
+		invoice_filters["pos_profile"] = filters.pos_profile
 	return frappe.get_list("Sales Invoice", filters=invoice_filters, pluck="name", limit_page_length=0)
 
 

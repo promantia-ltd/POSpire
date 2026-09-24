@@ -25,5 +25,14 @@ frappe.query_reports["POS Sales Trend by Terminal and Store"] = {
 			default: frappe.datetime.get_today(),
 			reqd: 1,
 		},
+		{
+			fieldname: "pos_profile",
+			label: __("POS Profile"),
+			fieldtype: "Link",
+			options: "POS Profile",
+			get_query: function () {
+				return { filters: { company: frappe.query_report.get_filter_value("company") } };
+			},
+		},
 	],
 };
