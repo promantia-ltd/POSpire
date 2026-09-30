@@ -973,9 +973,17 @@ def update_invoice(data: str | dict):
 			item.is_free_item = 0
 		add_taxes_from_tax_template(item, invoice_doc)
 
+	if invoice_doc.is_return and invoice_doc.return_against:
+		set_return_additional_discount(invoice_doc)
+
 	if invoice_doc.get("inclusive_tax"):
 		invoice_doc.ignore_pricing_rule = 1
-		invoice_doc.apply_discount_on = "Grand Total"
+		# A return keeps the discount base of the sale it reverses, set just above.
+		# Its discount is a percentage read against that base, so switching bases
+		# here would resize it -- and submit_invoice has no matching override, so
+		# the draft the cashier paid against would disagree with what is booked.
+		if not invoice_doc.is_return:
+			invoice_doc.apply_discount_on = "Grand Total"
 
 		if invoice_doc.get("taxes"):
 			for tax in invoice_doc.taxes:
@@ -1086,6 +1094,9 @@ def submit_invoice(invoice: str | dict, data: str | dict, offline_id: str | None
 		is_cashback = is_cashback.lower() == "true"
 
 	if invoice_doc.is_return and invoice_doc.return_against:
+		# `invoice_doc.update(invoice)` above re-applied the client payload, so
+		# size the discount again before the doc is submitted.
+		set_return_additional_discount(invoice_doc)
 		invoice_doc.update_outstanding_for_self = 0 if is_cashback else 1
 
 		# Only add payments for cashback (immediate refund)
@@ -1862,6 +1873,52 @@ def search_invoices_with_items(invoice_name: str, company: str) -> list:
 	for invoice in invoices_list:
 		data.append(frappe.get_doc("Sales Invoice", invoice["name"]))
 	return data
+
+
+def get_return_discount_percentage(invoice) -> float:
+	"""The invoice-level Additional Discount the sale gave, as a percentage.
+
+	Returns carry the discount as a percentage rather than an amount so ERPNext
+	sizes it against the returned lines instead of the whole original invoice.
+	A percentage is also the only form that stays exact when lines are taxed at
+	different rates: ERPNext splits a discount amount across lines in proportion
+	to their tax-exclusive value, so reusing per-line amounts under-refunds the
+	lower-taxed lines and over-refunds the higher-taxed ones.
+	"""
+	discount = flt(invoice.discount_amount)
+	if not discount:
+		return 0.0
+
+	# The total ERPNext subtracted the discount from, before it did so.
+	charged = flt(invoice.net_total if invoice.apply_discount_on == "Net Total" else invoice.grand_total)
+	base = charged + discount
+	if not base:
+		return 0.0
+
+	return discount / base * 100
+
+
+def set_return_additional_discount(invoice_doc) -> None:
+	"""Size a return's Additional Discount to the lines actually being returned.
+
+	A return refunds what the customer paid, so it reverses only the discount
+	that belongs to the returned qty. Copying the whole invoice discount onto a
+	partial return overshoots the returned lines and turns the credit note into
+	a debit, which ERPNext then refuses to submit.
+
+	The cart sends its own figure so the cashier sees the right total before
+	paying; this recomputes it from the original invoice so a stale tab, a
+	replayed offline row or a direct API caller cannot book the wrong discount.
+	`calculate_taxes_and_totals` derives `discount_amount` from the percentage
+	on validate, which is what prorates it to the returned lines.
+	"""
+	original = frappe.get_cached_doc("Sales Invoice", invoice_doc.return_against)
+	# The percentage is read against this base, so it has to be the sale's own.
+	invoice_doc.apply_discount_on = original.apply_discount_on or invoice_doc.apply_discount_on
+	invoice_doc.additional_discount_percentage = get_return_discount_percentage(original)
+	# Never carry the sale's amount over: on a return it is both unprorated and
+	# the wrong sign, and a stale value here would survive an empty percentage.
+	invoice_doc.discount_amount = 0
 
 
 @frappe.whitelist()
