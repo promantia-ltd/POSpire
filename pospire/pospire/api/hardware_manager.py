@@ -7,7 +7,9 @@ from urllib.parse import urlparse
 
 import frappe
 from frappe import _
+from frappe.contacts.doctype.address.address import get_default_address, render_address
 from frappe.utils import cint, flt, fmt_money, format_date, format_datetime, format_time
+from jinja2.sandbox import SandboxedEnvironment
 
 
 def format_currency(amount, currency=None):
@@ -21,6 +23,27 @@ def extract_base_url(url: str) -> str:
 	"""Extract base URL from full URL"""
 	parsed = urlparse(url)
 	return f"{parsed.scheme}://{parsed.hostname}"
+
+
+def cut(text, n) -> str:
+	"""First n characters, no padding. The offline-safe replacement for
+	Python slice syntax (doc.name[:28]) in a template — nunjucks can't parse
+	slices, so template authors call this instead on either side."""
+	return str(text if text is not None else "")[: int(n)]
+
+
+def address_lines(html) -> list:
+	"""Address HTML (as stored on company_address_display /
+	customer_address_display) to a list of plain text lines, one per <br>
+	or block-level break. Used so a template can loop over an address the
+	same way whether it came from the server (real HTML) or the offline
+	cache (already-plain lines, see the offline context builder)."""
+	if not html:
+		return []
+	text = re.sub(r"<br\s*/?>", "\n", str(html), flags=re.IGNORECASE)
+	text = re.sub(r"<[^>]+>", "", text)
+	lines = [line.strip() for line in text.split("\n")]
+	return [line for line in lines if line]
 
 
 def get_enhanced_context(doc):
@@ -40,6 +63,8 @@ def get_enhanced_context(doc):
 		"pad_left": lambda s, w: str(s).ljust(w)[:w],
 		"pad_right": lambda s, w: str(s).rjust(w)[:w],
 		"pad_center": lambda s, w: str(s).center(w)[:w],
+		"cut": cut,
+		"address_lines": address_lines,
 		# Layout helpers
 		"separator": lambda char="-", width=42: char * width,
 		"blank_line": lambda: "",
@@ -63,6 +88,34 @@ def get_enhanced_context(doc):
 		"format_currency": format_currency,
 		"_": _,  # Translation function
 	}
+
+
+_receipt_jinja_env = None
+
+
+def get_receipt_jinja_env() -> SandboxedEnvironment:
+	"""A dedicated, sandboxed Jinja environment for POS receipt templates,
+	with autoescape ON — separate from frappe's shared global Jinja env
+	(frappe.render_template), which does not escape by default and would
+	let "A & B" in a company/item name produce invalid XML. Sandboxed so a
+	template can only reach the helpers this module hands it, not arbitrary
+	Python. Module-level singleton: safe to reuse across requests, nothing
+	request-specific is bound to it (the doc/helpers are passed as render
+	context, not baked into the environment)."""
+	global _receipt_jinja_env
+	if _receipt_jinja_env is None:
+		_receipt_jinja_env = SandboxedEnvironment(autoescape=True)
+	return _receipt_jinja_env
+
+
+def render_receipt_template(template_content: str, doc) -> str:
+	"""Render a POS receipt template (XML) against a document, escaping on.
+	Shared by generate_print_xml (the real print) and
+	render_receipt_xml_to_html (the designer preview), so both agree on
+	what a template will actually output."""
+	env = get_receipt_jinja_env()
+	context = get_enhanced_context(doc)
+	return env.from_string(template_content).render(context)
 
 
 @frappe.whitelist()
@@ -111,6 +164,109 @@ def get_hardware_manager_setting(pos_profile_name: str) -> bool:
 	return True if doc.posa_hardware_manager == 1 else False
 
 
+def _can_access_pos_profile(pos_profile: str) -> bool:
+	"""Whether the current user may read this POS Profile for print-config
+	purposes.
+
+	Real POS access here is membership in the profile's own "Applicable
+	for Users" table (POS Profile User), not the POS Profile doctype's
+	own read permission -- ERPNext core grants that only to Accounts
+	Manager / Accounts User (pos_profile.json), which an ordinary cashier
+	role does not hold. Gating on the doctype permission instead would
+	lock most real cashiers out of offline printing. An empty Applicable
+	for Users table means the profile isn't restricted to specific
+	users. Falls back to the doctype permission so System Manager /
+	Accounts roles managing profiles from Desk are never blocked either.
+	"""
+	applicable_users = frappe.get_all("POS Profile User", filters={"parent": pos_profile}, pluck="user")
+	if not applicable_users or frappe.session.user in applicable_users:
+		return True
+	return bool(frappe.has_permission("POS Profile", "read", pos_profile))
+
+
+@frappe.whitelist()
+def get_offline_print_config(pos_profile: str) -> dict:
+	"""Everything the till needs to build and print a POS receipt itself
+	while offline: the printer address (if Hardware Manager is configured),
+	the default Sales Invoice XML template (+ its modified timestamp, so a
+	stale cached copy can be told apart from a current one), the company's
+	address as display-ready lines, and the site's date/time/number/
+	currency formatting settings — so an offline receipt is formatted the
+	same way an online one would be, not with browser defaults.
+
+	Called once while online (at shift-open) and cached client-side under
+	`offline.print_config:<pos_profile>`; read again at print time, online
+	or off. Aside from the permission check below, never throws — a
+	missing/unconfigured piece comes back as None so the caller can decide
+	what to do (show an error, or just print without a printer address),
+	rather than the whole shift-open failing.
+
+	Args:
+		pos_profile (str): Name of the POS Profile
+
+	Returns:
+		dict: printer_url, template, template_modified, company,
+			company_address_display, date_format, time_format,
+			number_format, currency, currency_symbol, currency_precision.
+	"""
+	# This otherwise-open endpoint hands back the printer's network address,
+	# the company's address, and the full receipt template for whichever
+	# POS Profile is named — none of which should be readable by a user who
+	# has no access to that profile.
+	if not _can_access_pos_profile(pos_profile):
+		frappe.throw(_("You do not have access to this POS Profile"), frappe.PermissionError)
+
+	profile = frappe.get_cached_doc("POS Profile", pos_profile)
+	company = profile.company
+
+	printer_url = None
+	try:
+		if get_hardware_manager_setting(pos_profile):
+			printer_url = hardware_url("Printer")
+	except Exception:
+		frappe.clear_last_message()
+
+	template = None
+	template_modified = None
+	default_template = frappe.db.get_value(
+		"POS XML Print Designer",
+		{"ref_doctype": "Sales Invoice", "is_default": 1},
+		["xml_template", "modified"],
+		as_dict=True,
+	)
+	if default_template:
+		template = default_template.xml_template
+		template_modified = default_template.modified
+
+	address_name = profile.get("company_address") or get_default_address("Company", company)
+	# render_address(..., check_permissions=False): the wrapping
+	# get_address_display() always checks Address-doctype read permission,
+	# which an ordinary cashier role does not have -- discovered while
+	# verifying the POS Profile access fix above. _can_access_pos_profile()
+	# has already established the caller may read this profile's print
+	# config, which is the only gate that should apply to the company's
+	# own address here.
+	company_address_display = render_address(address_name, check_permissions=False) if address_name else None
+
+	system_settings = frappe.get_cached_doc("System Settings")
+	currency = profile.currency or frappe.get_cached_value("Company", company, "default_currency")
+	currency_precision = cint(system_settings.currency_precision) or 2
+
+	return {
+		"printer_url": printer_url,
+		"template": template,
+		"template_modified": template_modified,
+		"company": company,
+		"company_address_display": company_address_display,
+		"date_format": system_settings.date_format,
+		"time_format": system_settings.time_format,
+		"number_format": system_settings.number_format,
+		"currency": currency,
+		"currency_symbol": frappe.get_cached_value("Currency", currency, "symbol") or currency,
+		"currency_precision": currency_precision or 2,
+	}
+
+
 @frappe.whitelist()
 def render_receipt_xml_to_html(
 	xml_string: str, doctype: str | None = None, docname: str | None = None
@@ -128,10 +284,7 @@ def render_receipt_xml_to_html(
 	try:
 		doc = frappe.get_doc(doctype, docname)
 
-		# Use enhanced context with helper functions
-		context = get_enhanced_context(doc)
-
-		rendered_xml = frappe.render_template(xml_string, context)  # nosemgrep: frappe-ssti
+		rendered_xml = render_receipt_template(xml_string, doc)
 
 		# Parse rendered XML
 		root = ET.fromstring(rendered_xml)
@@ -282,9 +435,7 @@ def generate_print_xml(
 
 		template_content = default_template
 
-	# Render template with enhanced context (includes helper functions)
-	context = get_enhanced_context(doc)
-	rendered_xml = frappe.render_template(template_content, context)  # nosemgrep: frappe-ssti
+	rendered_xml = render_receipt_template(template_content, doc)
 
 	return rendered_xml
 
@@ -495,6 +646,44 @@ def validate_xml_attributes(template):
 	return errors
 
 
+def check_offline_compatibility(template):
+	"""Warn (never block) on Jinja constructs that render fine on the
+	server but can't run in the browser's offline template engine
+	(nunjucks): Python slicing, frappe.* calls, Python method calls like
+	.upper()/.strip(), and % string formatting. All have an offline-safe
+	helper equivalent (cut() for slicing, upper()/lower() for method
+	calls, format_money()/format_qty() instead of manual formatting).
+
+	Args:
+		template (str): Template to check
+
+	Returns:
+		list: List of warning messages
+	"""
+	warnings = []
+
+	if re.search(r"\w\s*\[\s*-?\d*\s*:\s*-?\d*\s*\]", template):
+		warnings.append(
+			"Uses Python slice syntax (e.g. doc.name[:28]), which cannot run offline. Use cut(doc.name, 28) instead."
+		)
+
+	if re.search(r"\bfrappe\.\w+", template):
+		warnings.append(
+			"Calls frappe.* directly, which is not available offline. Use a template helper instead."
+		)
+
+	if re.search(r"\.\s*(upper|lower|title|strip|format)\s*\(", template):
+		warnings.append(
+			"Calls a Python string method (e.g. .upper()), which cannot run offline. "
+			"Use the upper()/lower()/title()/format_money() helpers instead."
+		)
+
+	if re.search(r"%\s*[sd]\b|%\s*\(", template):
+		warnings.append("Uses Python %-formatting, which cannot run offline. Use a template helper instead.")
+
+	return warnings
+
+
 @frappe.whitelist()
 def validate_xml_template(xml_template: str, doc_type: str) -> dict:
 	"""
@@ -574,5 +763,15 @@ def validate_xml_template(xml_template: str, doc_type: str) -> dict:
 		errors.extend(attr_errors)
 	else:
 		info.append("Attribute values are valid")
+
+	# 7. Offline-compatibility warnings — the template still renders fine
+	# online (frappe.render_template handles all of this); these only
+	# matter because the same template needs to also run through nunjucks
+	# in the browser when offline.
+	offline_warnings = check_offline_compatibility(xml_template)
+	if offline_warnings:
+		warnings.extend(offline_warnings)
+	else:
+		info.append("No offline-incompatible syntax found")
 
 	return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings, "info": info}

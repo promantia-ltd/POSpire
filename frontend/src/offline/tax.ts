@@ -12,6 +12,11 @@ export interface SalesTaxRow {
 	account_head: string;
 	charge_type: string;
 	rate: number;
+	/** Added alongside pospire.pospire.api.posapp.get_offline_tax_config's
+	 *  per-row `description` (S6) — the same label an online tax line
+	 *  shows, so an offline receipt's tax lines read the same as online's
+	 *  instead of falling back to the bare account head. */
+	description?: string;
 }
 
 export interface ItemTaxDetail {
@@ -38,6 +43,11 @@ export interface OfflineTaxRow {
 	charge_type: string;
 	rate: number;
 	tax_amount: number;
+	/** The base this row's tax was calculated on. Every row shares the same
+	 *  value here — the only charge type this module supports is a flat
+	 *  percentage "On Net Total", so there is one taxable base for the
+	 *  whole invoice, not a per-line split. */
+	taxable_amount: number;
 	included_in_print_rate: 0 | 1;
 }
 
@@ -129,29 +139,40 @@ export function computeOfflineTax(
 		}
 	}
 
-	const taxes: OfflineTaxRow[] = [];
+	const descriptionByAccount = new Map(
+		config.sales_taxes_and_charges
+			.filter((r) => r.description)
+			.map((r) => [r.account_head, r.description as string]),
+	);
+
 	let totalTax = 0;
+	for (const { tax_amount } of byAccount.values()) {
+		totalTax += round(tax_amount, precision);
+	}
+	totalTax = round(totalTax, precision);
+	// Inclusive: net_total is the price minus embedded tax. Exclusive:
+	// net_total is the base and tax adds on top. Also every row's taxable
+	// base (single flat charge type => one shared base, not a per-line one).
+	const netTotal_ = round(inclusive ? netTotal - totalTax : netTotal, precision);
+
+	const taxes: OfflineTaxRow[] = [];
 	for (const [account_head, { rate, tax_amount }] of byAccount) {
-		const rounded = round(tax_amount, precision);
-		totalTax += rounded;
 		taxes.push({
 			account_head,
-			description: account_head.split(" - ")[0],
+			description: descriptionByAccount.get(account_head) || account_head.split(" - ")[0],
 			charge_type: SUPPORTED_CHARGE_TYPE,
 			rate,
-			tax_amount: rounded,
+			tax_amount: round(tax_amount, precision),
+			taxable_amount: netTotal_,
 			included_in_print_rate: inclusive ? 1 : 0,
 		});
 	}
-	totalTax = round(totalTax, precision);
 
 	return {
 		supported: true,
 		taxes,
 		total_taxes_and_charges: totalTax,
-		// Inclusive: net_total is the price minus embedded tax. Exclusive:
-		// net_total is the base and tax adds on top.
-		net_total: round(inclusive ? netTotal - totalTax : netTotal, precision),
+		net_total: netTotal_,
 		grand_total: round(inclusive ? netTotal : netTotal + totalTax, precision),
 	};
 }
