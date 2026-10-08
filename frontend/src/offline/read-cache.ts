@@ -105,8 +105,15 @@ const DURABLE_KEYS: ReadonlySet<string> = new Set([
  * profile: one fixed key would serve the previous profile's tax rates after a
  * switch, which undercharges. Same non-PII contract as DURABLE_KEYS above:
  * tax config is account heads and rates, admin configuration only.
+ *
+ * "offline.print_config:<pos profile>" is the same shape for the receipt
+ * printer/template config (printer URL, default XML template, a company
+ * address, site date/time/number/currency formatting) — also per-profile,
+ * also non-PII admin configuration, needed durably so an offline sale can
+ * print a real receipt without the server. See
+ * pospire.pospire.api.hardware_manager.get_offline_print_config.
  */
-const DURABLE_KEY_PREFIXES: readonly string[] = ["offline.tax_config:"];
+const DURABLE_KEY_PREFIXES: readonly string[] = ["offline.tax_config:", "offline.print_config:"];
 
 function isDurableKey(cacheKey: string): boolean {
 	return (

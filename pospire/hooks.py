@@ -349,6 +349,7 @@ fixtures = [
 					"Sales Invoice-custom_delivery_charge_rate",
 					"POS Profile-posa_hardware_manager_setting",
 					"POS Profile-posa_hardware_manager",
+					"POS Profile-posa_browser_receipt_from_xml",
 					"POS Profile-posa_approval_workflow_tab",
 					"POS Profile-posa_enable_approval_workflow",
 					"POS Profile-posa_enable_remote_approval",

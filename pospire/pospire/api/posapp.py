@@ -527,6 +527,7 @@ def get_offline_tax_config(pos_profile: str | dict) -> dict:
 					"account_head": row.account_head,
 					"charge_type": row.charge_type,
 					"rate": flt(row.rate),
+					"description": row.description or row.account_head,
 				}
 			)
 
@@ -542,6 +543,15 @@ def get_offline_tax_config(pos_profile: str | dict) -> dict:
 	return {
 		"sales_taxes_and_charges": sales_taxes,
 		"item_tax_templates": item_tax_templates,
+		# Whether ERPNext itself adds a tax row for every account head in an
+		# item's tax template (add_taxes_from_tax_template in
+		# erpnext/controllers/accounts_controller.py). Off by default, in which
+		# case an item tax template only overrides the rate of a head the
+		# invoice already charges. The offline estimate has to follow the same
+		# setting or its tax lines cannot match the synced invoice's.
+		"add_taxes_from_item_tax_template": cint(
+			frappe.db.get_single_value("Accounts Settings", "add_taxes_from_item_tax_template")
+		),
 	}
 
 
@@ -999,6 +1009,20 @@ def update_invoice(data: str | dict):
 	if invoice_doc.get("posting_date") and getdate(invoice_doc.posting_date) != today_date:
 		invoice_doc.set_posting_time = 1
 
+	if invoice_doc.is_return:
+		# set_missing_values() above already copied the POS Profile's print
+		# heading onto this draft (ERPNext's normal behaviour), so a return
+		# would otherwise carry the same heading as a sale for as long as
+		# it stays a draft — including if someone opens/prints it from the
+		# desk before the cashier ever submits. Stamped here (not only at
+		# submit_invoice) so it's correct at every save, not just the last
+		# one. POS XML receipt templates don't need this — they decide the
+		# header themselves from doc.is_return — this is for Desk prints
+		# and emailed PDFs, which do read select_print_heading.
+		credit_note_heading = frappe.get_cached_value("Print Heading", _("Credit Note"))
+		if credit_note_heading:
+			invoice_doc.select_print_heading = credit_note_heading
+
 	ensure_typed_batches_exist_for_invoice(invoice_doc)
 	invoice_doc.save()
 	return invoice_doc
@@ -1044,6 +1068,14 @@ def submit_invoice(invoice: str | dict, data: str | dict, offline_id: str | None
 	if offline_id and not invoice_doc.get("pos_offline_id"):
 		invoice_doc.pos_offline_id = offline_id
 	_preserve_offline_generated_tax_rows(invoice_doc, invoice)
+	# Print-only fields Invoice.vue stamps onto the payload so an offline
+	# reprint can match what was actually charged (see buildPrintContext /
+	# get_invoice_doc) — not real Sales Invoice fields, so they're popped
+	# here rather than reaching update()/db_insert(). Both the live and
+	# offline submit paths converge on this function (offline.py delegates
+	# to it), so stripping here covers both.
+	invoice.pop("pospire_print_tax_snapshot", None)
+	invoice.pop("currency_precision", None)
 	invoice_doc.update(invoice)
 	# Belt-and-braces floor on item rate. The client clamps before sending
 	# (see Invoice.vue::clamp_item_rate), but a stale tab, replayed offline
