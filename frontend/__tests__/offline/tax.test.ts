@@ -104,4 +104,25 @@ describe("computeOfflineTax: item tax template overrides rates, never adds heads
 		expect(r.taxes.map((t) => t.account_head)).toEqual(["Cess - X"]);
 		expect(r.total_taxes_and_charges).toBe(2);
 	});
+	it("adds item-template heads only when the site setting says ERPNext would", () => {
+		const base = {
+			sales_taxes_and_charges: [
+				{ account_head: "Output Tax IGST - X", charge_type: "On Net Total", rate: 18 },
+			],
+			item_tax_templates: GST_TEMPLATE,
+		};
+		const off = computeOfflineTax([{ net: 100, item_tax_template: "GST 18%" }], base as never, OPTS);
+		expect(off.taxes.map((t) => t.account_head)).toEqual(["Output Tax IGST - X"]);
+
+		const on = computeOfflineTax(
+			[{ net: 100, item_tax_template: "GST 18%" }],
+			{ ...base, add_taxes_from_item_tax_template: 1 } as never,
+			OPTS,
+		);
+		expect(on.taxes.map((t) => t.account_head)).toEqual([
+			"Output Tax IGST - X",
+			"Input Tax IGST - X",
+			"Output Tax IGST Refund - X",
+		]);
+	});
 });
