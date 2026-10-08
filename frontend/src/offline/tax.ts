@@ -65,15 +65,32 @@ function round(value: number, precision: number): number {
 	return Math.round((value + Number.EPSILON) * f) / f;
 }
 
-/** Tax rate rows that apply to a single line (item override or invoice-level). */
+/**
+ * Tax rate rows that apply to a single line.
+ *
+ * The invoice's own Sales Taxes and Charges rows decide WHICH account heads
+ * are charged; an Item Tax Template only overrides the RATE of a head that is
+ * already among them. This mirrors ERPNext exactly — see `_get_tax_rate` in
+ * erpnext/controllers/taxes_and_totals.py, which walks `doc.taxes` and falls
+ * back to `tax.rate` when the item's map has nothing for that account head.
+ *
+ * Returning the Item Tax Template's own rows instead (as this did) invents
+ * tax lines that the server never produces: a GST template carries Input,
+ * RCM and negative Refund heads too, so an offline receipt listed fifteen
+ * lines where the online invoice had none, and the estimated tax was wrong by
+ * the sum of them. On a tax-exclusive profile that is an overcharge, not just
+ * a wrong printout.
+ */
 function ratesForLine(line: TaxLine, config: OfflineTaxConfig): ItemTaxDetail[] {
 	const template = line.item_tax_template;
-	if (template && config.item_tax_templates[template]) {
-		return config.item_tax_templates[template];
-	}
+	const overrides = new Map<string, number>(
+		(template && config.item_tax_templates[template] ? config.item_tax_templates[template] : []).map(
+			(r) => [r.account_head, r.rate],
+		),
+	);
 	return config.sales_taxes_and_charges.map((r) => ({
 		account_head: r.account_head,
-		rate: r.rate,
+		rate: overrides.has(r.account_head) ? (overrides.get(r.account_head) as number) : r.rate,
 	}));
 }
 
