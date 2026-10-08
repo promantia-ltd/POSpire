@@ -27,6 +27,11 @@ export interface ItemTaxDetail {
 export interface OfflineTaxConfig {
 	sales_taxes_and_charges: SalesTaxRow[];
 	item_tax_templates: Record<string, ItemTaxDetail[]>;
+	/** Mirrors Accounts Settings' flag of the same name (see
+	 *  get_offline_tax_config). When 1, ERPNext adds a tax row for every head
+	 *  in an item's tax template; when 0 (the default) a template only
+	 *  overrides the rate of a head the invoice already charges. */
+	add_taxes_from_item_tax_template?: 0 | 1;
 }
 
 /** One cart line reduced to what tax needs: its taxable net and tax template. */
@@ -80,18 +85,36 @@ function round(value: number, precision: number): number {
  * lines where the online invoice had none, and the estimated tax was wrong by
  * the sum of them. On a tax-exclusive profile that is an overcharge, not just
  * a wrong printout.
+ *
+ * The one case where ERPNext does add a head from the item's template is when
+ * Accounts Settings' `add_taxes_from_item_tax_template` is on
+ * (add_taxes_from_tax_template in accounts_controller.py). The server reports
+ * that flag on the tax config so this mirrors it rather than guessing.
  */
 function ratesForLine(line: TaxLine, config: OfflineTaxConfig): ItemTaxDetail[] {
 	const template = line.item_tax_template;
-	const overrides = new Map<string, number>(
-		(template && config.item_tax_templates[template] ? config.item_tax_templates[template] : []).map(
-			(r) => [r.account_head, r.rate],
-		),
-	);
-	return config.sales_taxes_and_charges.map((r) => ({
+	const itemRows =
+		template && config.item_tax_templates[template] ? config.item_tax_templates[template] : [];
+	const overrides = new Map<string, number>(itemRows.map((r) => [r.account_head, r.rate]));
+
+	const rows = config.sales_taxes_and_charges.map((r) => ({
 		account_head: r.account_head,
 		rate: overrides.has(r.account_head) ? (overrides.get(r.account_head) as number) : r.rate,
 	}));
+
+	// Only when the site has Accounts Settings' add_taxes_from_item_tax_template
+	// on does ERPNext append a row for an item-template head the invoice does
+	// not already charge, exactly as below.
+	if (config.add_taxes_from_item_tax_template) {
+		const charged = new Set(rows.map((r) => r.account_head));
+		for (const r of itemRows) {
+			if (!charged.has(r.account_head)) {
+				rows.push({ account_head: r.account_head, rate: r.rate });
+				charged.add(r.account_head);
+			}
+		}
+	}
+	return rows;
 }
 
 /**

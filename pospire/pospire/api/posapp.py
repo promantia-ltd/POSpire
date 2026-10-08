@@ -543,6 +543,15 @@ def get_offline_tax_config(pos_profile: str | dict) -> dict:
 	return {
 		"sales_taxes_and_charges": sales_taxes,
 		"item_tax_templates": item_tax_templates,
+		# Whether ERPNext itself adds a tax row for every account head in an
+		# item's tax template (add_taxes_from_tax_template in
+		# erpnext/controllers/accounts_controller.py). Off by default, in which
+		# case an item tax template only overrides the rate of a head the
+		# invoice already charges. The offline estimate has to follow the same
+		# setting or its tax lines cannot match the synced invoice's.
+		"add_taxes_from_item_tax_template": cint(
+			frappe.db.get_single_value("Accounts Settings", "add_taxes_from_item_tax_template")
+		),
 	}
 
 
