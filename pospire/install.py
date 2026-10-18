@@ -4,12 +4,20 @@ import frappe
 def after_install():
 	"""Run installation tasks."""
 	seed_default_denomination_data()
+	_ensure_rca_role()
 	frappe.clear_cache()
 
 
 def after_migrate():
 	"""Refresh cached desk metadata after migrations."""
+	_ensure_rca_role()
 	frappe.clear_cache()
+
+
+def _ensure_rca_role():
+	from pospire.pospire.api.diagnostics import ensure_rca_role
+
+	ensure_rca_role()
 
 
 def fix_desktop_icon_on_boot(bootinfo):

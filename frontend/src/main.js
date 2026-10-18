@@ -13,6 +13,7 @@ import eventBus from "./utils/bus";
 import { __ } from "./utils/translate";
 import { flt, get_currency_symbol, get_number_format, format_number } from "./utils/numberFormat";
 import { registerServiceWorker } from "./offline/registerServiceWorker";
+import { installErrorCapture } from "./offline/log-shipper";
 import { getStoredTheme } from "./composables/useThemePreference";
 import App from "./App.vue";
 
@@ -68,6 +69,10 @@ const vuetify = createVuetify({
 
 const pinia = createPinia();
 const app = createApp(App);
+
+// Capture uncaught Vue / window / promise errors for server-side RCA. The
+// buffer is shipped by the log shipper that App.vue starts.
+installErrorCapture(app);
 
 app.use(vuetify);
 app.use(pinia);

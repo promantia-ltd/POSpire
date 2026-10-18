@@ -2593,7 +2593,17 @@ def _classify_replay_exception(err: Exception) -> str:
 	error taxonomy. Keeps the recovery row's `error_category` consistent
 	with what the autonomous scheduler would have stamped via the wire-
 	level classifier."""
+	from pospire.pospire.api import offline as offline_api
+
+	# Offline endpoints raise OfflineSubmitError with the taxonomy code
+	# already attached — trust it over the class name.
+	if isinstance(err, offline_api.OfflineSubmitError) and err.error_code:
+		return err.error_code
 	name = type(err).__name__
+	if name in offline_api._STOCK_SHORTAGE_EXC_NAMES:
+		return offline_api.ERROR_STOCK_SHORTAGE
+	if name in offline_api._BATCH_OR_SERIAL_EXC_NAMES:
+		return offline_api.ERROR_BATCH_OR_SERIAL_CONFLICT
 	if name == "PermissionError":
 		return "permission_error"
 	if name in {"ValidationError", "MandatoryError"}:

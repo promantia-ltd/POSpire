@@ -885,3 +885,30 @@ class TestModuleSurface(FrappeTestCase):
 				f"public name `{name}` missing from offline.py — was a "
 				"public function removed without a corresponding test update?",
 			)
+
+
+class TestReplayErrorClassification(FrappeTestCase):
+	"""Recovery replay must stamp the same `error_category` the live sync
+	path would — otherwise RCA on Sync Review rows sees every failure as
+	`validation_error`."""
+
+	def test_offline_submit_error_code_wins(self):
+		from pospire.pospire.api.recovery import _classify_replay_exception
+
+		err = OfflineSubmitError(ERROR_ACCOUNTING_PERIOD_CLOSED, "closed")
+		self.assertEqual(_classify_replay_exception(err), ERROR_ACCOUNTING_PERIOD_CLOSED)
+
+	def test_stock_and_batch_errors_by_class_name(self):
+		from pospire.pospire.api.recovery import _classify_replay_exception
+
+		negative_stock = type("NegativeStockError", (frappe.ValidationError,), {})
+		batch_expired = type("BatchExpiredError", (frappe.ValidationError,), {})
+		self.assertEqual(_classify_replay_exception(negative_stock("x")), "stock_shortage")
+		self.assertEqual(
+			_classify_replay_exception(batch_expired("x")), "batch_or_serial_conflict"
+		)
+
+	def test_unknown_falls_back_to_validation_error(self):
+		from pospire.pospire.api.recovery import _classify_replay_exception
+
+		self.assertEqual(_classify_replay_exception(ValueError("x")), ERROR_VALIDATION)

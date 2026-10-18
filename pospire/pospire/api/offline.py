@@ -2038,7 +2038,11 @@ def log_batch(entries: list | str) -> dict[str, Any]:
 			continue
 		# Trim free-form blobs so a single event cannot DoS the error log.
 		message = json.dumps(entry, default=str)[:4000]
-		frappe.log_error(message=message, title="POSpire Offline Event")
+		# Suffix the kind (client_error / connectivity / sync_cycle) so RCA
+		# can filter Error Log by title without parsing every message.
+		kind = str(entry.get("kind") or "").strip()[:40]
+		title = f"POSpire Offline Event: {kind}" if kind else "POSpire Offline Event"
+		frappe.log_error(message=message, title=title)
 		accepted += 1
 
 	return {"ok": True, "accepted": accepted}

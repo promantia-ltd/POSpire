@@ -38,6 +38,7 @@ import {
 	MAX_ATTEMPTS,
 } from "./outbox";
 import { call } from "@/utils/call";
+import { recordSyncOutcome } from "./beacon";
 import type {
 	LastErrorCategory,
 	OutboxEntry,
@@ -92,6 +93,8 @@ export interface SyncCycleLog {
 	leader: boolean;
 	/** Rows parked on a dependency 409 (siblings/parent not ready) this cycle. */
 	parked?: number;
+	/** Sends that failed transiently and were rescheduled this cycle. */
+	retried?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -645,6 +648,7 @@ export class SyncScheduler {
 					// unblock here to avoid a scan on every send — the next
 					// `evaluateParents` call will resolve them.
 				} else if (result.kind === "retry") {
+					cycle.retried = (cycle.retried ?? 0) + 1;
 					await scheduleRetry(
 						entry.offline_id,
 						entry.attempt_count + 1,
@@ -681,6 +685,7 @@ export class SyncScheduler {
 				// Unexpected error inside the send pipeline — treat as
 				// transient so we don't drop the row.
 				const detail = err instanceof Error ? err.message : String(err);
+				cycle.retried = (cycle.retried ?? 0) + 1;
 				await scheduleRetry(
 					entry.offline_id,
 					entry.attempt_count + 1,
@@ -918,6 +923,15 @@ export class SyncScheduler {
 		}
 		await appendSyncLog(cycle);
 		this.publishStateToPeers(cycle);
+		// Feed the beacon's last_sync_at / last_sync_outcome. Idle cycles
+		// (nothing attempted) don't count as a sync; transient retries count
+		// as failures so an outage doesn't keep reporting the last success.
+		const failed =
+			Object.values(cycle.moved_to_needs_review).reduce((a, n) => a + n, 0) +
+			(cycle.retried ?? 0);
+		if (cycle.drained > 0 || failed > 0) {
+			recordSyncOutcome(failed === 0 ? "success" : cycle.drained > 0 ? "partial" : "failure");
+		}
 	}
 
 	/** Compute the scheduler's current phase for peer broadcast. */

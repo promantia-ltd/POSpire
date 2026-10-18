@@ -62,6 +62,13 @@ export function registerServiceWorker() {
 			// the SW file's cache headers allow it.
 			setTimeout(() => registration.update().catch(() => {}), 30_000);
 
+			// Ask the active SW for its BUILD_HASH; the reply (SW_VERSION) is
+			// mirrored onto globals read by the beacon, log shipper and
+			// recovery handoff so RCA can detect client/server build skew.
+			navigator.serviceWorker.ready
+				.then((ready) => ready.active?.postMessage({ type: "GET_VERSION" }))
+				.catch(() => {});
+
 			return registration;
 		})
 		.catch((err) => {
@@ -76,6 +83,10 @@ function handleSwMessage(event) {
 	if (!data || typeof data !== "object") return;
 	if (data.type === "NEW_VERSION_AVAILABLE") {
 		showUpdateAvailableToast();
+	}
+	if (data.type === "SW_VERSION" && typeof data.buildHash === "string") {
+		globalThis.__POSPIRE_SW_BUILD_HASH__ = data.buildHash;
+		globalThis.__POSPIRE_BUILD_HASH__ = data.buildHash;
 	}
 }
 

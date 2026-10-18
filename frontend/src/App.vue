@@ -63,6 +63,7 @@ import {
 	migrateLegacyNeedsReviewEntries,
 } from "@/offline/sync";
 import { startBeacon, stopBeacon } from "@/offline/beacon";
+import { startLogShipper, stopLogShipper } from "@/offline/log-shipper";
 
 export default {
 	components: {
@@ -155,12 +156,26 @@ export default {
 			// eslint-disable-next-line no-console
 			console.warn("[App] startBeacon failed", err);
 		}
+
+		// Ship client errors + connectivity / sync-cycle logs to `log_batch`
+		// on reconnect and every 5 min so server-side RCA sees the device side.
+		try {
+			startLogShipper();
+		} catch (err) {
+			// eslint-disable-next-line no-console
+			console.warn("[App] startLogShipper failed", err);
+		}
 	},
 	beforeUnmount() {
 		// Clean teardown of background timers + in-flight fetches when the
 		// SPA is being torn down (e.g. tab close / Frappe logout).
 		try {
 			stopBeacon();
+		} catch {
+			/* idempotent */
+		}
+		try {
+			stopLogShipper();
 		} catch {
 			/* idempotent */
 		}
