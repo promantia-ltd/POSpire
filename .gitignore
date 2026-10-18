@@ -26,8 +26,8 @@ yarn.lock
 # Claude Code session data (shared skills are committed)
 .claude/*
 !.claude/skills/
-# Local-only notes (e.g. unpublished security findings) next to shared skills
-.claude/skills/**/*.local.md
+# Skill docs stay local for now (repo is public; review before sharing)
+.claude/skills/**/*.md
 
 # npm lock at repo root (bench manages its own)
 package-lock.json
