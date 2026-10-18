@@ -129,9 +129,16 @@ def main() -> int:
 	bundle = run_remote(args) if args.remote else run_local(args)
 	text = json.dumps(bundle, indent=1, default=str)
 	if args.out:
-		with open(args.out, "w") as fh:
+		out = os.path.realpath(os.path.expanduser(args.out))
+		repo_root = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+		if out.startswith(repo_root + os.sep):
+			sys.exit(f"refusing to write evidence (customer data) inside the repo: {out}")
+		os.makedirs(os.path.dirname(out), exist_ok=True)
+		# Owner-only: bundles carry production payloads and Error Logs.
+		fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+		with os.fdopen(fd, "w") as fh:
 			fh.write(text)
-		print(f"wrote {args.out} ({len(text)} bytes)", file=sys.stderr)
+		print(f"wrote {out} ({len(text)} bytes)", file=sys.stderr)
 	else:
 		print(text)
 	return 0
