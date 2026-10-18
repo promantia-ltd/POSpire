@@ -23,8 +23,11 @@ yarn.lock
 # Local tarballs
 *.tgz
 
-# Claude Code session data
-.claude/
+# Claude Code session data (shared skills are committed)
+.claude/*
+!.claude/skills/
+# Local-only notes (e.g. unpublished security findings) next to shared skills
+.claude/skills/**/*.local.md
 
 # npm lock at repo root (bench manages its own)
 package-lock.json
