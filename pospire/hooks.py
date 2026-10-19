@@ -403,7 +403,7 @@ add_to_apps_screen = [
 	{
 		"name": "POSpire",
 		"title": "POSpire",
-		"route": "/pospire",
+		"route": "/desk/pospire",
 		"color": POSPIRE_COLOR,
 		"logo": "/assets/pospire/images/app-128x128-rounded.png",
 	}
