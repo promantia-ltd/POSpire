@@ -2,7 +2,7 @@
 	<v-dialog
 		v-model="isOpen"
 		persistent
-		max-width="1100"
+		:max-width="isFullscreen ? undefined : 1100"
 		scrollable
 		:fullscreen="isFullscreen"
 	>
