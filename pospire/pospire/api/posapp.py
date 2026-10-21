@@ -43,7 +43,11 @@ from erpnext.stock.doctype.batch.batch import (
 	get_batch_no,
 	get_batch_qty,
 )
-from erpnext.stock.get_item_details import get_item_details
+from erpnext.stock.get_item_details import (
+	_get_item_tax_template_from_item_group,
+	get_item_details,
+	get_item_tax_template,
+)
 from erpnext.stock.stock_ledger import NegativeStockError
 from frappe import _
 from frappe.query_builder import Field
@@ -376,6 +380,14 @@ def get_items(
 
 			# Per-item default tax template, forwarded for offline tax estimation
 			# and item-level re-derivation on sync.
+			# Item Tax rows span companies; only this profile's company's templates apply.
+			company_templates = set(
+				frappe.get_all(
+					"Item Tax Template",
+					filters={"company": pos_profile.get("company"), "disabled": 0},
+					pluck="name",
+				)
+			)
 			item_tax_map = {}
 			for tax_row in frappe.get_all(
 				"Item Tax",
@@ -389,7 +401,19 @@ def get_items(
 				order_by="valid_from asc",
 			):
 				# ascending order -> latest valid row wins
-				item_tax_map[tax_row.parent] = tax_row.item_tax_template
+				if tax_row.item_tax_template in company_templates:
+					item_tax_map[tax_row.parent] = tax_row.item_tax_template
+
+			# No item-level template for this company: fall back to the item group tree, as
+			# ERPNext does on save, so the offline estimate charges what the synced invoice will.
+			group_tax_map = {}
+
+			def group_tax_template(item_group):
+				if item_group not in group_tax_map:
+					group_tax_map[item_group] = _get_item_tax_template_from_item_group(
+						{"company": pos_profile.get("company"), "posting_date": today}, item_group
+					)
+				return group_tax_map[item_group]
 
 			for item in items_data:
 				item_code = item.item_code
@@ -464,7 +488,8 @@ def get_items(
 							"batch_no_data": batch_no_data or [],
 							"attributes": attributes or "",
 							"item_attributes": item_attributes or "",
-							"item_tax_template": item_tax_map.get(item_code),
+							"item_tax_template": item_tax_map.get(item_code)
+							or group_tax_template(item.item_group),
 						}
 					)
 					result.append(row)
@@ -700,6 +725,7 @@ def get_sales_person_names() -> list:
 
 
 def add_taxes_from_tax_template(item, parent_doc):
+	_set_company_item_tax_template(item, parent_doc)
 	accounts_settings = frappe.get_cached_doc("Accounts Settings")
 	add_taxes_from_item_tax_template = accounts_settings.add_taxes_from_item_tax_template
 	if item.get("item_tax_template") and add_taxes_from_item_tax_template:
@@ -727,6 +753,29 @@ def add_taxes_from_tax_template(item, parent_doc):
 				if parent_doc.doctype == "Purchase Order":
 					tax_row.update({"category": "Total", "add_deduct_tax": "Add"})
 				tax_row.db_insert()
+
+
+def _set_company_item_tax_template(item, parent_doc):
+	"""Replace an item tax template from another company with the one ERPNext picks for this company.
+
+	Item and Item Group tax tables hold templates for every company. One from another company
+	adds that company's tax account to the invoice and fails the account-company validation.
+	"""
+	# Returns keep the sale's template, same as ERPNext's validate_item_tax_template.
+	if not item.get("item_code") or (parent_doc.get("is_return") and parent_doc.get("return_against")):
+		return
+	template = item.get("item_tax_template")
+	if template and frappe.get_cached_value("Item Tax Template", template, "company") == parent_doc.company:
+		return
+	item.item_tax_template = get_item_tax_template(
+		{
+			"item_code": item.item_code,
+			"company": parent_doc.company,
+			"tax_category": parent_doc.get("tax_category"),
+			"posting_date": parent_doc.get("posting_date"),
+			"base_net_rate": item.get("base_net_rate"),
+		}
+	)
 
 
 def _expand_offline_taxes(invoice_doc):
