@@ -34,3 +34,14 @@ scripts/output/
 
 # Semgrep rules cloned locally for testing — not committed
 semgrep-rules/
+
+# Playwright E2E suite — real credentials, a live session cookie, and
+# generated run artifacts. Never commit these (review feedback 2026-10-20).
+frontend/tests/e2e/.env.test
+frontend/tests/e2e/auth.json
+frontend/tests/e2e/playwright-report/
+# playwright.config.ts lives in tests/e2e/ with testDir: ".", so Playwright's
+# default test-results/ output folder is created there, not at frontend/'s
+# own root — ignoring both locations in case of a stale run from elsewhere.
+frontend/tests/e2e/test-results/
+frontend/test-results/
