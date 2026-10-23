@@ -2,11 +2,12 @@
  * Configuration Check — POSpire internal QA process, "Configuration Check"
  * tab (CFG-010–CFG-015).
  *
- * Runs BEFORE every other suite (smoke/functional/negative/api/integration/
- * security/performance) to catch POS Profile misconfiguration with a clear,
- * specific failure message here, instead of a confusing failure three steps
- * into an unrelated test later (e.g. "Rate cannot be zero" during a checkout
- * test, when the real cause is a missing Item Price three layers upstream).
+ * Enforced to run BEFORE smoke.spec.ts via playwright.config.ts's own
+ * "config-check" project, listed as a `dependencies` entry on the browser
+ * project(s) — a failure here blocks smoke from running at all, rather than
+ * surfacing as a confusing failure three steps into an unrelated test later
+ * (e.g. "Rate cannot be zero" during a checkout test, when the real cause is
+ * a missing Item Price three layers upstream).
  *
  * Every check below is a pure read against the live Frappe site via
  * `frappe.client.get` (the standard whitelisted method for fetching a full
