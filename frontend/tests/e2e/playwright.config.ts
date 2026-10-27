@@ -53,6 +53,10 @@ export default defineConfig({
 			testMatch: /config-check\.spec\.ts/,
 		},
 		{
+			// testMatch is scoped to smoke.spec.ts only (not a catch-all for
+			// every other browser-based spec) — so smoke-online.spec.ts and
+			// any other offline-placeholder specs intentionally do NOT run as
+			// part of this project. That's expected for now, not an oversight.
 			name: "chromium",
 			testMatch: /smoke\.spec\.ts/,
 			use: { ...devices["Desktop Chrome"], storageState: AUTH_FILE },

@@ -80,7 +80,15 @@ test.describe("Configuration Check — POS Profile core fields (CFG-010 to CFG-0
 	let authed: APIRequestContext;
 
 	test.beforeAll(async ({ playwright }) => {
-		test.skip(!API_KEY || !API_SECRET, "POSPIRE_E2E_API_KEY/SECRET not set in .env.test");
+		// Review feedback: skipping here makes every CFG-01x case report
+		// "skipped," which Playwright still rolls up as an overall PASS — a
+		// missing key would make this whole file (and smoke.spec.ts, which
+		// has the same guard) look green with zero real checks run. Failing
+		// loudly is correct now that the keys are a required precondition,
+		// not optional.
+		if (!API_KEY || !API_SECRET) {
+			throw new Error("POSPIRE_E2E_API_KEY/SECRET not set in .env.test");
+		}
 		authed = await playwright.request.newContext({
 			baseURL: BASE_URL,
 			extraHTTPHeaders: {
@@ -201,7 +209,12 @@ test.describe("Configuration Check — Create Customer dialog data (CFG-015)", (
 	let authed: APIRequestContext;
 
 	test.beforeAll(async ({ playwright }) => {
-		test.skip(!API_KEY || !API_SECRET, "POSPIRE_E2E_API_KEY/SECRET not set in .env.test");
+		// Same reasoning as the other describe block's beforeAll above: fail
+		// loudly on a missing key instead of skipping, so a misconfigured run
+		// can't report an overall PASS with zero checks actually run.
+		if (!API_KEY || !API_SECRET) {
+			throw new Error("POSPIRE_E2E_API_KEY/SECRET not set in .env.test");
+		}
 		authed = await playwright.request.newContext({
 			baseURL: BASE_URL,
 			extraHTTPHeaders: {

@@ -25,9 +25,7 @@
  * (ItemsSelector.vue, Customer.vue, UpdateCustomer.vue, Payments.vue,
  * Returns.vue, ClosingDialog.vue, Navbar.vue, OpeningDialog.vue) — there are
  * no `data-testid` attributes anywhere in this codebase, so locators rely on
- * visible labels/button text/roles instead. A few steps where the exact
- * runtime markup could not be confirmed by reading source alone are marked
- * with `test.fixme` rather than guessed at.
+ * visible labels/button text/roles instead.
  */
 
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
@@ -44,6 +42,12 @@ const TEST_DATA = {
 	posProfileName: "MG Road - POS 1",
 	itemName: "Women's Ballerina Flats", // item_code LSF-002
 	existingCustomerName: "Sam",
+	// Review feedback: SMK-005 was picking whichever Customer Group rendered
+	// first in the dropdown (often "_Test Customer Group" or similar) instead
+	// of one this POS Profile can actually search — see the comment above.
+	// A customer created outside "MG Road Store" is effectively invisible to
+	// this profile afterward. Pin it explicitly.
+	customerGroup: "MG Road Store",
 	// Unique per run: "Ravneet" already exists on this site (from the
 	// workbook's own literal Test Data value), and Frappe doesn't block
 	// duplicate Customer *names* — only duplicate record IDs — so a fixed
@@ -61,8 +65,9 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 	// `beforeAll` and reused via a module-level variable is the fix.
 	let page: Page;
 	// Pure read-only API verification (Administrator key, same pattern as
-	// api.spec.ts/config-check.spec.ts) — used by SMK-007 to confirm a return
-	// actually saved server-side, not just that the UI's Submit click fired.
+	// config-check.spec.ts) — used by SMK-006/007 to confirm a sale/return
+	// actually saved server-side under the right customer, not just that the
+	// UI's Submit click fired.
 	let adminAuthed: APIRequestContext;
 	// Captured from SMK-006's success toast so SMK-007 can look up that exact
 	// invoice for its return, instead of guessing at an invoice name.
@@ -90,20 +95,19 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 		// (Opened At/By, per-mode amounts, denomination grid) — confirmed via a
 		// failure screenshot (2026-10-05) where the dialog had fully rendered
 		// with correct real data, but only AFTER the default 5s `expect`
-		// timeout had already elapsed and failed the test. Same class of issue
-		// as performance.spec.ts's PERF-005 loading-indicator timeout: a real
-		// data-backed round trip that can legitimately exceed the generic
-		// default under system load, not a missing/broken dialog.
+		// timeout had already elapsed and failed the test: a real data-backed
+		// round trip that can legitimately exceed the generic default under
+		// system load, not a missing/broken dialog.
 		await expect(dialogTitle.first()).toBeVisible({ timeout: 15_000 });
 
-		// Review feedback (2026-10-20): the dialog itself is NOT a reliable
-		// success signal. ClosingDialog.vue's submit_dialog() sets
-		// `closingDialog = false` immediately after emitting the close event —
-		// before the server has actually responded — so `toBeHidden()` below
-		// would pass even if the close were rejected server-side. The real
-		// success signal is Pos.vue's `toast.success(__("POS Shift Closed"))`
-		// (confirmed at Pos.vue:959, the online-immediate-success branch, not
-		// the offline-queued "Shift close queued..." branch at line ~941).
+		// The dialog itself is NOT a reliable success signal. ClosingDialog.
+		// vue's submit_dialog() sets `closingDialog = false` immediately after
+		// emitting the close event — before the server has actually
+		// responded — so `toBeHidden()` below would pass even if the close
+		// were rejected server-side. The real success signal is Pos.vue's
+		// `toast.success(__("POS Shift Closed"))` (confirmed at Pos.vue:959,
+		// the online-immediate-success branch, not the offline-queued "Shift
+		// close queued..." branch at line ~941).
 
 		// This POS Profile has cash denominations enabled for closing
 		// (custom_enable_cash_denominations=1), so the plain "Cash" row's
@@ -123,11 +127,16 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 	}
 
 	test.beforeAll(async ({ browser, playwright }) => {
-		// SMK-007's return now verifies via the API (see its own comment) —
-		// same skip-guard pattern as api.spec.ts/config-check.spec.ts, rather
-		// than letting a missing key surface as a confusing 401/malformed
-		// request failure deep inside SMK-007 instead of a clear skip reason.
-		test.skip(!API_KEY || !API_SECRET, "POSPIRE_E2E_API_KEY/SECRET not set in .env.test");
+		// SMK-004/005/006/007 all verify via the API now (see their own
+		// comments). Review feedback: skipping on a missing key used to make
+		// all 8 smoke tests report "skipped," which Playwright still rolls up
+		// as an overall PASS — easy to miss that zero real coverage ran, on
+		// top of config-check.spec.ts (which needs the same keys) reporting
+		// the same false-green. Failing loudly is correct now that the keys
+		// are required, not optional.
+		if (!API_KEY || !API_SECRET) {
+			throw new Error("POSPIRE_E2E_API_KEY/SECRET not set in .env.test");
+		}
 
 		// `browser.newPage()` does NOT inherit the project's `use` config
 		// (baseURL, storageState) the way the built-in `page`/`context`
@@ -178,12 +187,12 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 
 		// Either the opening-shift dialog (no active shift yet) or the item
 		// search bar (a shift is already active) proves the SPA booted and
-		// hydrated its POS data. Review feedback (2026-10-20): the previous
-		// one-shot `isVisible().catch()` pair doesn't wait — right after
-		// `goto()`, Vue may not have drawn either one yet, which could flake
-		// on a slow machine. `.filter({ visible: true })` lets Playwright's
-		// `expect` auto-retry until whichever one actually renders is found,
-		// instead of taking an instantaneous snapshot.
+		// hydrated its POS data. A one-shot `isVisible().catch()` pair
+		// wouldn't wait — right after `goto()`, Vue may not have drawn either
+		// one yet, which could flake on a slow machine. `.filter({ visible:
+		// true })` lets Playwright's `expect` auto-retry until whichever one
+		// actually renders is found, instead of taking an instantaneous
+		// snapshot.
 		const openingDialog = page.getByText("Create Opening Shift", { exact: true }).first();
 		const itemSearch = page.getByPlaceholder(/Search by name, code, barcode/i);
 		await expect(openingDialog.or(itemSearch).filter({ visible: true }).first()).toBeVisible();
@@ -301,14 +310,13 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 
 		await page.getByText(TEST_DATA.itemName, { exact: false }).first().click();
 
-		// Review feedback (2026-10-20): `getByText(itemName).first()` matches
-		// the item's own card in the search-results grid (ItemsSelector.vue
-		// renders item.item_name there too), not necessarily the cart — this
-		// would stay green even if the click above failed to add anything.
-		// Scoping to the cart table specifically (same pattern as
-		// performance.spec.ts's `cartRow` helper) and checking qty confirms
-		// the item actually landed in Invoice.vue's item table, not just that
-		// its name appears somewhere on the page.
+		// `getByText(itemName).first()` matches the item's own card in the
+		// search-results grid (ItemsSelector.vue renders item.item_name there
+		// too), not necessarily the cart — this would stay green even if the
+		// click above failed to add anything. Scoping to the cart table
+		// specifically and checking qty confirms the item actually landed in
+		// Invoice.vue's item table, not just that its name appears somewhere
+		// on the page.
 		const cartRow = page.locator(".invoice-cart-section").getByRole("row", { name: TEST_DATA.itemName });
 		await expect(cartRow).toBeVisible();
 
@@ -325,6 +333,19 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 		// autocomplete's "Clear Customer" icon button. Scoping to the textbox
 		// role disambiguates from that icon.
 		const customerField = page.getByRole("textbox", { name: /Customer/ });
+
+		// Review feedback: `.v-autocomplete__selection` is the chip Vuetify
+		// actually renders for the selected item — scoped to this field's own
+		// `.v-autocomplete` container so it can't match the unrelated Items
+		// Group filter combobox elsewhere on the page, which renders the same
+		// class. Checking this instead of the raw `<input>` value matters:
+		// the test itself just typed "Sam" into that input a few lines below,
+		// so `toHaveValue()` on it would pass whether or not the click below
+		// actually selected anything (see SMK-005's comment for the concrete
+		// case this distinction caught).
+		const customerSelection = page
+			.locator(".v-autocomplete", { has: customerField })
+			.locator(".v-autocomplete__selection");
 
 		// Safety net on top of SMK-002's post-create wait: Customer.vue's
 		// cached customer list (see SMK-002's comment) can still occasionally
@@ -354,10 +375,10 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 		expect(found, `'${TEST_DATA.existingCustomerName}' never appeared in the customer dropdown after 3 attempts`).toBe(true);
 		await customerOption.click();
 
-		await expect(customerField).toHaveValue(new RegExp(TEST_DATA.existingCustomerName));
+		await expect(customerSelection).toHaveText(new RegExp(TEST_DATA.existingCustomerName));
 	});
 
-	test("SMK-005 [KNOWN DEFECT] — Create new customer: customer does not exist", async () => {
+	test("SMK-005 — Create new customer: customer does not exist", async () => {
 		// The "add customer" trigger is an icon with no text/aria-label
 		// (Customer.vue), so it's located by its component class instead.
 		await page.locator(".customer-action-icon").last().click();
@@ -372,17 +393,19 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 		// instrumented debug run): UpdateCustomer.vue's loadCustomerFormOptions()
 		// fetches the Customer Group/Territory lists asynchronously when the
 		// dialog opens, and there's no guarantee that resolves before this click
-		// fires. A blind `.first()` click can land on Vuetify's own
-		// "Group not found" no-data placeholder (itself rendered as a
-		// `.v-list-item`) instead of a real option, leaving the field empty and
-		// failing submit with "Customer group is required." — confirmed via a
-		// debug run where the overlay's actual content at click-time was
-		// `['Group not found']`. Waiting for the option's text to move past the
-		// placeholder (Playwright's `expect` polls/retries) closes that race
-		// without an arbitrary fixed delay.
+		// fires. Review feedback: a blind `.first()` click doesn't just risk
+		// Vuetify's "Group not found" no-data placeholder — it can also land on
+		// a real but WRONG group. This POS Profile only searches customers in
+		// "MG Road Store" (see TEST_DATA's comment); a customer created under
+		// whatever group happened to render first is invisible to it
+		// afterward. Matching by name and waiting for that specific option to
+		// render (Playwright's `expect` polls/retries) fixes both problems at
+		// once, without an arbitrary fixed delay.
 		await page.getByRole("textbox", { name: /Customer Group/ }).click();
-		const groupOption = page.locator(".v-overlay--active .v-list-item").first();
-		await expect(groupOption).not.toHaveText(/not found/i);
+		const groupOption = page
+			.locator(".v-overlay--active .v-list-item", { hasText: TEST_DATA.customerGroup })
+			.first();
+		await expect(groupOption).toBeVisible();
 		await groupOption.click();
 
 		await page.getByRole("textbox", { name: /Territory/ }).click();
@@ -392,60 +415,31 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 
 		await page.getByRole("button", { name: "Submit" }).click();
 
-		// Review feedback (2026-10-20): the dialog also closes when the
-		// customer is only queued offline (not actually created server-side),
-		// so checking the dialog alone can't distinguish a real success from a
-		// silent offline-queue. UpdateCustomer.vue's real success toast is
+		// The dialog also closes when the customer is only queued offline
+		// (not actually created server-side), so checking the dialog alone
+		// can't distinguish a real success from a silent offline-queue.
+		// UpdateCustomer.vue's real success toast is
 		// `toast.success(__("Customer Created Successfully."))` (confirmed at
 		// UpdateCustomer.vue:534-535) — asserting that is a genuine
-		// strengthening over the old dialog-only check.
+		// strengthening over a dialog-only check.
 		await expect(page.getByText("Create Customer", { exact: true })).toBeHidden();
 		await expect(page.getByText("Customer Created Successfully.")).toBeVisible();
 
-		// CONFIRMED REAL DEFECT (2026-10-20, via a live instrumented run, not
-		// a test-authoring mistake): the app's OWN code says the Customer
-		// field should update to the new customer after creation —
-		// UpdateCustomer.vue's online-success branch emits
-		// `this.eventBus.emit("set_customer", r.name)` right after the toast
-		// (line ~539), and Customer.vue's `onBus("set_customer", (customer) =>
-		// { this.customer = customer; })` (line ~228-229) is registered well
-		// before this point in the shared session. By the app's own intended
-		// design this SHOULD flip the field to the new customer. Live testing
-		// shows it does not: the field reads "Sam" (the SMK-004 selection)
-		// immediately after the toast, at +500ms, and still at +2000ms — not a
-		// timing race, a genuinely stuck value. The exact break in the
-		// eventBus chain wasn't isolated further; what's confirmed is that the
-		// visible behavior contradicts the code's own intent. Asserting the
-		// CORRECT behavior here (per this project's standing practice for
-		// confirmed defects — see security.spec.ts's SEC-001/002/005b) so this
-		// stays a visible, tracked failure instead of silently passing against
-		// broken behavior.
-		//
-		// Scoped manually (try/catch) instead of a blanket test.fail() — a
-		// whole-test test.fail() can't tell "the known defect failed as
-		// expected" apart from "something above this (dialog open, group/
-		// territory selection, submit, success toast) broke for an unrelated
-		// reason." Confirmed live (2026-10-22): a headed run where an earlier
-		// step failed still reported this test as an overall PASS under
-		// test.fail(), left the Create Customer dialog open mid-interaction,
-		// and cascaded into a real SMK-006 failure (the dialog's scrim
-		// blocked the PAY button) instead of describe.serial correctly
-		// stopping the chain right here. With the try/catch scoped to only
-		// this assertion, any genuine failure above still throws normally and
-		// stops the chain as intended.
-		const customerField = page.getByRole("textbox", { name: /Customer/ });
-		let defectStillPresent = false;
-		try {
-			await expect(customerField).toHaveValue(new RegExp(TEST_DATA.newCustomerName), {
-				timeout: 5_000,
-			});
-		} catch {
-			defectStillPresent = true;
-		}
-		expect(
-			defectStillPresent,
-			"Customer field updated to the new customer after creation — the known defect looks FIXED. Remove this [KNOWN DEFECT] try/catch and assert the behavior normally.",
-		).toBe(true);
+		// Review feedback: an earlier version of this test asserted the raw
+		// `<input>` value and flagged it as a "known defect" when it stayed on
+		// "Sam". That was a test bug, not an app bug — confirmed via a live
+		// run (2026-10-27): the selected customer chip
+		// (`.v-autocomplete__selection`) DOES show the new customer
+		// immediately, and the resulting invoice is genuinely created against
+		// it (verified through the API). The raw input simply isn't kept in
+		// sync when the selection changes via UpdateCustomer.vue's
+		// `set_customer` eventBus emit instead of a direct dropdown click —
+		// checking the selection chip is both correct and what actually
+		// matters to a cashier. Same scoping as SMK-004's.
+		const customerSelection = page
+			.locator(".v-autocomplete", { has: page.getByRole("textbox", { name: /Customer/ }) })
+			.locator(".v-autocomplete__selection");
+		await expect(customerSelection).toHaveText(new RegExp(TEST_DATA.newCustomerName));
 	});
 
 	test("SMK-006 — Complete cash sale: select cash and submit", async () => {
@@ -462,16 +456,25 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 		// Capture the invoice ID for SMK-007's return lookup. Payments.vue's
 		// submit_invoice() does `toast.success(\`Invoice ${r.name} is
 		// Submited\`)` (their typo, not mine) on success — this is the only
-		// place the new invoice's name is surfaced in the UI. Review feedback
-		// (2026-10-20): matching the literal typo means this test breaks for
-		// the wrong reason the moment someone fixes the spelling in
-		// Payments.vue — `Submit+ed` tolerates both "Submited" and
-		// "Submitted".
+		// place the new invoice's name is surfaced in the UI. Matching the
+		// literal typo would mean this test breaks for the wrong reason the
+		// moment someone fixes the spelling in Payments.vue — `Submit+ed`
+		// tolerates both "Submited" and "Submitted".
 		const successToast = page.getByText(/Invoice \S+ is Submit+ed/);
 		await expect(successToast).toBeVisible();
 		const toastText = await successToast.textContent();
 		lastInvoiceId = toastText?.match(/Invoice (\S+) is Submit+ed/)?.[1] ?? "";
 		expect(lastInvoiceId).not.toBe("");
+
+		// Review feedback: a toast confirms the UI thinks it submitted, not
+		// that the invoice was actually saved against the customer SMK-005
+		// just created. Read it back and check the real record.
+		const invoiceRes = await adminAuthed.post("/api/method/frappe.client.get", {
+			data: { doctype: "Sales Invoice", name: lastInvoiceId },
+		});
+		expect(invoiceRes.status()).toBe(200);
+		const invoiceDoc = (await invoiceRes.json()).message;
+		expect(invoiceDoc.customer_name).toBe(TEST_DATA.newCustomerName);
 	});
 
 	test("SMK-007 — Process basic return: open return and submit", async () => {
@@ -520,17 +523,26 @@ test.describe.serial("Smoke — core POS flow (SMK-001 to SMK-008)", () => {
 		await page.locator(".pay-button").click();
 		await page.getByRole("button", { name: "Submit", exact: true }).click();
 
-		// Review feedback (2026-10-20): clicking Submit and stopping doesn't
-		// confirm the return actually saved — a return goes through the same
-		// submit_invoice() path as SMK-006's sale, so the same success toast
-		// applies. Going further than just the toast: read the new return
-		// back via the API and confirm it's a real, linked return (is_return=1,
-		// return_against === the original invoice), not just that some invoice
-		// got created.
-		const returnSuccessToast = page.getByText(/Invoice \S+ is Submit+ed/);
+		// Clicking Submit and stopping doesn't confirm the return actually
+		// saved — a return goes through the same submit_invoice() path as
+		// SMK-006's sale, so the same success toast applies. Going further
+		// than just the toast: read the new return back via the API and
+		// confirm it's a real, linked return (is_return=1, return_against ===
+		// the original invoice), not just that some invoice got created.
+		//
+		// Review feedback: the generic `/Invoice \S+ is Submit+ed/` regex
+		// also matches SMK-006's own sale toast, which vue3-toastify can keep
+		// on screen past its normal 3s auto-dismiss if the mouse is over it or
+		// the window loses focus (main.js's toast config pauses the timer in
+		// both cases). If that toast is still up, this either hits a
+		// strict-mode violation or reads the SALE invoice's id instead of the
+		// return's. Excluding the known sale invoice id from the match closes
+		// that gap.
+		const returnToastRe = new RegExp(`Invoice (?!${lastInvoiceId}\\b)(\\S+) is Submit+ed`);
+		const returnSuccessToast = page.getByText(returnToastRe);
 		await expect(returnSuccessToast).toBeVisible();
 		const returnToastText = await returnSuccessToast.textContent();
-		const returnInvoiceId = returnToastText?.match(/Invoice (\S+) is Submit+ed/)?.[1] ?? "";
+		const returnInvoiceId = returnToastText?.match(returnToastRe)?.[1] ?? "";
 		expect(returnInvoiceId).not.toBe("");
 
 		const returnDocRes = await adminAuthed.post("/api/method/frappe.client.get", {
