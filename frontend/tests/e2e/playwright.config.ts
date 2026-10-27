@@ -1,17 +1,28 @@
 /**
  * Playwright config for the POSpire offline E2E suite.
  *
- * Device matrix (14-testing-strategy.md §8) — P0 entries are enabled here.
- * iPadOS Safari runs in WebKit + device-emulation mode; Chrome + Edge share
- * the same Chromium project.
+ * Project wiring (review feedback 2026-10-20):
+ *   - "setup" runs auth.setup.ts to produce auth.json. Playwright does not
+ *     auto-discover files outside *.spec.ts/*.test.ts, so this project's
+ *     explicit testMatch is the only thing that makes it run at all.
+ *   - "config-check" runs config-check.spec.ts on its own, with no browser
+ *     storageState — it's pure Administrator-API-key reads (see
+ *     config-check.spec.ts's own header).
+ *   - "chromium" depends on BOTH "setup" and "config-check": a config-check
+ *     failure blocks it from running at all, and it reuses the session
+ *     "setup" just produced.
  *
- * The full chaos + device suite lands in Phase 1 task 1.14. Until then this
- * config runs the smoke spec only.
+ * webkit/ipad-safari are deliberately not defined below for now (see the
+ * device matrix note in 14-testing-strategy.md §8) — smoke.spec.ts's
+ * self-healing shift logic and TEST_DATA assume a single shared test user,
+ * and running the same user across 3 parallel projects let one project's
+ * shift-close race another project's still-in-progress run (the original
+ * bug this review caught). Re-add them once each project has its own
+ * dedicated test user/POS Profile.
  */
 
 import { defineConfig, devices } from "@playwright/test";
-
-const BASE_URL = process.env.POSPIRE_E2E_BASE_URL ?? "http://localhost:8000";
+import { AUTH_FILE, BASE_URL } from "./auth.config";
 
 export default defineConfig({
 	testDir: ".",
@@ -30,24 +41,26 @@ export default defineConfig({
 		trace: "retain-on-failure",
 		screenshot: "only-on-failure",
 		video: "retain-on-failure",
-		// Frappe sites require an authenticated session for the POS page. Set
-		// storageState via the auth-setup project in a follow-up; Phase 1 runs
-		// the smoke spec against an already-authenticated browser profile that
-		// the test runner shares via `POSPIRE_E2E_STORAGE_STATE`.
-		storageState: process.env.POSPIRE_E2E_STORAGE_STATE || undefined,
 	},
 	projects: [
 		{
-			name: "chromium",
+			name: "setup",
+			testMatch: /auth\.setup\.ts/,
 			use: { ...devices["Desktop Chrome"] },
 		},
 		{
-			name: "webkit",
-			use: { ...devices["Desktop Safari"] },
+			name: "config-check",
+			testMatch: /config-check\.spec\.ts/,
 		},
 		{
-			name: "ipad-safari",
-			use: { ...devices["iPad (gen 7)"] },
+			// testMatch is scoped to smoke.spec.ts only (not a catch-all for
+			// every other browser-based spec) — so smoke-online.spec.ts and
+			// any other offline-placeholder specs intentionally do NOT run as
+			// part of this project. That's expected for now, not an oversight.
+			name: "chromium",
+			testMatch: /smoke\.spec\.ts/,
+			use: { ...devices["Desktop Chrome"], storageState: AUTH_FILE },
+			dependencies: ["setup", "config-check"],
 		},
 	],
 });
