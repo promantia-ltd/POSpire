@@ -84,19 +84,27 @@ def get_last_number(pos_profile: str, fy: str) -> int:
 	return last
 
 
+def assert_can_use_profile(pos_profile: str) -> None:
+	"""Cashiers lack POS Profile read; being listed in its applicable users is enough."""
+	if frappe.has_permission("POS Profile", "read", pos_profile) or frappe.db.exists(
+		"POS Profile User", {"parent": pos_profile, "user": frappe.session.user}
+	):
+		return
+	frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+
 def release_stale_draft(name: str, pos_profile: str) -> None:
+	if not pos_profile:
+		frappe.throw(_("POS Profile is required to use a terminal invoice number."))
 	parsed = parse_number(name)
-	prefix = (
-		frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix") if pos_profile else None
-	)
+	prefix = frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix")
 	if not (parsed and prefix and parsed[0] == prefix):
 		frappe.throw(
 			_("Invoice number {0} does not belong to POS Profile {1} for this financial year.").format(
 				name, pos_profile
 			)
 		)
-	if not frappe.has_permission("POS Profile", "read", pos_profile):
-		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	assert_can_use_profile(pos_profile)
 	docstatus = frappe.db.get_value("Sales Invoice", name, "docstatus")
 	if docstatus is None:
 		return
@@ -114,8 +122,7 @@ class TerminalDeviceMismatch(frappe.ValidationError):
 def claim_terminal(pos_profile: str, device_id: str) -> dict:
 	from pospire.pospire.api.offline import _validate_uuid
 
-	if not frappe.has_permission("POS Profile", "read", pos_profile):
-		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	assert_can_use_profile(pos_profile)
 	_validate_uuid(device_id, "device_id")
 
 	prefix, linked, company = frappe.db.get_value(

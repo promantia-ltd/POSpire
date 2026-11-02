@@ -1,6 +1,8 @@
 # Copyright (c) 2026, Promantia Business Solutions PVT Ltd and Contributors
 # See license.txt
 
+from contextlib import contextmanager
+
 import frappe
 from erpnext.accounts.utils import get_fiscal_year
 from frappe.tests.utils import FrappeTestCase
@@ -116,6 +118,37 @@ def _ensure_test_item():
 			item.gst_hsn_code = hsn
 		item.insert(ignore_permissions=True)
 	return code
+
+
+def _plain_user():
+	email = "pospire-plain-user@example.com"
+	if not frappe.db.exists("User", email):
+		frappe.get_doc(
+			{"doctype": "User", "email": email, "first_name": "Plain", "send_welcome_email": 0}
+		).insert(ignore_permissions=True)
+	return email
+
+
+@contextmanager
+def _as_user(email):
+	original = frappe.session.user
+	frappe.set_user(email)  # nosemgrep: frappe-semgrep-rules.rules.security.frappe-setuser
+	try:
+		yield
+	finally:
+		frappe.set_user(original)  # nosemgrep: frappe-semgrep-rules.rules.security.frappe-setuser
+
+
+def _list_user_on_profile(profile, email):
+	frappe.get_doc(
+		{
+			"doctype": "POS Profile User",
+			"parent": profile,
+			"parenttype": "POS Profile",
+			"parentfield": "applicable_for_users",
+			"user": email,
+		}
+	).insert(ignore_permissions=True)
 
 
 def _make_si(pos_profile, number=None, *, is_return=0, submit=False):
@@ -257,16 +290,16 @@ class TestTerminalDevice(FrappeTestCase):
 		claim_terminal(self.profile, DEVICE_2)
 
 	def test_unlink_requires_manager(self):
-		email = "pospire-plain-user@example.com"
-		if not frappe.db.exists("User", email):
-			frappe.get_doc(
-				{"doctype": "User", "email": email, "first_name": "Plain", "send_welcome_email": 0}
-			).insert(ignore_permissions=True)
-		frappe.set_user(email)
-		try:
+		with _as_user(_plain_user()):
 			self.assertRaises(frappe.PermissionError, unlink_terminal_device, self.profile, "x")
-		finally:
-			frappe.set_user("Administrator")
+
+	def test_claim_needs_listed_user(self):
+		email = _plain_user()
+		with _as_user(email):
+			self.assertRaises(frappe.PermissionError, claim_terminal, self.profile, DEVICE_1)
+		_list_user_on_profile(self.profile, email)
+		with _as_user(email):
+			self.assertEqual(claim_terminal(self.profile, DEVICE_1)["prefix"], "T02")
 
 	def test_second_open_shift_refused(self):
 		from pospire.pospire.api.posapp import create_opening_voucher
@@ -386,17 +419,17 @@ class TestOnlinePaths(FrappeTestCase):
 			self.assertRaises(frappe.ValidationError, create_sales_invoice_from_order, "SO-X", name)
 		self.assertTrue(frappe.db.exists("Sales Invoice", name))
 
-	def test_release_requires_profile_read_access(self):
-		email = "pospire-plain-user@example.com"
-		if not frappe.db.exists("User", email):
-			frappe.get_doc(
-				{"doctype": "User", "email": email, "first_name": "Plain", "send_welcome_email": 0}
-			).insert(ignore_permissions=True)
+	def test_release_needs_listed_user(self):
+		email = _plain_user()
 		name = f"T03/{self.fy}/000032"
 		_make_si(self.profile, name)
-		frappe.set_user(email)
-		try:
+		with _as_user(email):
 			self.assertRaises(frappe.PermissionError, release_stale_draft, name, self.profile)
-		finally:
-			frappe.set_user("Administrator")
 		self.assertTrue(frappe.db.exists("Sales Invoice", name))
+		_list_user_on_profile(self.profile, email)
+		with _as_user(email):
+			release_stale_draft(name, self.profile)
+		self.assertFalse(frappe.db.exists("Sales Invoice", name))
+
+	def test_release_requires_profile(self):
+		self.assertRaises(frappe.ValidationError, release_stale_draft, f"T03/{self.fy}/000033", "")
