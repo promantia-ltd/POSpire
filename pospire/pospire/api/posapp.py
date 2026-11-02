@@ -177,6 +177,15 @@ def create_opening_voucher(
 ) -> dict:
 	balance_details = _load(balance_details)
 
+	if frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix"):
+		open_shift = frappe.db.get_value(
+			"POS Opening Shift", {"pos_profile": pos_profile, "docstatus": 1, "status": "Open"}, "name"
+		)
+		if open_shift:
+			frappe.throw(
+				_("POS Profile {0} already has an open shift ({1}).").format(pos_profile, open_shift)
+			)
+
 	new_pos_opening = frappe.get_doc(
 		{
 			"doctype": "POS Opening Shift",

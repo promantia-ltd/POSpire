@@ -8,6 +8,7 @@ import re
 import frappe
 from erpnext.accounts.utils import get_fiscal_year
 from frappe import _
+from frappe.utils import add_days, getdate, nowdate
 
 PREFIX_RE = re.compile(r"^[A-Z][A-Z0-9]{0,3}$")
 _NUMBER_RE = re.compile(r"^([A-Z][A-Z0-9]{0,3})/(\d{2})/(\d{6})$")
@@ -91,3 +92,72 @@ def release_stale_draft(name: str) -> None:
 		frappe.delete_doc("Sales Invoice", name, ignore_permissions=True)
 		return
 	raise TerminalNumberConflict(_("Invoice number {0} is already used.").format(name))
+
+
+class TerminalDeviceMismatch(frappe.ValidationError):
+	pass
+
+
+@frappe.whitelist()
+def claim_terminal(pos_profile: str, device_id: str) -> dict:
+	from pospire.pospire.api.offline import _validate_uuid
+
+	if not frappe.has_permission("POS Profile", "read", pos_profile):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	_validate_uuid(device_id, "device_id")
+
+	prefix, linked, company = frappe.db.get_value(
+		"POS Profile", pos_profile, ["pospire_invoice_prefix", "pospire_linked_device", "company"]
+	)
+	if not prefix:
+		return {"prefix": None, "fiscal_years": [], "last": {}}
+
+	if not linked:
+		frappe.db.set_value("POS Profile", pos_profile, "pospire_linked_device", device_id)
+		frappe.get_doc("POS Profile", pos_profile).add_comment("Info", f"Linked device {device_id}")
+	elif linked != device_id:
+		raise TerminalDeviceMismatch(
+			_("This POS Profile is linked to another device. Ask a manager to unlink it.")
+		)
+
+	today_fy = get_fiscal_year(nowdate(), company=company, as_dict=True)
+	years = [today_fy]
+	try:
+		years.append(get_fiscal_year(add_days(today_fy.year_end_date, 1), company=company, as_dict=True))
+	except frappe.ValidationError:  # next FY not created yet
+		pass
+	fiscal_years = [
+		{
+			"code": str(y.year_start_date.year)[-2:],
+			"start": str(getdate(y.year_start_date)),
+			"end": str(getdate(y.year_end_date)),
+		}
+		for y in years
+	]
+	return {
+		"prefix": prefix,
+		"fiscal_years": fiscal_years,
+		"last": {y["code"]: get_last_number(pos_profile, y["code"]) for y in fiscal_years},
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def unlink_terminal_device(pos_profile: str, reason: str) -> dict:
+	frappe.only_for(("System Manager", "Sales Manager"))
+	reason = (reason or "").strip()
+	if not reason:
+		frappe.throw(_("A reason is required to unlink a device."))
+
+	company, skip = frappe.db.get_value("POS Profile", pos_profile, ["company", "pospire_reset_skip"])
+	fy = fy_code(company, nowdate())
+	last = get_last_number(pos_profile, fy)
+	floor = last + (skip if skip is not None else 50)
+	frappe.db.set_value(
+		"POS Profile",
+		pos_profile,
+		{"pospire_linked_device": "", "pospire_floor_fy": fy, "pospire_floor_number": floor},
+	)
+	frappe.get_doc("POS Profile", pos_profile).add_comment(
+		"Info", f"Device reset: numbers {last + 1} to {floor} skipped. Reason: {reason}"
+	)
+	return {"floor": floor}

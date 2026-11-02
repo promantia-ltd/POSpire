@@ -7,14 +7,18 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
 from pospire.pospire.api.terminal_number import (
+	TerminalDeviceMismatch,
 	TerminalNumberConflict,
+	claim_terminal,
 	format_number,
 	fy_code,
 	get_last_number,
 	parse_number,
 	release_stale_draft,
+	unlink_terminal_device,
 )
 from pospire.pospire.tests.test_utils import (
+	create_test_opening_shift,
 	ensure_test_company,
 	ensure_test_customer,
 	get_cost_center,
@@ -195,3 +199,83 @@ class TestTerminalNumbering(FrappeTestCase):
 			with self.assertRaises(frappe.ValidationError) as cm:
 				doc.save()
 			self.assertIn("Invoice Prefix cannot be changed after invoices have used it.", str(cm.exception))
+
+
+DEVICE_1 = "11111111-1111-4111-8111-111111111111"
+DEVICE_2 = "22222222-2222-4222-8222-222222222222"
+
+
+class TestTerminalDevice(FrappeTestCase):
+	def setUp(self):
+		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal B", "T02")
+		frappe.db.set_value(
+			"POS Profile",
+			self.profile,
+			{"pospire_linked_device": "", "pospire_floor_fy": "", "pospire_floor_number": 0},
+		)
+		self.company = frappe.db.get_value("POS Profile", self.profile, "company")
+		self.addCleanup(frappe.db.rollback)
+		self.fy = fy_code(self.company, nowdate())
+
+	def test_claim_links_first_device(self):
+		res = claim_terminal(self.profile, DEVICE_1)
+		self.assertEqual(res["prefix"], "T02")
+		self.assertEqual(frappe.db.get_value("POS Profile", self.profile, "pospire_linked_device"), DEVICE_1)
+		claim_terminal(self.profile, DEVICE_1)  # same device again is fine
+
+	def test_claim_refuses_other_device(self):
+		claim_terminal(self.profile, DEVICE_1)
+		self.assertRaises(TerminalDeviceMismatch, claim_terminal, self.profile, DEVICE_2)
+
+	def test_claim_returns_last_numbers(self):
+		_make_si(self.profile, f"T02/{self.fy}/000005")
+		res = claim_terminal(self.profile, DEVICE_1)
+		self.assertEqual(res["last"][self.fy], 5)
+		self.assertIn(self.fy, [f["code"] for f in res["fiscal_years"]])
+
+	def test_claim_without_prefix(self):
+		frappe.db.set_value("POS Profile", self.profile, "pospire_invoice_prefix", "")
+		self.assertEqual(
+			claim_terminal(self.profile, DEVICE_1), {"prefix": None, "fiscal_years": [], "last": {}}
+		)
+
+	def test_unlink_sets_floor_and_logs(self):
+		_make_si(self.profile, f"T02/{self.fy}/000005")
+		claim_terminal(self.profile, DEVICE_1)
+		self.assertEqual(unlink_terminal_device(self.profile, "tablet replaced"), {"floor": 55})
+		self.assertFalse(frappe.db.get_value("POS Profile", self.profile, "pospire_linked_device"))
+		self.assertTrue(
+			frappe.db.exists(
+				"Comment",
+				{
+					"reference_doctype": "POS Profile",
+					"reference_name": self.profile,
+					"content": ["like", "Device reset%"],
+				},
+			)
+		)
+		claim_terminal(self.profile, DEVICE_2)
+
+	def test_unlink_requires_manager(self):
+		email = "pospire-plain-user@example.com"
+		if not frappe.db.exists("User", email):
+			frappe.get_doc(
+				{"doctype": "User", "email": email, "first_name": "Plain", "send_welcome_email": 0}
+			).insert(ignore_permissions=True)
+		frappe.set_user(email)
+		try:
+			self.assertRaises(frappe.PermissionError, unlink_terminal_device, self.profile, "x")
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_second_open_shift_refused(self):
+		from pospire.pospire.api.posapp import create_opening_voucher
+
+		create_test_opening_shift(self.company, self.profile)
+		self.assertRaises(
+			frappe.ValidationError,
+			create_opening_voucher,
+			self.profile,
+			self.company,
+			[{"mode_of_payment": "Cash", "amount": 0}],
+		)

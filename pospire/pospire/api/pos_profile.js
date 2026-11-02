@@ -33,6 +33,37 @@ frappe.ui.form.on("POS Profile", {
 
 	refresh: function (frm) {
 		set_denomination_query(frm);
+		if (frm.doc.pospire_linked_device) {
+			frm.add_custom_button(__("Unlink Device"), () => {
+				frappe.prompt(
+					{ fieldname: "reason", fieldtype: "Small Text", label: __("Reason"), reqd: 1 },
+					(values) => {
+						frappe
+							.xcall("pospire.pospire.api.terminal_number.unlink_terminal_device", {
+								pos_profile: frm.doc.name,
+								reason: values.reason,
+							})
+							.then(() => frm.reload_doc());
+					},
+					__("Unlink Device")
+				);
+			});
+		}
+		if (frm.is_new() && !frm.doc.pospire_invoice_prefix) {
+			// Suggestion only: the manager types the actual prefix.
+			frappe.db
+				.get_list("POS Profile", { fields: ["pospire_invoice_prefix"], limit: 0 })
+				.then((rows) => {
+					const used = new Set(rows.map((r) => r.pospire_invoice_prefix));
+					for (let i = 1; i < 100; i++) {
+						const p = "T" + String(i).padStart(2, "0");
+						if (!used.has(p)) {
+							frm.set_df_property("pospire_invoice_prefix", "placeholder", p);
+							break;
+						}
+					}
+				});
+		}
 		if (frm.is_new()) {
 			// Frappe places __newname (the Name prompt for autoname=Prompt) at the
 			// bottom of whichever tab is currently active due to a rendering sequence
