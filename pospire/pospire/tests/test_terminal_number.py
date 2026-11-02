@@ -1,6 +1,8 @@
 # Copyright (c) 2026, Promantia Business Solutions PVT Ltd and Contributors
 # See license.txt
 
+from unittest.mock import patch
+
 import frappe
 from erpnext.accounts.utils import get_fiscal_year
 from frappe.tests.utils import FrappeTestCase
@@ -46,3 +48,12 @@ class TestPrefixValidation(FrappeTestCase):
 		first.save()
 		second.pospire_invoice_prefix = "T01"
 		self.assertRaises(frappe.ValidationError, second.save)
+
+	def test_prefix_locked_when_used_even_if_cleared(self):
+		doc = self._profiles()[0]
+		doc.pospire_invoice_prefix = "T01"
+		doc.save()
+		with patch.object(frappe.db, "exists", return_value=True):
+			for new in ("", "T02"):
+				doc.pospire_invoice_prefix = new
+				self.assertRaises(frappe.ValidationError, doc.save)

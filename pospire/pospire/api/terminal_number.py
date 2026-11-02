@@ -30,6 +30,11 @@ def fy_code(company: str, posting_date) -> str:
 def validate_prefix(doc) -> None:
 	prefix = (doc.get("pospire_invoice_prefix") or "").strip().upper()
 	doc.pospire_invoice_prefix = prefix
+
+	old = None if doc.is_new() else frappe.db.get_value("POS Profile", doc.name, "pospire_invoice_prefix")
+	if old and old != prefix and frappe.db.exists("Sales Invoice", {"name": ["like", f"{old}/%"]}):
+		frappe.throw(_("Invoice Prefix cannot be changed after invoices have used it."))
+
 	if not prefix:
 		return
 	if not PREFIX_RE.match(prefix):
@@ -40,7 +45,3 @@ def validate_prefix(doc) -> None:
 	)
 	if other:
 		frappe.throw(_("Invoice Prefix {0} is already used by POS Profile {1}.").format(prefix, other))
-
-	old = None if doc.is_new() else frappe.db.get_value("POS Profile", doc.name, "pospire_invoice_prefix")
-	if old and old != prefix and frappe.db.exists("Sales Invoice", {"name": ["like", f"{old}/%"]}):
-		frappe.throw(_("Invoice Prefix cannot be changed after invoices have used it."))
