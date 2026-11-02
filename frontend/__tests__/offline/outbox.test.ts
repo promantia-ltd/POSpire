@@ -574,10 +574,14 @@ describe("enqueue with terminal number", () => {
 		expect(await currentNumber("Main", "2026-05-01")).toBe("T01/26/000079");
 	});
 
-	it("a failed outbox put leaves the counter unchanged", async () => {
+	it("rolls back the outbox row when consuming the number fails", async () => {
 		await applyClaim("Main", claim);
-		vi.spyOn(db.outbox, "put").mockRejectedValueOnce(new Error("boom"));
-		await expect(enqueue("invoice", { a: 1 }, { offlineIdempotencyKey: "k2", terminal: term })).rejects.toThrow();
+		const spy = vi.spyOn(db.metadata, "put").mockRejectedValueOnce(new Error("boom"));
+		await expect(
+			enqueue("invoice", { a: 1 }, { offlineIdempotencyKey: "k2", terminal: term }),
+		).rejects.toThrow();
+		spy.mockRestore();
+		expect(await db.outbox.get("k2")).toBeUndefined();
 		expect(await currentNumber("Main", "2026-05-01")).toBe("T01/26/000078");
 	});
 });

@@ -1689,7 +1689,7 @@ function extractErrorCode(err: unknown): string | undefined {
 	return undefined;
 }
 
-function errorCodeToCategory(
+export function errorCodeToCategory(
 	errorCode: string | undefined,
 	fallback: NonNullable<LastErrorCategory>,
 ): NonNullable<LastErrorCategory> {
