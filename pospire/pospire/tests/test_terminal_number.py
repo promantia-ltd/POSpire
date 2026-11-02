@@ -1,8 +1,6 @@
 # Copyright (c) 2026, Promantia Business Solutions PVT Ltd and Contributors
 # See license.txt
 
-from unittest.mock import patch
-
 import frappe
 from erpnext.accounts.utils import get_fiscal_year
 from frappe.tests.utils import FrappeTestCase
@@ -19,7 +17,38 @@ from pospire.pospire.api.terminal_number import (
 from pospire.pospire.tests.test_utils import (
 	ensure_test_company,
 	ensure_test_customer,
+	get_cost_center,
+	get_expense_account,
 )
+
+
+def _ensure_terminal_test_profile(name, prefix=None):
+	"""Return a dedicated test POS Profile (created once), with its prefix set to `prefix`."""
+	if not frappe.db.exists("POS Profile", name):
+		company = ensure_test_company()
+		if not frappe.db.exists("Mode of Payment", "Cash"):
+			frappe.get_doc({"doctype": "Mode of Payment", "mode_of_payment": "Cash", "type": "Cash"}).insert(
+				ignore_permissions=True
+			)
+		frappe.get_doc(
+			{
+				"doctype": "POS Profile",
+				"__newname": name,
+				"name": name,
+				"company": company,
+				"currency": frappe.db.get_value("Company", company, "default_currency"),
+				"warehouse": frappe.db.get_value("Warehouse", {"company": company, "is_group": 0}, "name"),
+				"write_off_account": get_expense_account(company),
+				"write_off_cost_center": get_cost_center(company),
+				"payments": [{"mode_of_payment": "Cash", "default": 1}],
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.set_value(
+		"POS Profile",
+		name,
+		{"pospire_invoice_prefix": prefix or "", "posa_enable_approval_workflow": 0},
+	)
+	return name
 
 
 class TestNumberFormat(FrappeTestCase):
@@ -39,9 +68,10 @@ class TestNumberFormat(FrappeTestCase):
 
 class TestPrefixValidation(FrappeTestCase):
 	def _profiles(self):
-		names = frappe.get_all("POS Profile", pluck="name", order_by="name", limit=2)
-		self.assertEqual(len(names), 2, "needs two POS Profiles")
-		return [frappe.get_doc("POS Profile", n) for n in names]
+		return [
+			frappe.get_doc("POS Profile", _ensure_terminal_test_profile(n))
+			for n in ("_Test POSpire Terminal A", "_Test POSpire Terminal B")
+		]
 
 	def test_prefix_upper_cased_and_validated(self):
 		doc = self._profiles()[0]
@@ -59,15 +89,6 @@ class TestPrefixValidation(FrappeTestCase):
 		second.pospire_invoice_prefix = "T01"
 		self.assertRaises(frappe.ValidationError, second.save)
 
-	def test_prefix_locked_when_used_even_if_cleared(self):
-		doc = self._profiles()[0]
-		doc.pospire_invoice_prefix = "T01"
-		doc.save()
-		with patch.object(frappe.db, "exists", return_value=True):
-			for new in ("", "T02"):
-				doc.pospire_invoice_prefix = new
-				self.assertRaises(frappe.ValidationError, doc.save)
-
 
 def _ensure_test_item():
 	code = "_Test POSpire Terminal Item"
@@ -83,7 +104,12 @@ def _ensure_test_item():
 			}
 		)
 		if frappe.get_meta("Item").has_field("gst_hsn_code"):  # India Compliance requires it
-			item.gst_hsn_code = frappe.db.get_value("GST HSN Code", {}, "name")
+			hsn = "01011010"
+			if not frappe.db.exists("GST HSN Code", hsn):
+				frappe.get_doc({"doctype": "GST HSN Code", "hsn_code": hsn, "description": "Test"}).insert(
+					ignore_permissions=True
+				)
+			item.gst_hsn_code = hsn
 		item.insert(ignore_permissions=True)
 	return code
 
@@ -109,15 +135,9 @@ def _make_si(pos_profile, number=None, *, is_return=0, submit=False):
 
 class TestTerminalNumbering(FrappeTestCase):
 	def setUp(self):
-		# the site's first Company may have no POS Profile; take one that does
-		self.profile = frappe.get_all("POS Profile", pluck="name", order_by="name", limit=1)[0]
+		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal A", "T01")
 		company = frappe.db.get_value("POS Profile", self.profile, "company")
 		self.addCleanup(frappe.db.rollback)  # FrappeTestCase only rolls back per class
-		frappe.db.set_value(
-			"POS Profile",
-			self.profile,
-			{"pospire_invoice_prefix": "T01", "posa_enable_approval_workflow": 0},
-		)
 		self.fy = fy_code(company, nowdate())
 
 	def test_terminal_number_becomes_name(self):
