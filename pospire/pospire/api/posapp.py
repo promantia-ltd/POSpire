@@ -177,7 +177,8 @@ def create_opening_voucher(
 ) -> dict:
 	balance_details = _load(balance_details)
 
-	if frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix"):
+	# for_update serializes concurrent opens on this profile
+	if frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix", for_update=True):
 		open_shift = frappe.db.get_value(
 			"POS Opening Shift", {"pos_profile": pos_profile, "docstatus": 1, "status": "Open"}, "name"
 		)

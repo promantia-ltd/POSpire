@@ -98,7 +98,7 @@ class TerminalDeviceMismatch(frappe.ValidationError):
 	pass
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def claim_terminal(pos_profile: str, device_id: str) -> dict:
 	from pospire.pospire.api.offline import _validate_uuid
 
@@ -107,13 +107,18 @@ def claim_terminal(pos_profile: str, device_id: str) -> dict:
 	_validate_uuid(device_id, "device_id")
 
 	prefix, linked, company = frappe.db.get_value(
-		"POS Profile", pos_profile, ["pospire_invoice_prefix", "pospire_linked_device", "company"]
+		"POS Profile",
+		pos_profile,
+		["pospire_invoice_prefix", "pospire_linked_device", "company"],
+		for_update=True,  # serialize concurrent claims
 	)
 	if not prefix:
 		return {"prefix": None, "fiscal_years": [], "last": {}}
 
 	if not linked:
-		frappe.db.set_value("POS Profile", pos_profile, "pospire_linked_device", device_id)
+		frappe.db.set_value(
+			"POS Profile", pos_profile, "pospire_linked_device", device_id, update_modified=False
+		)
 		frappe.get_doc("POS Profile", pos_profile).add_comment("Info", f"Linked device {device_id}")
 	elif linked != device_id:
 		raise TerminalDeviceMismatch(
@@ -156,6 +161,7 @@ def unlink_terminal_device(pos_profile: str, reason: str) -> dict:
 		"POS Profile",
 		pos_profile,
 		{"pospire_linked_device": "", "pospire_floor_fy": fy, "pospire_floor_number": floor},
+		update_modified=False,
 	)
 	frappe.get_doc("POS Profile", pos_profile).add_comment(
 		"Info", f"Device reset: numbers {last + 1} to {floor} skipped. Reason: {reason}"
