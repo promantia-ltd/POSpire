@@ -95,6 +95,8 @@ def release_stale_draft(name: str, pos_profile: str) -> None:
 				name, pos_profile
 			)
 		)
+	if not frappe.has_permission("POS Profile", "read", pos_profile):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 	docstatus = frappe.db.get_value("Sales Invoice", name, "docstatus")
 	if docstatus is None:
 		return

@@ -356,7 +356,47 @@ class TestOnlinePaths(FrappeTestCase):
 		name = f"T03/{self.fy}/000030"
 		stale = _make_si(self.profile, name)
 		with patch("pospire.pospire.api.posapp.make_sales_invoice", side_effect=lambda *a, **k: unsaved()):
-			si = create_sales_invoice_from_order("SO-X", name)
+			si = create_sales_invoice_from_order("SO-X", name, self.profile)
 			self.assertEqual(si.name, name)
 			self.assertNotEqual(si.creation, stale.creation)
 			self.assertIsNone(parse_number(create_sales_invoice_from_order("SO-X").name))
+
+	def test_create_from_order_refuses_other_profile(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.posapp import create_sales_invoice_from_order
+
+		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "T02")
+		name = f"T02/{self.fy}/000031"
+		_make_si(other, name)
+		order_si = frappe.get_doc(
+			{
+				"doctype": "Sales Invoice",
+				"company": self.company,
+				"customer": ensure_test_customer(),
+				"is_pos": 0,
+				"pos_profile": other,  # the order's own profile must not steer the check
+				"items": [{"item_code": _ensure_test_item(), "qty": 1, "rate": 100}],
+			}
+		)
+		with patch("pospire.pospire.api.posapp.make_sales_invoice", return_value=order_si):
+			self.assertRaises(
+				frappe.ValidationError, create_sales_invoice_from_order, "SO-X", name, self.profile
+			)
+			self.assertRaises(frappe.ValidationError, create_sales_invoice_from_order, "SO-X", name)
+		self.assertTrue(frappe.db.exists("Sales Invoice", name))
+
+	def test_release_requires_profile_read_access(self):
+		email = "pospire-plain-user@example.com"
+		if not frappe.db.exists("User", email):
+			frappe.get_doc(
+				{"doctype": "User", "email": email, "first_name": "Plain", "send_welcome_email": 0}
+			).insert(ignore_permissions=True)
+		name = f"T03/{self.fy}/000032"
+		_make_si(self.profile, name)
+		frappe.set_user(email)
+		try:
+			self.assertRaises(frappe.PermissionError, release_stale_draft, name, self.profile)
+		finally:
+			frappe.set_user("Administrator")
+		self.assertTrue(frappe.db.exists("Sales Invoice", name))
