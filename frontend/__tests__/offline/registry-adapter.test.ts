@@ -54,6 +54,9 @@ describe("registry adapter — submit_invoice", () => {
 		const w = run({ name: "T01/26/000078", pospire_terminal_number: "T01/26/000079", pos_profile: "Main" });
 		expect(JSON.parse(w.payload.data as string).pospire_terminal_number).toBe("T01/26/000079");
 		expect(w.terminal?.number).toBe("T01/26/000079");
+		const e = run({ name: "T01/26/000078", pospire_terminal_number: "", pos_profile: "Main" });
+		expect(JSON.parse(e.payload.data as string).pospire_terminal_number).toBe("T01/26/000078");
+		expect(e.terminal?.number).toBe("T01/26/000078");
 	});
 
 	it("places payment metadata under posa_submit_data — NOT merged into invoice fields", () => {

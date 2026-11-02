@@ -406,7 +406,7 @@ export const methodRegistry: Record<string, MethodConfig> = {
 			}
 
 			const terminalNumber =
-				(invoice.pospire_terminal_number as string | undefined) ??
+				(invoice.pospire_terminal_number as string | undefined) ||
 				(parseTerminalNumber(invoice.name as string) ? (invoice.name as string) : undefined);
 			if (terminalNumber) innerData.pospire_terminal_number = terminalNumber;
 
