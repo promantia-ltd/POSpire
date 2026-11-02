@@ -279,3 +279,51 @@ class TestTerminalDevice(FrappeTestCase):
 			self.company,
 			[{"mode_of_payment": "Cash", "amount": 0}],
 		)
+
+
+class TestOnlinePaths(FrappeTestCase):
+	def setUp(self):
+		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal C", "T03")
+		self.company = frappe.db.get_value("POS Profile", self.profile, "company")
+		self.addCleanup(frappe.db.rollback)
+		self.fy = fy_code(self.company, nowdate())
+
+	def _data(self, number, rate):
+		return {
+			"doctype": "Sales Invoice",
+			"company": self.company,
+			"customer": ensure_test_customer(),
+			"is_pos": 0,  # skips payment validation; the number logic does not depend on it
+			"pos_profile": self.profile,
+			"posting_date": nowdate(),
+			"items": [{"item_code": _ensure_test_item(), "qty": 1, "rate": rate}],
+			"pospire_terminal_number": number,
+		}
+
+	def test_update_invoice_reuses_abandoned_slot(self):
+		from pospire.pospire.api.posapp import update_invoice
+
+		name = f"T03/{self.fy}/000001"
+		update_invoice(self._data(name, 100))
+		update_invoice(self._data(name, 250))
+		self.assertEqual(frappe.db.count("Sales Invoice", {"name": name}), 1)
+		self.assertEqual(frappe.db.get_value("Sales Invoice Item", {"parent": name}, "rate"), 250)
+
+	def test_update_invoice_conflict_on_submitted(self):
+		from pospire.pospire.api.posapp import update_invoice
+
+		name = f"T03/{self.fy}/000002"
+		_make_si(self.profile, name, submit=True)
+		self.assertRaises(TerminalNumberConflict, update_invoice, self._data(name, 100))
+
+	def test_drafts_list_hides_terminal_slots(self):
+		from pospire.pospire.api.posapp import get_draft_invoices
+
+		shift = create_test_opening_shift(self.company, self.profile)
+		slot = _make_si(self.profile, f"T03/{self.fy}/000003")
+		held = _make_si(self.profile)
+		for si in (slot, held):
+			frappe.db.set_value("Sales Invoice", si.name, "posa_pos_opening_shift", shift.name)
+		names = [d.name for d in get_draft_invoices(shift.name)]
+		self.assertIn(held.name, names)
+		self.assertNotIn(slot.name, names)

@@ -60,6 +60,7 @@ from pospire.pospire.api.stock_reconcile import (
 	ensure_stock_for_invoice,
 	ensure_typed_batches_exist_for_invoice,
 )
+from pospire.pospire.api.terminal_number import parse_number, release_stale_draft
 from pospire.pospire.doctype.delivery_charges.delivery_charges import (
 	get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
@@ -844,6 +845,8 @@ def update_invoice(data: str | dict):
 			)
 			invoice_doc.title = invoice_doc.customer_name
 	else:
+		if data.get("pospire_terminal_number"):
+			release_stale_draft(data["pospire_terminal_number"])
 		invoice_doc = frappe.get_doc(data)
 
 	deleted_items = data.get("custom_deleted_pos_items", [])
@@ -1569,6 +1572,8 @@ def get_draft_invoices(pos_opening_shift: str) -> list:
 	)
 	data = []
 	for invoice in invoices_list:
+		if parse_number(invoice["name"]):  # terminal-named draft = unused Pay slot, not a held cart
+			continue
 		data.append(frappe.get_cached_doc("Sales Invoice", invoice["name"]))
 	return data
 
@@ -2657,8 +2662,11 @@ def get_seearch_items_conditions(item_code, serial_no, batch_no, barcode):
 
 
 @frappe.whitelist()
-def create_sales_invoice_from_order(sales_order: str):
+def create_sales_invoice_from_order(sales_order: str, terminal_number: str | None = None):
 	sales_invoice = make_sales_invoice(sales_order, ignore_permissions=True)
+	if terminal_number:
+		release_stale_draft(terminal_number)
+		sales_invoice.pospire_terminal_number = terminal_number
 	sales_invoice.save()
 	return sales_invoice
 
