@@ -605,6 +605,7 @@ async function enqueueWrite(
 	let shiftOfflineId: string | null = null;
 	let postingDate: string | undefined;
 	let ownerUser: string | undefined;
+	let terminal: { profile: string; number: string } | undefined;
 
 	if (config.toOfflinePayload) {
 		const adapted = config.toOfflinePayload(opts.args ?? {}, {
@@ -617,6 +618,7 @@ async function enqueueWrite(
 		shiftOfflineId = adapted.shiftOfflineId ?? null;
 		postingDate = adapted.postingDate;
 		ownerUser = adapted.ownerUser;
+		terminal = adapted.terminal;
 	} else {
 		// Belt-and-braces: an offline-capable write without an adapter can't
 		// produce a server-shaped payload. Fail loud rather than enqueue
@@ -635,6 +637,7 @@ async function enqueueWrite(
 		shiftOfflineId,
 		postingDate,
 		ownerUser,
+		terminal,
 	});
 }
 

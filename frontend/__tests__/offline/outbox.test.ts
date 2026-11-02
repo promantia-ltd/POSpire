@@ -44,6 +44,7 @@ import {
 	MAX_ATTEMPTS,
 } from "@/offline/outbox";
 import { db } from "@/offline/db";
+import { applyClaim, currentNumber } from "@/offline/terminal-number";
 
 import {
 	setupOfflineStorage,
@@ -557,5 +558,26 @@ describe("markVacuumed", () => {
 
 		const row = await db.outbox.get(ack.offline_id);
 		expect(row?.status).toBe("synced");
+	});
+});
+
+describe("enqueue with terminal number", () => {
+	const claim = { prefix: "T01", fiscal_years: [{ code: "26", start: "2026-04-01", end: "2027-03-31" }], last: { "26": 77 } };
+	const term = { profile: "Main", number: "T01/26/000078" };
+
+	it("enqueue consumes terminal number in the same transaction", async () => {
+		await applyClaim("Main", claim);
+		await enqueue("invoice", { a: 1 }, { offlineIdempotencyKey: "k1", terminal: term });
+		expect(await currentNumber("Main", "2026-05-01")).toBe("T01/26/000079");
+		// Same key again: row exists, number is not consumed twice.
+		await enqueue("invoice", { a: 1 }, { offlineIdempotencyKey: "k1", terminal: { ...term, number: "T01/26/000079" } });
+		expect(await currentNumber("Main", "2026-05-01")).toBe("T01/26/000079");
+	});
+
+	it("a failed outbox put leaves the counter unchanged", async () => {
+		await applyClaim("Main", claim);
+		vi.spyOn(db.outbox, "put").mockRejectedValueOnce(new Error("boom"));
+		await expect(enqueue("invoice", { a: 1 }, { offlineIdempotencyKey: "k2", terminal: term })).rejects.toThrow();
+		expect(await currentNumber("Main", "2026-05-01")).toBe("T01/26/000078");
 	});
 });

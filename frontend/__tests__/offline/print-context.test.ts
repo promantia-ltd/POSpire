@@ -14,6 +14,7 @@
 import { describe, it, expect } from "vitest";
 import { buildPrintContext } from "@/offline/print/context";
 
+
 const TAX_CONFIG = {
 	sales_taxes_and_charges: [
 		{ account_head: "GST - TC", charge_type: "On Net Total", rate: 18, description: "GST" },
@@ -199,5 +200,13 @@ describe("buildPrintContext — reprint prefers the stamped tax snapshot", () =>
 
 		expect(doc.taxes).toHaveLength(1);
 		expect(doc.total_taxes_and_charges).toBe(180);
+	});
+});
+
+describe("buildPrintContext — terminal number", () => {
+	it("prints the terminal number instead of the OFFLINE-INV name on a reprint", () => {
+		const invoice = invoiceWith({ pospire_terminal_number: "T01/26/000078" });
+		const doc = buildPrintContext(invoice, { taxConfig: TAX_CONFIG, printConfig: {}, offlineId: "abc" });
+		expect(doc.name).toBe("T01/26/000078");
 	});
 });

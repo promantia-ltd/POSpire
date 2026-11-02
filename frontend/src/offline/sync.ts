@@ -1707,6 +1707,8 @@ function errorCodeToCategory(
 			return "batch_or_serial_conflict";
 		case "stock_shortage":
 			return "stock_shortage";
+		case "number_conflict":
+			return "number_conflict";
 		case "accounting_period_closed":
 			return "accounting_period_closed";
 		case "schema_mismatch":

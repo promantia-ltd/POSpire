@@ -68,6 +68,7 @@ export type LastErrorCategory =
 	| "siblings_not_ready"
 	| "batch_or_serial_conflict"
 	| "stock_shortage"
+	| "number_conflict"
 	| "accounting_period_closed"
 	| "retry_exhausted"
 	| "schema_mismatch"
@@ -378,6 +379,8 @@ export interface OutboxEnqueueOptions {
 	postingDate?: string;
 	/** Optional: override owner_user. Defaults to the current cashier. */
 	ownerUser?: string;
+	/** Terminal invoice number consumed atomically with the outbox row. */
+	terminal?: { profile: string; number: string };
 }
 
 /**

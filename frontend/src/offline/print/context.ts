@@ -187,7 +187,9 @@ export function buildPrintContext(invoice, opts = {}) {
 		// stale or empty in that case — opts.offlineId is the signal this
 		// is a reprint, and provisionalNameFor() derives the same
 		// OFFLINE-INV-... the cashier saw at time of sale.
-		name: opts.offlineId ? provisionalNameFor("invoice", opts.offlineId) : invoice.name,
+		name:
+			invoice.pospire_terminal_number ||
+			(opts.offlineId ? provisionalNameFor("invoice", opts.offlineId) : invoice.name),
 		posting_date: invoice.posting_date || datetime.now_date(),
 		// Sale date, print time — deliberately the moment this receipt is
 		// actually being rendered, not necessarily the moment of sale (a
