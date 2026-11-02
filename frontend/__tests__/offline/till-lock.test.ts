@@ -40,4 +40,12 @@ describe("acquireTillLock", () => {
 		const second = await freshModule();
 		expect(await second.acquireTillLock()).toBe(false);
 	});
+
+	it("lets the till open when the Locks API rejects", async () => {
+		vi.stubGlobal("navigator", {
+			locks: { request: vi.fn(() => Promise.reject(new Error("SecurityError"))) },
+		});
+		const { acquireTillLock } = await freshModule();
+		expect(await acquireTillLock()).toBe(true);
+	});
 });

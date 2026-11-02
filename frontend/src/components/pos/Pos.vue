@@ -1204,12 +1204,14 @@ export default {
 			}
 		});
 
-		this.$nextTick(async function () {
-			// A second tab would draw the same terminal invoice numbers.
-			if (!(await acquireTillLock())) {
-				this.tillLocked = true;
-				return;
-			}
+		this.$nextTick(function () {
+			// Registered first so every profile announcement below is seen.
+			// Only terminal-numbered tills lock: a second tab would draw the same numbers.
+			this.onBus("register_pos_profile", async (data) => {
+				if (data?.pos_profile?.pospire_invoice_prefix && !(await acquireTillLock())) {
+					this.tillLocked = true;
+				}
+			});
 			// Rebuild closing-pending state from the outbox BEFORE the shift
 			// check runs, so a reload lands in the right state instead of
 			// silently resuming selling on a shift that is already closing —

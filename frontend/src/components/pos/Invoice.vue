@@ -1138,6 +1138,7 @@ import {
 	applyClaim,
 	currentNumber,
 	forgetTerminal,
+	parseTerminalNumber,
 	TerminalNotReadyError,
 } from "@/offline/terminal-number";
 
@@ -1160,6 +1161,8 @@ export default {
 			// Cached printer/template/formatting config for offline receipts
 			// (see @/offline/print). Primed the same way as offline_tax_config.
 			offline_print_config: null,
+			// In-flight claim_terminal (never rejects); Pay waits for it on a new till.
+			terminalClaim: null,
 			sales_persons: [],
 			//
 			pos_profile: "",
@@ -2077,6 +2080,8 @@ export default {
 			// so the held cart takes the next free number when it is paid.
 			if (this.pos_profile?.pospire_invoice_prefix) {
 				const held = { ...doc };
+				// Drop the server name too: the local copy is the only cart to resume.
+				delete held.name;
 				delete held.pospire_terminal_number;
 				this.savingDraft = true;
 				try {
@@ -2596,6 +2601,8 @@ export default {
 			if (!this.pos_profile?.pospire_invoice_prefix || doc.is_return || doc.name) {
 				return true;
 			}
+			// A brand-new till gets its counter from the claim started at profile load.
+			await this.terminalClaim;
 			try {
 				doc.pospire_terminal_number = await currentNumber(
 					this.pos_profile.name,
@@ -3046,8 +3053,13 @@ export default {
 					// Terminal-numbered tills hold carts locally even when online.
 					vm.eventBus.emit(
 						"open_drafts",
+						// The server already hides terminal-named drafts; this filter is a backstop
+						// so a held cart is never listed twice.
 						vm.pos_profile?.pospire_invoice_prefix
-							? [...r, ...vm.getLocalOfflineDrafts()]
+							? [
+									...r.filter((d) => !parseTerminalNumber(d.name)),
+									...vm.getLocalOfflineDrafts(),
+								]
 							: r,
 					);
 				}
@@ -4506,7 +4518,7 @@ export default {
 				// Same for the printer/template/formatting config — required
 				// for offline receipts to print at all.
 				this.load_print_config();
-				this.refreshTerminalClaim();
+				this.terminalClaim = this.refreshTerminalClaim();
 		});
 		this.onBus("auto_set_delivery_charge", () => {
 			if (this.delivery_charges.length > 0 && !this.selected_delivery_charge) {
