@@ -182,14 +182,14 @@ class TestTerminalNumbering(FrappeTestCase):
 	def test_release_stale_draft(self):
 		name = f"T01/{self.fy}/000011"
 		_make_si(self.profile, name)
-		release_stale_draft(name)
+		release_stale_draft(name, self.profile)
 		self.assertFalse(frappe.db.exists("Sales Invoice", name))
-		release_stale_draft(name)  # no row: no-op
+		release_stale_draft(name, self.profile)  # no row: no-op
 
 	def test_release_submitted_raises_conflict(self):
 		name = f"T01/{self.fy}/000012"
 		_make_si(self.profile, name, submit=True)
-		self.assertRaises(TerminalNumberConflict, release_stale_draft, name)
+		self.assertRaises(TerminalNumberConflict, release_stale_draft, name, self.profile)
 
 	def test_prefix_locked_after_use(self):
 		_make_si(self.profile, f"T01/{self.fy}/000013")
@@ -327,3 +327,36 @@ class TestOnlinePaths(FrappeTestCase):
 		names = [d.name for d in get_draft_invoices(shift.name)]
 		self.assertIn(held.name, names)
 		self.assertNotIn(slot.name, names)
+
+	def test_release_refuses_other_profile_number(self):
+		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "T02")
+		name = f"T02/{self.fy}/000020"
+		_make_si(other, name)
+		self.assertRaises(frappe.ValidationError, release_stale_draft, name, self.profile)
+		self.assertRaises(frappe.ValidationError, release_stale_draft, name, None)
+		self.assertTrue(frappe.db.exists("Sales Invoice", name))
+
+	def test_create_from_order_uses_number(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.posapp import create_sales_invoice_from_order
+
+		def unsaved():
+			return frappe.get_doc(
+				{
+					"doctype": "Sales Invoice",
+					"company": self.company,
+					"customer": ensure_test_customer(),
+					"is_pos": 0,
+					"pos_profile": self.profile,
+					"items": [{"item_code": _ensure_test_item(), "qty": 1, "rate": 100}],
+				}
+			)
+
+		name = f"T03/{self.fy}/000030"
+		stale = _make_si(self.profile, name)
+		with patch("pospire.pospire.api.posapp.make_sales_invoice", side_effect=lambda *a, **k: unsaved()):
+			si = create_sales_invoice_from_order("SO-X", name)
+			self.assertEqual(si.name, name)
+			self.assertNotEqual(si.creation, stale.creation)
+			self.assertIsNone(parse_number(create_sales_invoice_from_order("SO-X").name))

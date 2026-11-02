@@ -846,7 +846,7 @@ def update_invoice(data: str | dict):
 			invoice_doc.title = invoice_doc.customer_name
 	else:
 		if data.get("pospire_terminal_number"):
-			release_stale_draft(data["pospire_terminal_number"])
+			release_stale_draft(data["pospire_terminal_number"], data.get("pos_profile"))
 		invoice_doc = frappe.get_doc(data)
 
 	deleted_items = data.get("custom_deleted_pos_items", [])
@@ -2665,7 +2665,7 @@ def get_seearch_items_conditions(item_code, serial_no, batch_no, barcode):
 def create_sales_invoice_from_order(sales_order: str, terminal_number: str | None = None):
 	sales_invoice = make_sales_invoice(sales_order, ignore_permissions=True)
 	if terminal_number:
-		release_stale_draft(terminal_number)
+		release_stale_draft(terminal_number, sales_invoice.pos_profile)
 		sales_invoice.pospire_terminal_number = terminal_number
 	sales_invoice.save()
 	return sales_invoice

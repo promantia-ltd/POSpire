@@ -84,7 +84,17 @@ def get_last_number(pos_profile: str, fy: str) -> int:
 	return last
 
 
-def release_stale_draft(name: str) -> None:
+def release_stale_draft(name: str, pos_profile: str) -> None:
+	parsed = parse_number(name)
+	prefix = (
+		frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix") if pos_profile else None
+	)
+	if not (parsed and prefix and parsed[0] == prefix):
+		frappe.throw(
+			_("Invoice number {0} does not belong to POS Profile {1} for this financial year.").format(
+				name, pos_profile
+			)
+		)
 	docstatus = frappe.db.get_value("Sales Invoice", name, "docstatus")
 	if docstatus is None:
 		return
