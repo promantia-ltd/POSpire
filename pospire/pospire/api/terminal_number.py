@@ -69,16 +69,42 @@ def autoname(doc, method=None) -> None:
 	doc.name = number
 
 
+def validate_number_applied(doc, method=None) -> None:
+	"""A Document Naming Rule runs before autoname and would silently replace the terminal number."""
+	number = doc.get("pospire_terminal_number")
+	if not number or not doc.flags.in_insert or doc.is_return or doc.amended_from:
+		return
+	if doc.name != number:
+		frappe.throw(
+			_(
+				"Invoice number {0} was not applied. Remove any Document Naming Rule for POS Sales Invoices."
+			).format(number)
+		)
+
+
 def get_last_number(pos_profile: str, fy: str) -> int:
 	prefix, floor_fy, floor_number = frappe.db.get_value(
 		"POS Profile", pos_profile, ["pospire_invoice_prefix", "pospire_floor_fy", "pospire_floor_number"]
 	)
 	last = 0
 	if prefix:
-		names = frappe.get_all(
-			"Sales Invoice", filters={"name": ["like", f"{prefix}/{fy}/______"]}, pluck="name"
-		)
-		last = max((p[2] for p in map(parse_number, names) if p), default=0)
+		# Used numbers only: submitted/cancelled, or a draft a Payment Request points at.
+		# Zero-padded, so MAX(name) is the highest number.
+		top = frappe.db.sql(
+			"""
+			SELECT MAX(si.name) FROM `tabSales Invoice` si
+			WHERE si.name LIKE %s AND (
+				si.docstatus IN (1, 2) OR EXISTS (
+					SELECT 1 FROM `tabPayment Request` pr
+					WHERE pr.reference_doctype = 'Sales Invoice'
+						AND pr.reference_name = si.name AND pr.docstatus < 2
+				)
+			)
+			""",
+			(f"{prefix}/{fy}/______",),
+		)[0][0]
+		parsed = parse_number(top)
+		last = parsed[2] if parsed else 0
 	if floor_fy == fy:
 		last = max(last, floor_number or 0)
 	return last
@@ -112,10 +138,20 @@ def _delete_stale_draft(name: str) -> None:
 	docstatus = frappe.db.get_value("Sales Invoice", name, "docstatus")
 	if docstatus is None:
 		return
-	if docstatus == 0:
+	if docstatus == 0 and not _has_payment_request(name):
 		frappe.delete_doc("Sales Invoice", name, ignore_permissions=True)
 		return
 	raise TerminalNumberConflict(_("Invoice number {0} is already used.").format(name))
+
+
+def _has_payment_request(name: str) -> bool:
+	"""A payment request uses the number up (same rule as get_last_number)."""
+	return bool(
+		frappe.db.exists(
+			"Payment Request",
+			{"reference_doctype": "Sales Invoice", "reference_name": name, "docstatus": ["<", 2]},
+		)
+	)
 
 
 def log_voided_number(pos_profile: str, number: str, reason: str) -> None:

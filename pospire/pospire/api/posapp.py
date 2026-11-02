@@ -180,8 +180,12 @@ def create_opening_voucher(
 
 	# for_update serializes concurrent opens on this profile
 	if frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix", for_update=True):
+		# for_update reads the latest committed row, so a shift opened while we waited is seen
 		open_shift = frappe.db.get_value(
-			"POS Opening Shift", {"pos_profile": pos_profile, "docstatus": 1, "status": "Open"}, "name"
+			"POS Opening Shift",
+			{"pos_profile": pos_profile, "docstatus": 1, "status": "Open"},
+			"name",
+			for_update=True,
 		)
 		if open_shift:
 			frappe.throw(
@@ -1570,9 +1574,12 @@ def get_draft_invoices(pos_opening_shift: str) -> list:
 		limit_page_length=0,
 		order_by="modified desc",
 	)
+	pos_profile = frappe.db.get_value("POS Opening Shift", pos_opening_shift, "pos_profile")
+	prefix = pos_profile and frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix")
 	data = []
 	for invoice in invoices_list:
-		if parse_number(invoice["name"]):  # terminal-named draft = unused Pay slot, not a held cart
+		parsed = parse_number(invoice["name"])
+		if prefix and parsed and parsed[0] == prefix:  # this till's numbered draft = unused Pay slot
 			continue
 		data.append(frappe.get_cached_doc("Sales Invoice", invoice["name"]))
 	return data

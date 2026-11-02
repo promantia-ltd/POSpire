@@ -1143,6 +1143,7 @@ def _release_voided_number(row, reason: str) -> None:
 		TerminalNumberConflict,
 		_delete_stale_draft,
 		log_voided_number,
+		parse_number,
 	)
 
 	try:
@@ -1156,10 +1157,21 @@ def _release_voided_number(row, reason: str) -> None:
 	profile = data.get("pos_profile") if isinstance(data, dict) else None
 	if not (number and profile):
 		return
+	parsed = parse_number(number)
+	prefix = frappe.db.get_value("POS Profile", profile, "pospire_invoice_prefix")
+	if not (parsed and prefix and parsed[0] == prefix):
+		return  # not this till's number: never touch or log it
 	try:
 		_delete_stale_draft(number)
-	except TerminalNumberConflict:
-		pass  # the number is used by a submitted invoice, nothing to clean
+	except (TerminalNumberConflict, frappe.LinkExistsError) as exc:
+		if isinstance(exc, frappe.LinkExistsError):
+			frappe.clear_last_message()  # drop its queued error popup; the void itself succeeds
+		frappe.get_doc("POS Profile", profile).add_comment(
+			"Info",
+			f"Invoice number {number} is used by another invoice; this sale was voided without a number. "
+			f"Reason: {reason.strip()}",
+		)
+		return
 	log_voided_number(profile, number, reason.strip())
 
 

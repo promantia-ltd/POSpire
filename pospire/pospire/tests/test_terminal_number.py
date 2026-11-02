@@ -134,11 +134,11 @@ def _plain_user():
 @contextmanager
 def _as_user(email):
 	original = frappe.session.user
-	frappe.set_user(email)  # nosemgrep: frappe-semgrep-rules.rules.security.frappe-setuser
+	frappe.set_user(email)  # nosemgrep: frappe-setuser
 	try:
 		yield
 	finally:
-		frappe.set_user(original)  # nosemgrep: frappe-semgrep-rules.rules.security.frappe-setuser
+		frappe.set_user(original)  # nosemgrep: frappe-setuser
 
 
 def _list_user_on_profile(profile, email):
@@ -172,6 +172,19 @@ def _make_si(pos_profile, number=None, *, is_return=0, submit=False):
 	return si
 
 
+def _payment_request(invoice, docstatus=0):
+	"""Bare Payment Request row pointing at `invoice`; only the reference matters here."""
+	frappe.get_doc(
+		{
+			"doctype": "Payment Request",
+			"name": frappe.generate_hash(length=10),
+			"reference_doctype": "Sales Invoice",
+			"reference_name": invoice,
+			"docstatus": docstatus,
+		}
+	).db_insert()
+
+
 class TestTerminalNumbering(FrappeTestCase):
 	def setUp(self):
 		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal A", "T01")
@@ -196,12 +209,47 @@ class TestTerminalNumbering(FrappeTestCase):
 		self.assertIsNone(parse_number(si.name))
 
 	def test_last_number_and_floor(self):
-		_make_si(self.profile, f"T01/{self.fy}/000005")
+		_make_si(self.profile, f"T01/{self.fy}/000005", submit=True)
 		self.assertEqual(get_last_number(self.profile, self.fy), 5)
 		frappe.db.set_value(
 			"POS Profile", self.profile, {"pospire_floor_fy": self.fy, "pospire_floor_number": 60}
 		)
 		self.assertEqual(get_last_number(self.profile, self.fy), 60)
+
+	def test_last_number_counts_used_numbers_only(self):
+		_make_si(self.profile, f"T01/{self.fy}/000003", submit=True).cancel()
+		self.assertEqual(get_last_number(self.profile, self.fy), 3)  # cancelled counts
+		_make_si(self.profile, f"T01/{self.fy}/000004", submit=True)
+		self.assertEqual(get_last_number(self.profile, self.fy), 4)  # submitted counts
+		unused = _make_si(self.profile, f"T01/{self.fy}/000005")
+		self.assertEqual(get_last_number(self.profile, self.fy), 4)  # unused Pay draft does not
+		_payment_request(unused.name, docstatus=2)
+		self.assertEqual(get_last_number(self.profile, self.fy), 4)  # cancelled request does not
+		_payment_request(unused.name)
+		self.assertEqual(get_last_number(self.profile, self.fy), 5)  # draft with a request does
+
+	def test_release_draft_with_payment_request_conflicts(self):
+		name = f"T01/{self.fy}/000014"
+		_make_si(self.profile, name)
+		_payment_request(name)
+		self.assertRaises(TerminalNumberConflict, release_stale_draft, name, self.profile)
+		self.assertTrue(frappe.db.exists("Sales Invoice", name))
+
+	def test_naming_rule_override_refused(self):
+		from unittest.mock import patch
+
+		def rule(doc):
+			if doc.doctype == "Sales Invoice":
+				doc.name = frappe.generate_hash(length=10)
+
+		with patch("frappe.model.naming.set_naming_from_document_naming_rule", side_effect=rule):
+			with self.assertRaises(frappe.ValidationError) as cm:
+				_make_si(self.profile, f"T01/{self.fy}/000015")
+			self.assertIn("was not applied", str(cm.exception))
+			_make_si(self.profile)  # no terminal number: rule name is fine
+		si = _make_si(self.profile, f"T01/{self.fy}/000016")
+		si.save()  # later save of the same doc keeps working
+		self.assertEqual(si.name, f"T01/{self.fy}/000016")
 
 	def test_amended_name_ignored_by_last_number(self):
 		name = f"T01/{self.fy}/000009"
@@ -263,7 +311,8 @@ class TestTerminalDevice(FrappeTestCase):
 		self.assertRaises(TerminalDeviceMismatch, claim_terminal, self.profile, DEVICE_2)
 
 	def test_claim_returns_last_numbers(self):
-		_make_si(self.profile, f"T02/{self.fy}/000005")
+		_make_si(self.profile, f"T02/{self.fy}/000005", submit=True)
+		_make_si(self.profile, f"T02/{self.fy}/000006")  # unused draft: next cart reuses 6
 		res = claim_terminal(self.profile, DEVICE_1)
 		self.assertEqual(res["last"][self.fy], 5)
 		self.assertIn(self.fy, [f["code"] for f in res["fiscal_years"]])
@@ -275,7 +324,7 @@ class TestTerminalDevice(FrappeTestCase):
 		)
 
 	def test_unlink_sets_floor_and_logs(self):
-		_make_si(self.profile, f"T02/{self.fy}/000005")
+		_make_si(self.profile, f"T02/{self.fy}/000005", submit=True)
 		claim_terminal(self.profile, DEVICE_1)
 		self.assertEqual(unlink_terminal_device(self.profile, "tablet replaced"), {"floor": 55})
 		self.assertFalse(frappe.db.get_value("POS Profile", self.profile, "pospire_linked_device"))
@@ -362,6 +411,18 @@ class TestOnlinePaths(FrappeTestCase):
 		names = [d.name for d in get_draft_invoices(shift.name)]
 		self.assertIn(held.name, names)
 		self.assertNotIn(slot.name, names)
+
+	def test_drafts_list_keeps_lookalike_names_without_prefix(self):
+		from pospire.pospire.api.posapp import get_draft_invoices
+
+		shift = create_test_opening_shift(self.company, self.profile)
+		draft = _make_si(self.profile)
+		lookalike = "X/26/000001"  # custom series that looks like a terminal number
+		frappe.rename_doc("Sales Invoice", draft.name, lookalike, force=True)
+		frappe.db.set_value("Sales Invoice", lookalike, "posa_pos_opening_shift", shift.name)
+		self.assertIn(lookalike, [d.name for d in get_draft_invoices(shift.name)])  # other prefix
+		frappe.db.set_value("POS Profile", self.profile, "pospire_invoice_prefix", "")
+		self.assertIn(lookalike, [d.name for d in get_draft_invoices(shift.name)])  # feature off
 
 	def test_release_refuses_other_profile_number(self):
 		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "T02")
@@ -526,3 +587,64 @@ class TestOfflinePaths(FrappeTestCase):
 		with patch("frappe.db.commit"):
 			void_entry(row.name, "dup")
 		self.assertEqual(frappe.db.get_value("Sales Invoice", name, "docstatus"), 1)
+		comments = self._comments()
+		self.assertTrue(any(f"Invoice number {name} is used by another invoice" in c for c in comments))
+		self.assertFalse(any(f"Invoice number {name} voided" in c for c in comments))
+
+	def _comments(self):
+		return frappe.get_all(
+			"Comment",
+			filters={"reference_doctype": "POS Profile", "reference_name": self.profile},
+			pluck="content",
+		)
+
+	def test_void_keeps_payment_request_draft(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.recovery import void_entry
+
+		name = f"T04/{self.fy}/000006"
+		_make_si(self.profile, name)
+		_payment_request(name)
+		row = self._review_row(name)
+		with patch("frappe.db.commit"):
+			void_entry(row.name, "paid by link")
+		self.assertTrue(frappe.db.exists("Sales Invoice", name))
+		self.assertEqual(frappe.db.get_value("POSpire Offline Sync Review", row.name, "status"), "Voided")
+		self.assertTrue(
+			any(f"Invoice number {name} is used by another invoice" in c for c in self._comments())
+		)
+
+	def test_void_link_exists_treated_as_conflict(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.recovery import void_entry
+
+		name = f"T04/{self.fy}/000007"
+		_make_si(self.profile, name)
+		row = self._review_row(name)
+
+		def linked(*args, **kwargs):
+			frappe.throw("linked", frappe.LinkExistsError)
+
+		with patch("frappe.db.commit"), patch("frappe.delete_doc", side_effect=linked):
+			void_entry(row.name, "linked")
+		self.assertEqual(frappe.db.get_value("POSpire Offline Sync Review", row.name, "status"), "Voided")
+		self.assertTrue(
+			any(f"Invoice number {name} is used by another invoice" in c for c in self._comments())
+		)
+
+	def test_void_skips_other_profile_number(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.recovery import void_entry
+
+		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "T02")
+		name = f"T02/{self.fy}/000008"
+		_make_si(other, name)
+		row = self._review_row(name)  # payload profile is T04's, number is T02's
+		with patch("frappe.db.commit"):
+			void_entry(row.name, "mismatch")
+		self.assertEqual(frappe.db.get_value("POSpire Offline Sync Review", row.name, "status"), "Voided")
+		self.assertTrue(frappe.db.exists("Sales Invoice", name))
+		self.assertFalse(any(name in c for c in self._comments()))

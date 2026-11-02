@@ -118,7 +118,10 @@ after_uninstall = "pospire.uninstall.after_uninstall"
 doc_events = {
 	"Sales Invoice": {
 		"autoname": "pospire.pospire.api.terminal_number.autoname",
-		"validate": "pospire.pospire.api.invoice.validate",
+		"validate": [
+			"pospire.pospire.api.invoice.validate",
+			"pospire.pospire.api.terminal_number.validate_number_applied",
+		],
 		"before_submit": "pospire.pospire.api.invoice.before_submit",
 		"before_cancel": "pospire.pospire.api.invoice.before_cancel",
 	},
