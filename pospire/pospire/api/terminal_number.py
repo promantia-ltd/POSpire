@@ -1,0 +1,46 @@
+# Copyright (c) 2026, Promantia Business Solutions PVT Ltd and Contributors
+# See license.txt
+
+"""Per-terminal invoice numbers of the form PREFIX/YY/NNNNNN."""
+
+import re
+
+import frappe
+from erpnext.accounts.utils import get_fiscal_year
+from frappe import _
+
+PREFIX_RE = re.compile(r"^[A-Z][A-Z0-9]{0,3}$")
+_NUMBER_RE = re.compile(r"^([A-Z][A-Z0-9]{0,3})/(\d{2})/(\d{6})$")
+
+
+def format_number(prefix: str, fy: str, n: int) -> str:
+	return f"{prefix}/{fy}/{n:06d}"
+
+
+def parse_number(name: str | None) -> tuple[str, str, int] | None:
+	m = _NUMBER_RE.match(name or "")
+	return (m.group(1), m.group(2), int(m.group(3))) if m else None
+
+
+def fy_code(company: str, posting_date) -> str:
+	fy = get_fiscal_year(posting_date, company=company, as_dict=True)
+	return str(fy.year_start_date.year)[-2:]
+
+
+def validate_prefix(doc) -> None:
+	prefix = (doc.get("pospire_invoice_prefix") or "").strip().upper()
+	doc.pospire_invoice_prefix = prefix
+	if not prefix:
+		return
+	if not PREFIX_RE.match(prefix):
+		frappe.throw(_("Invoice Prefix must be 1 to 4 letters or digits and start with a letter."))
+
+	other = frappe.db.get_value(
+		"POS Profile", {"pospire_invoice_prefix": prefix, "name": ["!=", doc.name]}, "name"
+	)
+	if other:
+		frappe.throw(_("Invoice Prefix {0} is already used by POS Profile {1}.").format(prefix, other))
+
+	old = None if doc.is_new() else frappe.db.get_value("POS Profile", doc.name, "pospire_invoice_prefix")
+	if old and old != prefix and frappe.db.exists("Sales Invoice", {"name": ["like", f"{old}/%"]}):
+		frappe.throw(_("Invoice Prefix cannot be changed after invoices have used it."))

@@ -389,6 +389,11 @@ fixtures = [
 					"Stock Reconciliation-posa_sales_invoice",
 					"Payment Entry-custom_pos_opening_shift",
 					"POS Opening Shift-custom_cancelled_count",
+					"POS Profile-pospire_invoice_prefix",
+					"POS Profile-pospire_linked_device",
+					"POS Profile-pospire_reset_skip",
+					"POS Profile-pospire_floor_fy",
+					"POS Profile-pospire_floor_number",
 				),
 			]
 		],

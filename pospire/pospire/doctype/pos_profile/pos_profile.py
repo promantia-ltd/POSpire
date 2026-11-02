@@ -4,6 +4,8 @@
 import frappe
 from frappe import _
 
+from pospire.pospire.api.terminal_number import validate_prefix
+
 
 def validate_pos_profile(doc, method):
 	if doc.custom_assortment and doc.item_groups:
@@ -22,6 +24,7 @@ def validate_pos_profile(doc, method):
 				)
 			)
 
+	validate_prefix(doc)
 	_validate_approval_actions(doc)
 
 
