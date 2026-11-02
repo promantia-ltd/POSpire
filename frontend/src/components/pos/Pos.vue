@@ -1,5 +1,8 @@
 <template>
-	<div fluid class="mt-2 pos-page">
+	<div v-if="tillLocked" class="pa-8 text-center text-h6">
+		{{ __("POSpire is already open in another tab on this computer.") }}
+	</div>
+	<div v-else fluid class="mt-2 pos-page">
 		<ClosingDialog></ClosingDialog>
 		<Drafts></Drafts>
 		<SalesOrders></SalesOrders>
@@ -74,6 +77,7 @@ import { toast } from "vue3-toastify";
 import { onSynced, readDeviceId } from "@/offline/outbox";
 import { setBeaconContext } from "@/offline/beacon";
 import connectivity from "@/offline/connectivity";
+import { acquireTillLock } from "@/offline/till-lock";
 
 import busListeners from "@/utils/busListeners";
 export default {
@@ -91,6 +95,7 @@ export default {
 				cartHasItems: false,
 				pendingClosingOfflineId: null,
 				shiftLifecycleId: null,
+				tillLocked: false,
 			};
 		},
 
@@ -1199,7 +1204,12 @@ export default {
 			}
 		});
 
-		this.$nextTick(function () {
+		this.$nextTick(async function () {
+			// A second tab would draw the same terminal invoice numbers.
+			if (!(await acquireTillLock())) {
+				this.tillLocked = true;
+				return;
+			}
 			// Rebuild closing-pending state from the outbox BEFORE the shift
 			// check runs, so a reload lands in the right state instead of
 			// silently resuming selling on a shift that is already closing —

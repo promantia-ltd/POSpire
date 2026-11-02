@@ -1,0 +1,43 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+// Fake Web Locks: grants "pospire-till" to the first requester only.
+function fakeLocks() {
+	let taken = false;
+	return {
+		request: vi.fn(
+			async (_name: string, _opts: unknown, cb: (lock: object | null) => unknown) => {
+				const lock = taken ? null : {};
+				taken = true;
+				return cb(lock);
+			},
+		),
+	};
+}
+
+async function freshModule() {
+	vi.resetModules();
+	return import("@/offline/till-lock");
+}
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe("acquireTillLock", () => {
+	it("allows the till when Web Locks is missing", async () => {
+		vi.stubGlobal("navigator", {});
+		const { acquireTillLock } = await freshModule();
+		expect(await acquireTillLock()).toBe(true);
+	});
+
+	it("blocks a second tab and keeps the first one open", async () => {
+		const locks = fakeLocks();
+		vi.stubGlobal("navigator", { locks });
+		const first = await freshModule();
+		expect(await first.acquireTillLock()).toBe(true);
+		// Same tab asking again (Pos.vue remount) must not lock itself out.
+		expect(await first.acquireTillLock()).toBe(true);
+		expect(locks.request).toHaveBeenCalledTimes(1);
+
+		const second = await freshModule();
+		expect(await second.acquireTillLock()).toBe(false);
+	});
+});

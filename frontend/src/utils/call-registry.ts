@@ -605,6 +605,7 @@ export const methodRegistry: Record<string, MethodConfig> = {
 		offline: false,
 	},
 	"pospire.pospire.api.posapp.create_payment_request": { intent: "write", offline: false },
+	"pospire.pospire.api.terminal_number.claim_terminal": { intent: "write", offline: false },
 
 	// Shift close. `make_closing_shift_from_opening` stays live-only — when
 	// offline, Pos.vue catches the failure and synthesises a minimal closing
