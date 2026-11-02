@@ -1137,6 +1137,32 @@ def lookup_resolution(
 	return out
 
 
+def _release_voided_number(row, reason: str) -> None:
+	"""Free the terminal number a voided invoice row held and log it on the POS Profile."""
+	from pospire.pospire.api.terminal_number import (
+		TerminalNumberConflict,
+		_delete_stale_draft,
+		log_voided_number,
+	)
+
+	try:
+		outer = json.loads(row.payload or "{}")
+		data = outer.get("data", outer)
+		if isinstance(data, str):
+			data = json.loads(data)
+	except (ValueError, AttributeError):
+		return
+	number = data.get("pospire_terminal_number") if isinstance(data, dict) else None
+	profile = data.get("pos_profile") if isinstance(data, dict) else None
+	if not (number and profile):
+		return
+	try:
+		_delete_stale_draft(number)
+	except TerminalNumberConflict:
+		pass  # the number is used by a submitted invoice, nothing to clean
+	log_voided_number(profile, number, reason.strip())
+
+
 @frappe.whitelist()
 def void_entry(name: str, reason: str) -> dict[str, Any]:
 	"""Manager-driven void of a recovery row.
@@ -1197,6 +1223,7 @@ def void_entry(name: str, reason: str) -> dict[str, Any]:
 		)
 
 	row = frappe.get_doc("POSpire Offline Sync Review", name)
+	_release_voided_number(row, reason)
 	row.status = "Voided"
 	row.reviewer_user = manager_user
 	row.reviewer_notes = (reason or "").strip()[:1000]

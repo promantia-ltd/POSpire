@@ -1,6 +1,8 @@
 # Copyright (c) 2026, Promantia Business Solutions PVT Ltd and Contributors
 # See license.txt
 
+import json
+import uuid
 from contextlib import contextmanager
 
 import frappe
@@ -433,3 +435,94 @@ class TestOnlinePaths(FrappeTestCase):
 
 	def test_release_requires_profile(self):
 		self.assertRaises(frappe.ValidationError, release_stale_draft, f"T03/{self.fy}/000033", "")
+
+
+class TestOfflinePaths(FrappeTestCase):
+	def setUp(self):
+		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal D", "T04")
+		self.company = frappe.db.get_value("POS Profile", self.profile, "company")
+		self.addCleanup(frappe.db.rollback)
+		self.fy = fy_code(self.company, nowdate())
+
+	def _data(self, number, rate=100):
+		return {
+			"doctype": "Sales Invoice",
+			"owner_user": "Administrator",
+			"company": self.company,
+			"customer": ensure_test_customer(),
+			"is_pos": 0,
+			"pos_profile": self.profile,
+			"posting_date": nowdate(),
+			"items": [{"item_code": _ensure_test_item(), "qty": 1, "rate": rate}],
+			"pospire_terminal_number": number,
+		}
+
+	def _submit(self, number):
+		from pospire.pospire.api import offline
+
+		return offline.submit_invoice(self._data(number), str(uuid.uuid4()), str(uuid.uuid4()))
+
+	def test_offline_submit_replaces_pay_draft(self):
+		from pospire.pospire.api.posapp import update_invoice
+
+		name = f"T04/{self.fy}/000001"
+		update_invoice(self._data(name, 50))
+		offline_id = str(uuid.uuid4())
+		from pospire.pospire.api import offline
+
+		offline.submit_invoice(self._data(name), offline_id, str(uuid.uuid4()))
+		self.assertEqual(frappe.db.count("Sales Invoice", {"name": name}), 1)
+		self.assertEqual(frappe.db.get_value("Sales Invoice", name, "docstatus"), 1)
+		self.assertEqual(frappe.db.get_value("Sales Invoice", name, "pos_offline_id"), offline_id)
+
+	def test_offline_submit_number_conflict(self):
+		from pospire.pospire.api.offline import OfflineSubmitError
+
+		name = f"T04/{self.fy}/000002"
+		_make_si(self.profile, name, submit=True)
+		with self.assertRaises(OfflineSubmitError) as cm:
+			self._submit(name)
+		self.assertEqual(cm.exception.error_code, "number_conflict")
+
+	def _review_row(self, number):
+		return frappe.get_doc(
+			{
+				"doctype": "POSpire Offline Sync Review",
+				"offline_id": str(uuid.uuid4()),
+				"entry_type": "invoice",
+				"cashier_user": "Administrator",
+				"error_category": "validation_error",
+				"payload": json.dumps({"data": json.dumps(self._data(number))}),
+				"original_payload": "{}",
+			}
+		).insert(ignore_permissions=True)
+
+	def test_void_deletes_slot_draft_and_logs(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.recovery import void_entry
+
+		name = f"T04/{self.fy}/000004"
+		_make_si(self.profile, name)
+		row = self._review_row(name)
+		with patch("frappe.db.commit"):
+			void_entry(row.name, "customer left")
+		self.assertFalse(frappe.db.exists("Sales Invoice", name))
+		comments = frappe.get_all(
+			"Comment",
+			filters={"reference_doctype": "POS Profile", "reference_name": self.profile},
+			pluck="content",
+		)
+		self.assertTrue(any(name in c and "customer left" in c for c in comments))
+
+	def test_void_keeps_submitted_invoice(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.recovery import void_entry
+
+		name = f"T04/{self.fy}/000005"
+		_make_si(self.profile, name, submit=True)
+		row = self._review_row(name)
+		with patch("frappe.db.commit"):
+			void_entry(row.name, "dup")
+		self.assertEqual(frappe.db.get_value("Sales Invoice", name, "docstatus"), 1)

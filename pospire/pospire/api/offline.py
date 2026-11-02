@@ -36,6 +36,7 @@ from pospire.pospire.api.customer import (
 )
 from pospire.pospire.api.posapp import submit_sales_invoice
 from pospire.pospire.api.stock_reconcile import ensure_typed_batches_exist_for_invoice
+from pospire.pospire.api.terminal_number import TerminalNumberConflict, release_stale_draft
 
 # ---------------------------------------------------------------------------
 # Error taxonomy (see docs/offline/12-server-side-changes.md §5)
@@ -49,6 +50,7 @@ ERROR_ACCOUNTING_PERIOD_CLOSED = "accounting_period_closed"
 ERROR_VALIDATION = "validation_error"
 ERROR_PERMISSION = "permission_error"
 ERROR_SCHEMA_MISMATCH = "schema_mismatch"
+ERROR_NUMBER_CONFLICT = "number_conflict"
 
 _HTTP_STATUS_BY_CODE: dict[str, int] = {
 	ERROR_PARENT_NOT_READY: 409,
@@ -59,6 +61,7 @@ _HTTP_STATUS_BY_CODE: dict[str, int] = {
 	ERROR_VALIDATION: 400,
 	ERROR_PERMISSION: 403,
 	ERROR_SCHEMA_MISMATCH: 426,
+	ERROR_NUMBER_CONFLICT: 409,
 }
 
 
@@ -1279,6 +1282,13 @@ def submit_invoice(
 	# Wrap insert+submit in _acting_as_user so the doc owner reflects the
 	# original cashier (P-5) instead of the replay session.
 	with _acting_as_user(owner_user), _offline_replay_context():
+		number = payload.get("pospire_terminal_number")
+		if number:
+			# Run as the original cashier so their profile access applies, not the replaying manager's.
+			try:
+				release_stale_draft(number, payload.get("pos_profile"))
+			except TerminalNumberConflict as exc:
+				_throw(ERROR_NUMBER_CONFLICT, str(exc), {"name": number})
 		try:
 			# Strip `name` from the insert payload too: the cart may have
 			# stamped a stale online-draft name onto invoice_doc, but the
@@ -1418,7 +1428,7 @@ def _complete_or_resume_invoice(
 	# stays in the transaction so the retry's get_doc still finds it.
 	# A naive frappe.db.rollback() would wipe that insert too, leaving
 	# `frappe.get_doc("Sales Invoice", doc_name)` to throw DoesNotExist.
-	savepoint = f"posapp_submit_{doc_name}".replace("-", "_")
+	savepoint = re.sub(r"\W", "_", f"posapp_submit_{doc_name}")  # terminal numbers contain "/"
 	for attempt in range(1, max_attempts + 1):
 		frappe.db.savepoint(savepoint)
 		try:

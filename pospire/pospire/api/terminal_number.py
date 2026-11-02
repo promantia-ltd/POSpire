@@ -105,6 +105,10 @@ def release_stale_draft(name: str, pos_profile: str) -> None:
 			)
 		)
 	assert_can_use_profile(pos_profile)
+	_delete_stale_draft(name)
+
+
+def _delete_stale_draft(name: str) -> None:
 	docstatus = frappe.db.get_value("Sales Invoice", name, "docstatus")
 	if docstatus is None:
 		return
@@ -112,6 +116,12 @@ def release_stale_draft(name: str, pos_profile: str) -> None:
 		frappe.delete_doc("Sales Invoice", name, ignore_permissions=True)
 		return
 	raise TerminalNumberConflict(_("Invoice number {0} is already used.").format(name))
+
+
+def log_voided_number(pos_profile: str, number: str, reason: str) -> None:
+	frappe.get_doc("POS Profile", pos_profile).add_comment(
+		"Info", f"Invoice number {number} voided in Sync Review. Reason: {reason}"
+	)
 
 
 class TerminalDeviceMismatch(frappe.ValidationError):
