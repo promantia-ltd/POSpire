@@ -2077,8 +2077,13 @@ export default {
 			const doc = this.get_invoice_doc();
 
 			// Terminal-numbered till: hold carts on this till only, without a number,
-			// so the held cart takes the next free number when it is paid.
-			if (this.pos_profile?.pospire_invoice_prefix) {
+			// so the held cart takes the next free number when it is paid. An older
+			// naming-series server draft is held on the server as before, so it stays
+			// the only copy.
+			if (
+				this.pos_profile?.pospire_invoice_prefix &&
+				(!doc.name || parseTerminalNumber(doc.name))
+			) {
 				const held = { ...doc };
 				// Drop the server name too: the local copy is the only cart to resume.
 				delete held.name;
