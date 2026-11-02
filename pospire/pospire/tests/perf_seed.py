@@ -1,4 +1,3 @@
-
 import secrets
 
 import frappe
@@ -30,7 +29,11 @@ WAREHOUSES = ("PERF-WH-A", "PERF-WH-B")
 
 # profile -> settings that deliberately differ between profiles
 PROFILES = {
-	"PERF-P1": {"warehouse": "PERF-WH-A", "price_list": STANDARD_PRICE_LIST, "payments": ("Cash", "Credit Card")},
+	"PERF-P1": {
+		"warehouse": "PERF-WH-A",
+		"price_list": STANDARD_PRICE_LIST,
+		"payments": ("Cash", "Credit Card"),
+	},
 	"PERF-P2": {"warehouse": "PERF-WH-A", "price_list": PERF_PRICE_LIST, "payments": ("Cash", "Credit Card")},
 	"PERF-P3": {"warehouse": "PERF-WH-B", "price_list": STANDARD_PRICE_LIST, "payments": ("Cash",)},
 }
@@ -69,6 +72,7 @@ RACE_EXTRA_ROLES = ("Accounts Manager",)
 
 def _burst_roles(n):
 	return CASHIER_ROLES + (RACE_EXTRA_ROLES if n == RACE_CASHIER else ())
+
 
 # item_code -> {warehouse: qty}, selling rate in Standard / PERF price lists
 ITEMS = {
@@ -312,7 +316,10 @@ def _ensure_burst_on_profile(dry_run, burst):
 	missing = [cashier_email(n) for n in range(FIRST_BURST, burst + 1) if cashier_email(n) not in assigned]
 	if not missing:
 		return
-	_log(dry_run, f"assign {len(missing)} burst cashier(s) ({missing[0]} .. {missing[-1]}) to POS Profile {BURST_PROFILE}")
+	_log(
+		dry_run,
+		f"assign {len(missing)} burst cashier(s) ({missing[0]} .. {missing[-1]}) to POS Profile {BURST_PROFILE}",
+	)
 	if not dry_run:
 		for email in missing:
 			doc.append("applicable_for_users", {"user": email, "default": 1})
@@ -337,7 +344,9 @@ def _ensure_profiles(dry_run):
 		doc.custom_assortment = None  # would hide the PERF items, see module docstring
 		doc.payments = []
 		for i, mop in enumerate(spec["payments"]):
-			doc.append("payments", {"mode_of_payment": mop, "default": 1 if i == len(spec["payments"]) - 1 else 0})
+			doc.append(
+				"payments", {"mode_of_payment": mop, "default": 1 if i == len(spec["payments"]) - 1 else 0}
+			)
 		doc.applicable_for_users = []
 		for n, profiles in CASHIERS.items():
 			if name in profiles:

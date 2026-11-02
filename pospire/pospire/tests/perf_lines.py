@@ -84,34 +84,80 @@ def seed(dry_run=1):
 				_log(dry_run, f"turn {item} into a stock item (valuation rate {val})")
 				if not dry_run:
 					frappe.db.set_value("Item", item, {"is_stock_item": 1, "valuation_rate": val})
-			if n in BARCODES and not frappe.db.exists("Item Barcode", {"parent": item, "barcode": BARCODES[n]}):
+			if n in BARCODES and not frappe.db.exists(
+				"Item Barcode", {"parent": item, "barcode": BARCODES[n]}
+			):
 				_log(dry_run, f"add barcode {BARCODES[n]} to existing {item}")
 				if not dry_run:
 					doc = frappe.get_doc("Item", item)
 					doc.append("barcodes", {"barcode": BARCODES[n]})
 					doc.save(ignore_permissions=True)
 		if not frappe.db.exists("Stock Ledger Entry", {"item_code": item, "warehouse": WAREHOUSE}):
-			to_receive.append({"item_code": item, "t_warehouse": WAREHOUSE, "qty": STOCK_QTY, "basic_rate": val})
+			to_receive.append(
+				{"item_code": item, "t_warehouse": WAREHOUSE, "qty": STOCK_QTY, "basic_rate": val}
+			)
 		if not frappe.db.exists("Item Price", {"item_code": item, "price_list": PRICE_LIST}):
 			made_prices += 1
 			if not dry_run:
-				frappe.get_doc({"doctype": "Item Price", "item_code": item, "price_list": PRICE_LIST, "price_list_rate": rate(n), "currency": CURRENCY, "selling": 1}).insert(ignore_permissions=True)
+				frappe.get_doc(
+					{
+						"doctype": "Item Price",
+						"item_code": item,
+						"price_list": PRICE_LIST,
+						"price_list_rate": rate(n),
+						"currency": CURRENCY,
+						"selling": 1,
+					}
+				).insert(ignore_permissions=True)
 
 	if not frappe.db.exists("Item", NOSTOCK):
 		_log(dry_run, f"create non-stock Item {NOSTOCK} @ {NOSTOCK_RATE}")
 		if not dry_run:
-			frappe.get_doc({"doctype": "Item", "item_code": NOSTOCK, "item_name": NOSTOCK, "item_group": ITEM_GROUP, "stock_uom": "Nos", "is_stock_item": 0, "is_sales_item": 1, "gst_hsn_code": HSN_CODE}).insert(ignore_permissions=True)
+			frappe.get_doc(
+				{
+					"doctype": "Item",
+					"item_code": NOSTOCK,
+					"item_name": NOSTOCK,
+					"item_group": ITEM_GROUP,
+					"stock_uom": "Nos",
+					"is_stock_item": 0,
+					"is_sales_item": 1,
+					"gst_hsn_code": HSN_CODE,
+				}
+			).insert(ignore_permissions=True)
 	if not frappe.db.exists("Item Price", {"item_code": NOSTOCK, "price_list": PRICE_LIST}):
 		if not dry_run:
-			frappe.get_doc({"doctype": "Item Price", "item_code": NOSTOCK, "price_list": PRICE_LIST, "price_list_rate": NOSTOCK_RATE, "currency": CURRENCY, "selling": 1}).insert(ignore_permissions=True)
+			frappe.get_doc(
+				{
+					"doctype": "Item Price",
+					"item_code": NOSTOCK,
+					"price_list": PRICE_LIST,
+					"price_list_rate": NOSTOCK_RATE,
+					"currency": CURRENCY,
+					"selling": 1,
+				}
+			).insert(ignore_permissions=True)
 
 	if to_receive:
-		_log(dry_run, f"receive {STOCK_QTY} each of {len(to_receive)} item(s) into {WAREHOUSE} (one Material Receipt)")
+		_log(
+			dry_run,
+			f"receive {STOCK_QTY} each of {len(to_receive)} item(s) into {WAREHOUSE} (one Material Receipt)",
+		)
 		if not dry_run:
-			se = frappe.get_doc({"doctype": "Stock Entry", "stock_entry_type": "Material Receipt", "company": COMPANY, "items": to_receive})
+			se = frappe.get_doc(
+				{
+					"doctype": "Stock Entry",
+					"stock_entry_type": "Material Receipt",
+					"company": COMPANY,
+					"items": to_receive,
+				}
+			)
 			se.insert(ignore_permissions=True)
 			se.submit()
-	_log(dry_run, f"create {made_items} Item(s) (of {COUNT}), convert {converted} to stock items, create {made_prices} Item Price(s) in {PRICE_LIST}, barcodes {sorted(BARCODES.values())}")
+	_log(
+		dry_run,
+		f"create {made_items} Item(s) (of {COUNT}), convert {converted} to stock items, create {made_prices} Item Price(s) in {PRICE_LIST}, barcodes {sorted(BARCODES.values())}",
+	)
 	if not dry_run:
 		frappe.db.commit()
 

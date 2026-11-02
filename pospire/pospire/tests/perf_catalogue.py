@@ -40,7 +40,9 @@ def seed(dry_run=1, count=COUNT):
 	dry_run, count = int(dry_run), int(count)
 	existing = set(frappe.get_all("Item", filters={"item_code": ["like", "PERF-CAT-%"]}, pluck="name"))
 	todo = [n for n in range(1, count + 1) if code(n) not in existing]
-	print(f"{'[dry-run] would ' if dry_run else ''}create {len(todo)} item(s) of {count} ({len(existing)} already exist)")
+	print(
+		f"{'[dry-run] would ' if dry_run else ''}create {len(todo)} item(s) of {count} ({len(existing)} already exist)"
+	)
 
 	made = 0
 	for n in todo:
@@ -61,7 +63,14 @@ def seed(dry_run=1, count=COUNT):
 			}
 		).insert(ignore_permissions=True)
 		frappe.get_doc(
-			{"doctype": "Item Price", "item_code": code(n), "price_list": PRICE_LIST, "price_list_rate": rate(n), "currency": CURRENCY, "selling": 1}
+			{
+				"doctype": "Item Price",
+				"item_code": code(n),
+				"price_list": PRICE_LIST,
+				"price_list_rate": rate(n),
+				"currency": CURRENCY,
+				"selling": 1,
+			}
 		).insert(ignore_permissions=True)
 		made += 1
 		if made % 200 == 0:
@@ -71,9 +80,21 @@ def seed(dry_run=1, count=COUNT):
 		frappe.db.commit()
 
 	# stock: one Material Receipt per RECEIPT_LINES items that have no ledger entry in the warehouse yet
-	have_stock = set(frappe.get_all("Stock Ledger Entry", filters={"item_code": ["like", "PERF-CAT-%"], "warehouse": WAREHOUSE}, pluck="item_code"))
-	need = [n for n in range(1, count + 1) if code(n) not in have_stock and (dry_run or frappe.db.exists("Item", code(n)))]
-	print(f"{'[dry-run] would ' if dry_run else ''}receive {STOCK_QTY} each of {len(need)} item(s) into {WAREHOUSE} in {-(-len(need) // RECEIPT_LINES)} receipt(s)")
+	have_stock = set(
+		frappe.get_all(
+			"Stock Ledger Entry",
+			filters={"item_code": ["like", "PERF-CAT-%"], "warehouse": WAREHOUSE},
+			pluck="item_code",
+		)
+	)
+	need = [
+		n
+		for n in range(1, count + 1)
+		if code(n) not in have_stock and (dry_run or frappe.db.exists("Item", code(n)))
+	]
+	print(
+		f"{'[dry-run] would ' if dry_run else ''}receive {STOCK_QTY} each of {len(need)} item(s) into {WAREHOUSE} in {-(-len(need) // RECEIPT_LINES)} receipt(s)"
+	)
 	if not dry_run:
 		for i in range(0, len(need), RECEIPT_LINES):
 			chunk = need[i : i + RECEIPT_LINES]
@@ -82,7 +103,15 @@ def seed(dry_run=1, count=COUNT):
 					"doctype": "Stock Entry",
 					"stock_entry_type": "Material Receipt",
 					"company": COMPANY,
-					"items": [{"item_code": code(n), "t_warehouse": WAREHOUSE, "qty": STOCK_QTY, "basic_rate": round(rate(n) * 0.6, 2)} for n in chunk],
+					"items": [
+						{
+							"item_code": code(n),
+							"t_warehouse": WAREHOUSE,
+							"qty": STOCK_QTY,
+							"basic_rate": round(rate(n) * 0.6, 2),
+						}
+						for n in chunk
+					],
 				}
 			)
 			se.insert(ignore_permissions=True)
@@ -95,7 +124,9 @@ def teardown(dry_run=1):
 	dry_run = int(dry_run)
 	items = frappe.get_all("Item", filters={"item_code": ["like", "PERF-CAT-%"], "disabled": 0}, pluck="name")
 	prices = frappe.get_all("Item Price", filters={"item_code": ["like", "PERF-CAT-%"]}, pluck="name")
-	print(f"{'[dry-run] would ' if dry_run else ''}delete {len(prices)} Item Price(s) and disable {len(items)} Item(s)")
+	print(
+		f"{'[dry-run] would ' if dry_run else ''}delete {len(prices)} Item Price(s) and disable {len(items)} Item(s)"
+	)
 	if dry_run:
 		return
 	for p in prices:
