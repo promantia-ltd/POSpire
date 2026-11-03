@@ -1070,7 +1070,8 @@ export default {
 				// close it is silent AND exit-less.
 				console.error("[OpeningDialog] create_opening_voucher failed", err);
 				toast.error(
-					(err && err.message) ||
+					err?.messages?.[0] ||
+						err?.message ||
 						__("Could not open the shift. Please try again."),
 					{ autoClose: 7000 },
 				);

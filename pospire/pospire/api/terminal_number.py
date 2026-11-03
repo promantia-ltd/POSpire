@@ -141,7 +141,7 @@ def _delete_stale_draft(name: str) -> None:
 	if docstatus == 0 and not _has_payment_request(name):
 		frappe.delete_doc("Sales Invoice", name, ignore_permissions=True)
 		return
-	raise TerminalNumberConflict(_("Invoice number {0} is already used.").format(name))
+	frappe.throw(_("Invoice number {0} is already used.").format(name), TerminalNumberConflict)
 
 
 def _has_payment_request(name: str) -> bool:
@@ -186,8 +186,9 @@ def claim_terminal(pos_profile: str, device_id: str) -> dict:
 		)
 		frappe.get_doc("POS Profile", pos_profile).add_comment("Info", f"Linked device {device_id}")
 	elif linked != device_id:
-		raise TerminalDeviceMismatch(
-			_("This POS Profile is linked to another device. Ask a manager to unlink it.")
+		frappe.throw(
+			_("This POS Profile is linked to another device. Ask a manager to unlink it."),
+			TerminalDeviceMismatch,
 		)
 
 	today_fy = get_fiscal_year(nowdate(), company=company, as_dict=True)
