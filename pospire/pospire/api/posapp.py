@@ -44,7 +44,6 @@ from erpnext.stock.doctype.batch.batch import (
 	get_batch_qty,
 )
 from erpnext.stock.get_item_details import (
-	_get_item_tax_template_from_item_group,
 	get_item_details,
 	get_item_tax_template,
 )
@@ -411,8 +410,11 @@ def get_items(
 
 			def group_tax_template(item_group):
 				if item_group not in group_tax_map:
-					group_tax_map[item_group] = _get_item_tax_template_from_item_group(
-						{"company": pos_profile.get("company"), "posting_date": today}, item_group
+					# An item with no tax rows makes ERPNext walk the group tree. Public on all of v16,
+					# unlike _get_item_tax_template_from_item_group (16.18+).
+					group_tax_map[item_group] = get_item_tax_template(
+						{"company": pos_profile.get("company"), "posting_date": today},
+						frappe._dict(taxes=[], item_group=item_group),
 					)
 				return group_tax_map[item_group]
 
@@ -582,12 +584,24 @@ def get_offline_tax_config(pos_profile: str | dict) -> dict:
 
 
 def get_item_group_condition(pos_profile):
-	cond = " and 1=1"
-	item_groups = get_item_groups(pos_profile)
-	if item_groups:
-		cond = " and item_group in (%s)" % (", ".join(["%s"] * len(item_groups)))  # noqa: UP031
+	"""SQL fragment limiting items to the profile's item groups.
 
-	return cond % tuple(item_groups)
+	ERPNext 16.31+ returns plain names from get_item_groups. Earlier 16.x
+	returned names already wrapped by frappe.db.escape. Quote exactly once.
+	"""
+	item_groups = [_plain_item_group(name) for name in get_item_groups(pos_profile)]
+	if not item_groups:
+		return " and 1=1"
+
+	escaped = ", ".join(frappe.db.escape(name) for name in item_groups)
+	return f" and item_group in ({escaped})"
+
+
+def _plain_item_group(name):
+	name = str(name)
+	if len(name) >= 2 and name[0] == "'" and name[-1] == "'":
+		return name[1:-1].replace("''", "'").replace("\\'", "'").replace("%%", "%")
+	return name
 
 
 def get_root_of(doctype):
