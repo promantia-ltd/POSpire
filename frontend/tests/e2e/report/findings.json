@@ -1,0 +1,715 @@
+{
+ "meta": {
+  "title": "Multi-cashier concurrency and offline feasibility",
+  "subtitle": "POSpire shared profile, account and shift: online and offline",
+  "ticket": "#33391",
+  "branch": "fest/34082/performance_playwright",
+  "site": "pospire_dev (http://localhost:8004)",
+  "results_gathered": "8 to 15 October 2026",
+  "audience": "Engineers and the business owner who must decide the open policy questions",
+  "environment": [
+   "One dev server on a single machine (7.8 GB RAM), headless Chromium, one Playwright worker, no automatic test retries.",
+   "Timings show the shape of behaviour on this dev setup. They are NOT production capacity and must be repeated on the agreed target environment.",
+   "The suite is built against seeded PERF data: 3 POS Profiles, 2 warehouses, 55 PERF cashiers, 1 low-privilege user."
+  ]
+ },
+ "summary": {
+  "safe": [
+   "Distinct cashiers, each on their own shift, are safe online and offline: no lost, duplicated or misattributed sale in any run, including 50 cashiers submitting at the same moment.",
+   "One sale is applied once however it is repeated: double clicks, a retry storm, a lost reply, and replays after a network flap, a server error or an expired session.",
+   "Stock, coupon and ledger totals reconciled in every scenario that completed, with the exception of the return defect below.",
+   "The same account on two devices or two tabs works, with the restriction that two devices opening a shift at the same moment get two shifts.",
+   "A draft already on the server, a deleted draft, or a cancelled invoice never turns a queued bill into a fake success: the draft is finished once, a deleted draft is rebuilt once, and a cancelled bill becomes a visible exception for a manager.",
+   "The smoke journeys (customer lookup and creation, sale, discount, split payment, hold and resume, reprint, return, shift close) stay correct on screen and on the server while ten other cashiers sell continuously."
+  ],
+  "unsafe": [
+   "The server does not check who owns a shift: any assigned cashier can bill onto another user's open shift through the API, although the screen never offers it.",
+   "A return can be accepted for more than the original quantity when sent through the API without the item-row link; the Sales Return screen itself holds the limit.",
+   "A shift can be closed while sales are still on their way, and the closing then omits them, with no flag, while the server still accepts those sales.",
+   "After a manager voids a failed bill, the closing that was waiting on it never completes by itself.",
+   "Store credit can be spent twice: the server trusts the credit amount sent by the screen and does not re-check it, so two sales were accepted against one credit note (simultaneous and sequential).",
+   "Any logged-in cashier can create submitted invoices in another cashier's name by calling the offline replay endpoint directly (D7), and doing so ends the caller's session (D8).",
+   "A sale containing a non-stock item is refused on a profile with automatic stock reconciliation (D9); and a submit that never gets an answer leaves an orphan draft beside the queued invoice (D10)."
+  ]
+ },
+ "feasibility": [
+  {
+   "area": "Distinct users, one common profile, own shift each",
+   "mode": "Online",
+   "outcome": "supported",
+   "tests": [
+    "CON-01",
+    "CON-02"
+   ],
+   "note": "Each cashier's sales land on their own shift, attributed to them."
+  },
+  {
+   "area": "Burst of 10, 25 and 50 cashiers on one profile",
+   "mode": "Online",
+   "outcome": "supported_with_restrictions",
+   "tests": [
+    "CON-06 (10)",
+    "CON-06 (25)",
+    "CON-06 (50)"
+   ],
+   "note": "Correct in every run. Throughput plateaus near 2 sales per second on this server, so 50 simultaneous submits wait up to about 24 s (p95 23 s). The ticket's proposed 5 s target is for a sustained workload, which was not run; this burst is a harsher case, but the trend is clear."
+  },
+  {
+   "area": "Same account on two devices",
+   "mode": "Online",
+   "outcome": "supported_with_restrictions",
+   "tests": [
+    "CON-03a",
+    "CON-03b"
+   ],
+   "note": "Both logins stay valid. If both open a shift at the same moment the account ends with two open shifts. A device that loads after the first has opened joins the existing shift."
+  },
+  {
+   "area": "Same account, two tabs of one browser",
+   "mode": "Offline",
+   "outcome": "supported",
+   "tests": [
+    "CON-05"
+   ],
+   "note": "The tabs share one queue, one tab sends it (Web Locks), each sale arrives exactly once."
+  },
+  {
+   "area": "Different users sharing one shift",
+   "mode": "Online",
+   "outcome": "defect",
+   "tests": [
+    "CON-04",
+    "CON-04b"
+   ],
+   "note": "The screen refuses it (the second user is asked to open their own shift). The server does not: see D1."
+  },
+  {
+   "area": "Same sale submitted repeatedly or reply lost",
+   "mode": "Online",
+   "outcome": "supported",
+   "tests": [
+    "CON-07a",
+    "CON-07b",
+    "CON-07c",
+    "CON-07d"
+   ],
+   "note": "One invoice and one set of stock and ledger effects every time."
+  },
+  {
+   "area": "Last unit sold by two cashiers at once",
+   "mode": "Online",
+   "outcome": "defect",
+   "tests": [
+    "CON-08a"
+   ],
+   "note": "Stock is safe: one sale wins, none goes below zero. The loser gets a raw permission error and leaves a draft that stops the shift closing for roles without delete rights: see D5."
+  },
+  {
+   "area": "Return of the same original quantity twice (API, no item-row link)",
+   "mode": "Online",
+   "outcome": "defect",
+   "tests": [
+    "CON-08b",
+    "CON-08b0"
+   ],
+   "note": "Accepted twice, concurrently and one after the other, when the request omits the original item-row reference: see D2."
+  },
+  {
+   "area": "Returns through the Sales Return screen: over-return, sequential and two screens at once",
+   "mode": "Online",
+   "outcome": "supported",
+   "tests": [
+    "CON-08e",
+    "CON-08f"
+   ],
+   "note": "The screen caps the quantity at what remains and warns 'Cannot return more than 1 Nos'; the invoice then shows Fully Returned. Two screens returning the same 3 units together: one accepted, one refused with a controlled 417; stock rose by exactly 3. Restriction: the screen needs a role with Sales Invoice read rights; a plain cashier role gets 403 from the invoice search and cannot find the invoice (D5)."
+  },
+  {
+   "area": "One-use coupon redeemed by two cashiers at once",
+   "mode": "Online",
+   "outcome": "supported",
+   "tests": [
+    "CON-08c"
+   ],
+   "note": "The use limit holds."
+  },
+  {
+   "area": "Distinct users, own shifts, offline backlogs, common or different profiles",
+   "mode": "Offline",
+   "outcome": "supported",
+   "tests": [
+    "OFF-01a",
+    "OFF-01b"
+   ],
+   "note": "Every bill becomes exactly one invoice on the right shift. About 40 to 46 s to drain 5 bills per device."
+  },
+  {
+   "area": "Same account, two devices, one shared shift, offline",
+   "mode": "Offline",
+   "outcome": "supported",
+   "tests": [
+    "OFF-02a",
+    "OFF-02b",
+    "OFF-02c"
+   ],
+   "note": "No lost, merged or colliding bills when devices reconnect together or in either order."
+  },
+  {
+   "area": "Closing the shift while another device still has unsynced offline sales",
+   "mode": "Offline",
+   "outcome": "defect",
+   "tests": [
+    "OFF-03a"
+   ],
+   "note": "The closing completes without them and the server later accepts them onto the closed shift: see D3."
+  },
+  {
+   "area": "Closing while online sales are being submitted",
+   "mode": "Online",
+   "outcome": "defect",
+   "tests": [
+    "OFF-03b"
+   ],
+   "note": "Sales in flight during the close are missing from the closing: see D3."
+  },
+  {
+   "area": "Two or five simultaneous close requests",
+   "mode": "Online",
+   "outcome": "supported",
+   "tests": [
+    "OFF-03c",
+    "OFF-03c (5 requests)"
+   ],
+   "note": "Exactly one valid closing every time; all requests get the same closing name."
+  },
+  {
+   "area": "Offline chain: open shift, create customer, sell, close, open next shift",
+   "mode": "Offline",
+   "outcome": "supported",
+   "tests": [
+    "OFF-04"
+   ],
+   "note": "Dependants sync after their parents; every invoice links to the right shift and customer; the closing lists its sale; another device's sync is undisturbed. A return made afterwards online links to the right original."
+  },
+  {
+   "area": "Return created while offline",
+   "mode": "Offline",
+   "outcome": "unsupported_safely",
+   "tests": [
+    "OFF-04"
+   ],
+   "note": "Returns are online-only by design. Offline the Returns dialog opens and shows only 'Failed to load invoices'; nothing is lost."
+  },
+  {
+   "area": "Sync interrupted by network flaps, lost replies, server 500s, retries exhausted",
+   "mode": "Offline",
+   "outcome": "supported",
+   "tests": [
+    "OFF-05a",
+    "OFF-05c",
+    "OFF-05d",
+    "OFF-05e"
+   ],
+   "note": "Queue is durable, retries bounded at 8, every bill applied once. Retry exhaustion takes about 8 minutes."
+  },
+  {
+   "area": "Session expiry (HTTP 401) during sync",
+   "mode": "Offline",
+   "outcome": "supported_with_restrictions",
+   "tests": [
+    "OFF-05b"
+   ],
+   "note": "Bills are handed to the manager review queue after one attempt each (no hammering). They do not resume when the cashier logs in again; a manager must retry them. Nothing appears on screen."
+  },
+  {
+   "area": "One device selling online while others drain, one invalid bill queued",
+   "mode": "Both",
+   "outcome": "supported",
+   "sharedEvidence": "OFF-06 also records defect D4 (next row).",
+   "tests": [
+    "OFF-06"
+   ],
+   "note": "The online cashier's sales were unaffected (median 1.23 s during the drain, 1.29 s before). Valid bills synced once each; the invalid bill never became an invoice and stayed visible with a review row."
+  },
+  {
+   "area": "Recovery after a manager voids the failed bill that blocks a closing",
+   "mode": "Offline",
+   "outcome": "defect",
+   "tests": [
+    "OFF-06"
+   ],
+   "note": "The closing stays queued and the shift stays Open: see D4."
+  },
+  {
+   "area": "A cashier asks the server to submit another cashier's printed draft (via the closing request)",
+   "mode": "Online",
+   "outcome": "unsupported_safely",
+   "tests": [
+    "CON-04c",
+    "CON-04d"
+   ],
+   "note": "Both a Sales Manager cashier and the least-privilege cashier were refused (403) and the draft stayed a draft. The refusal comes from missing Sales Invoice submit rights, not from an ownership check (see the control in the next row and D1). A user whose role can submit invoices was not tested."
+  },
+  {
+   "area": "A cashier closes their own shift while a printed draft is on it",
+   "mode": "Online",
+   "outcome": "defect",
+   "tests": [
+    "CON-04e"
+   ],
+   "note": "The closing is refused (403) because it submits printed drafts as the caller and cashier roles cannot submit. See D5. A printed draft only arises when the profile submits invoices in a background job, which PERF-P1 does not."
+  },
+  {
+   "area": "A draft exists, was deleted, or was cancelled before the offline replay",
+   "mode": "Offline",
+   "outcome": "supported",
+   "tests": [
+    "OFF-05f-1",
+    "OFF-05f-2",
+    "OFF-05f-3"
+   ],
+   "note": "An existing draft is finished (one submitted invoice, no duplicate). A deleted draft is rebuilt once. A cancelled invoice is not re-submitted: the bill is handed to the manager review queue with a validation error and is not shown as synced."
+  },
+  {
+   "area": "Smoke journeys while ten other cashiers sell on the same profile",
+   "mode": "Online",
+   "outcome": "supported_with_restrictions",
+   "tests": [
+    "FUNC-01"
+   ],
+   "note": "All nine journey steps were correct on the server (totals, discount, split payment, hold and resume, reprint request, return link and quantity, closing contents). Restrictions: plain cashier roles cannot use Load Draft sales (403, see D5); approvals were not tested (workflow is off on PERF-P1); the screen is slow under load (sale confirmation 5 to 12 s, payment dialog about 7 s on this single machine)."
+  },
+  {
+   "area": "Two cashiers redeem the same store credit",
+   "mode": "Online",
+   "outcome": "defect",
+   "tests": [
+    "CON-08d0",
+    "CON-08d"
+   ],
+   "note": "Two sales were accepted against one credit note of 1,000 in both the simultaneous run and the sequential control, leaving the note over-spent. See D6."
+  },
+  {
+   "area": "Offline backlog recovery at scale: many devices, each on its own shift, reconnecting together",
+   "mode": "Offline",
+   "outcome": "supported",
+   "tests": [
+    "OFF-SCALE-2x20",
+    "OFF-SCALE-5x50",
+    "OFF-SCALE-10x50",
+    "OFF-SCALE-2x20-stagger30"
+   ],
+   "note": "2 devices x 20 bills, 5 x 50 and 10 x 50 (500 bills): every bill became exactly one submitted invoice on the right cashier's shift, queues ended empty, stock and ledger reconciled. Drain time was 54 s, 252 s and 490 s. Restriction: in total the drain runs at about 1 bill per second whatever the number of devices, so the ticket's 1,000-bill target of 10 minutes is projected to be missed (about 16 minutes) on this setup; that run was not made. Staggered reconnect (2 devices x 20 bills, 30 s apart) also passed: no lost or duplicated bill; the first device drained its 20 bills in 12 s on its own."
+  },
+  {
+   "area": "Page reload while offline with bills queued",
+   "mode": "Offline",
+   "outcome": "supported",
+   "tests": [
+    "OFF-07a"
+   ],
+   "note": "The POS screen reloads offline, the 3 queued bills are still in the queue, and after reconnecting they became 3 invoices with the right quantities."
+  },
+  {
+   "area": "A second cashier signs in on the same browser while the first cashier's bills are queued",
+   "mode": "Offline",
+   "outcome": "supported_with_restrictions",
+   "tests": [
+    "OFF-07b"
+   ],
+   "note": "The first cashier's queued bills were not purged by the second sign-in, and none landed on the second cashier's shift. The first replay (made by the second cashier's session for the first cashier's bill) was accepted and the invoice stayed attributed to the first cashier on their shift; the next replay was refused with 403 as Guest because the first replay had ended the replaying session (D8). That bill stayed in the browser's queue as needs_review with no row in the server review queue. Restriction: only the first bill of a departed cashier's backlog replays under another cashier's session, and the rest stay in that browser until the original cashier signs in again."
+  },
+  {
+   "area": "Browser storage full or unavailable while selling offline",
+   "mode": "Offline",
+   "outcome": "supported_with_restrictions",
+   "tests": [
+    "OFF-07c",
+    "OFF-07d"
+   ],
+   "note": "With writes to the queue refused, the sale is blocked, nothing is half-queued, the cart is kept, and the same sale queues normally once storage recovers. With IndexedDB unavailable the screen says 'Offline storage is in safe mode; new writes are blocked until reconnection.' Restriction: with a full quota the cashier sees the raw browser text 'The quota has been exceeded. QuotaExceededError', not an explanation. Quota exhaustion was simulated by making writes throw, not by filling the disk."
+  },
+  {
+   "area": "A cashier names another user as the owner of an offline bill",
+   "mode": "Online",
+   "outcome": "defect",
+   "tests": [
+    "CON-04f0",
+    "CON-04f",
+    "CON-04g"
+   ],
+   "note": "The control (own name) was accepted. Naming another cashier was also accepted, on the caller's own shift and on that cashier's shift: the invoice was created with the other cashier as owner. See D7 and D8."
+  },
+  {
+   "area": "Catalogue of 1,100+ items: load, search, prices",
+   "mode": "Online",
+   "outcome": "supported",
+   "tests": [
+    "PERF-01"
+   ],
+   "note": "1,104 items. A first load in a fresh browser was ready in 0.5 s; warm reloads took 0.5 to 1.9 s (p95 1.9 s against the proposed 3 s). 20 searches: p50 295 ms, p95 306 ms, one 2.4 s outlier; results and prices were correct. Browser memory 70 MB."
+  },
+  {
+   "area": "A cart of 100 distinct lines",
+   "mode": "Online",
+   "outcome": "supported_with_restrictions",
+   "tests": [
+    "PERF-02"
+   ],
+   "note": "Totals were exact at every stage (21,830 after 100 lines, 22,190 after editing one quantity, equal to the submitted invoice with 100 rows and 102 units). Restriction: the screen slows as the cart grows: p50 904 ms and p95 1.6 s per add against the proposed 500 ms, and the last 10 adds took about 3 times as long as the first 10. A quantity edit took 0.7 s to update the total."
+  },
+  {
+   "area": "100 barcode scans at scanner cadence, repeated and unknown codes",
+   "mode": "Online",
+   "outcome": "supported",
+   "tests": [
+    "PERF-03"
+   ],
+   "note": "60 scans of one code and 30 of another gave exactly 60 and 30 units; the 10 unknown scans added no line and showed 'No Item has this barcode'. The invoice matched. The 100 scans took 34 s typed at 10 ms per character."
+  },
+  {
+   "area": "A sale containing a non-stock item",
+   "mode": "Online",
+   "outcome": "defect",
+   "tests": [
+    "FUNC-02"
+   ],
+   "note": "Refused on a profile with automatic stock reconciliation, alone or mixed with a stock item; the control stock sale was accepted. See D9."
+  },
+  {
+   "area": "A slow submit (12 s) and a slow catalogue",
+   "mode": "Online",
+   "outcome": "supported",
+   "tests": [
+    "PERF-04a",
+    "PERF-04c"
+   ],
+   "note": "A 12 s delay: the Submit button is disabled while waiting, exactly one request, one invoice, a confirmation at the end. A catalogue held for 8 s: the screen is usable after 1.3 s with a progress bar and the catalogue is ready after 10.8 s."
+  },
+  {
+   "area": "A submit that is never answered, then the connection drops",
+   "mode": "Online",
+   "outcome": "defect",
+   "tests": [
+    "PERF-04b"
+   ],
+   "note": "For the whole 60 s the screen shows a spinner and a disabled Submit with no message and no time limit. When the connection dropped the sale was queued and became exactly one submitted invoice, but the draft saved earlier was left behind as an orphan: see D10."
+  },
+  {
+   "area": "Bill made offline on a device whose clock is days behind",
+   "mode": "Offline",
+   "outcome": "defect",
+   "tests": [
+    "OFF-08a"
+   ],
+   "note": "The app stamps the bill with the date of the device clock (2 days back) and the queue carries it, but the invoice and its ledger entries are dated the day it synced: see D11."
+  },
+  {
+   "area": "Bill dated inside an existing accounting period (Sales Invoice not closed)",
+   "mode": "Offline",
+   "outcome": "defect",
+   "tests": [
+    "OFF-08d"
+   ],
+   "note": "Refused and handed to the review queue (visible, nothing lost), but the period does not close Sales Invoices, so it should have been accepted: see D12."
+  },
+  {
+   "area": "Item price changed on the server while the bill waits offline",
+   "mode": "Offline",
+   "outcome": "supported",
+   "tests": [
+    "OFF-08b"
+   ],
+   "note": "Price 150 shown to the customer became 400 on the server; the invoice kept 150 and was fully paid. The price the customer saw is the price that is posted."
+  },
+  {
+   "area": "Profile tax template changed while the bill waits offline",
+   "mode": "Offline",
+   "outcome": "supported_with_restrictions",
+   "tests": [
+    "OFF-08c"
+   ],
+   "note": "The invoice stayed fully paid but carries the tax of the template live at sync time (13.64 on a 150 bill), not the tax shown on the offline receipt (none). Plan tax changes outside trading hours or after the backlog is cleared."
+  },
+  {
+   "area": "Steady paced load: 5 to 50 cashiers on one profile, 2 minutes each",
+   "mode": "Online",
+   "outcome": "supported_with_restrictions",
+   "tests": [
+    "PERF-RAMP (5)",
+    "PERF-RAMP (10)",
+    "PERF-RAMP (25)",
+    "PERF-RAMP (50)"
+   ],
+   "note": "Correct at every size: 635 sales accepted, none lost, duplicated or misattributed, stock and ledger exact, all shifts closed. Speed does not scale: throughput stayed at about 1.1 to 1.2 sales/s whatever the number of cashiers, so a whole sale (save + submit) took p95 3.6 s with 5 cashiers, 7.1 s with 10, 19.6 s with 25 and 39.8 s with 50. The 3 s p95 target is missed from the first stage. Measured on one machine running a single dev server under the debugger, so this is a floor for this setup, not production capacity."
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "title": "The server does not check who owns a shift",
+   "severity": "High (proposed)",
+   "tests": [
+    "CON-04",
+    "CON-04b"
+   ],
+   "what": "A logged-in cashier assigned to the profile can create and submit invoices that name another user's open shift, and they are counted in that user's closing. A Sales Manager can also build and submit the other user's closing. The screen never offers this: the second user is shown the Create Opening Shift dialog.",
+   "impact": "Sales and cash are attributed to a shift and cashier who did not make them; a closing can be submitted by someone else. The only protection is the screen.",
+   "repro": [
+    "Cashier A has an open shift S on PERF-P1. Cashier B is assigned to the same profile.",
+    "As B, call pospire.pospire.api.posapp.update_invoice with posa_pos_opening_shift = S. Result: HTTP 200 and a draft.",
+    "As B, call pospire.pospire.api.posapp.submit_invoice for that draft. Result: HTTP 200, the invoice is owned by B and sits on A's shift.",
+    "Build A's closing (make_closing_shift_from_opening). It lists B's invoice (1,000 in the test).",
+    "As a Sales Manager, submit_closing_shift also succeeds (HTTP 200). As the least-privilege user it returns 403, but building the closing still returns 200 and counts the invoice."
+   ],
+   "likelyCause": "validate_shift and check_opening_shift do not compare the shift's user with the caller (read from the code; not changed or retested).",
+   "decision": "Either enforce ownership on the server, or decide that shared shifts are allowed and make attribution and closing rules explicit."
+  },
+  {
+   "id": "D2",
+   "title": "A return can exceed the original quantity when the request is sent without the item-row link (API path)",
+   "severity": "Medium (proposed): reachable through the API, not through the Sales Return screen",
+   "tests": [
+    "CON-08b",
+    "CON-08b0",
+    "CON-08e",
+    "CON-08f"
+   ],
+   "what": "Two returns of the full original quantity were both accepted, whether sent at the same moment or one after the other. Stock rose by 4 for a 2-unit sale. The Sales Return screen does NOT allow this: with 1 unit left a request for 2 is clamped to 1, and two screens returning the same 3 units at the same moment gave one accepted return and one refusal (HTTP 417 StockOverReturnError), with stock up by exactly 3.",
+   "impact": "Refunds beyond what was sold and inflated stock.",
+   "repro": [
+    "As a cashier, create and submit a sale of 2 units.",
+    "Submit two return invoices (is_return = 1, return_against = the sale, quantity -2 each), at the same moment or one after the other.",
+    "Result: both are submitted (each -2,000); two submitted returns exist against one invoice of 2 units; stock is up by 4."
+   ],
+   "likelyCause": "No server-side check of the already-returned quantity when the return rows carry no reference to the original invoice rows. The screen's requests are refused, which suggests it sends the row reference and the standard stock check then applies; this was not confirmed by re-sending the API return with the row reference.",
+   "decision": "Decide whether the server should refuse a return that omits the original row reference (recommended), since the API is the only route that can over-return."
+  },
+  {
+   "id": "D3",
+   "title": "A shift can be closed 'complete' while sales are still arriving",
+   "severity": "High (proposed)",
+   "tests": [
+    "OFF-03a",
+    "OFF-03b"
+   ],
+   "what": "The closing is a snapshot of the invoices submitted at that moment. The app only holds a close back for the same device's own unsynced sales. The server keeps accepting sales onto the shift during and after the close, and nothing flags them.",
+   "impact": "The closing total omits real sales (10,000 in the offline test), so the shift looks reconciled when it is not.",
+   "repro": [
+    "Offline case: one account on two devices sharing a shift. Device B goes offline and queues 3 sales. Device A (online) closes the shift. B reconnects: all 3 sales are accepted onto the closed shift. The closing lists only A's sale.",
+    "Online case: stream 12 sales one every 150 ms and run the closing in the middle. In 5 rounds the closing missed 9, 7, 5, 3 and 1 of the 12 sales, fewer the later the close started. All 12 were accepted."
+   ],
+   "likelyCause": "The close does not lock the shift, and the server does not reject or flag invoices for a closing or closed shift.",
+   "decision": "Choose a policy: block the close while any device has unsynced bills, reject late sales, or accept them with an audited amendment of the closing."
+  },
+  {
+   "id": "D4",
+   "title": "A manager's void does not release the closing that was waiting on that bill",
+   "severity": "Medium (proposed)",
+   "tests": [
+    "OFF-06"
+   ],
+   "what": "A failed bill was handed to the review queue. A manager voided it, and the device correctly marked it voided. The closing queued behind it stayed 'waiting for siblings' for 4 minutes, including after the cashier reloaded the POS. The server shift stayed Open.",
+   "impact": "The shift can only be closed another way, for example by an administrator through the API.",
+   "repro": [
+    "A device goes offline, queues 4 bills (one invalid) and closes the shift offline.",
+    "Reconnect: 3 bills sync, the invalid one is handed off, the closing waits.",
+    "As a manager, void the review row. The local row becomes 'voided'; the closing stays enqueued (waiting_for_siblings)."
+   ],
+   "likelyCause": "Hypothesis from reading the code, not verified by instrumentation: the sync loop skips any row with a blocked reason, and the only code that clears it works from parent links, not from sibling invoices.",
+   "decision": "Confirm the intended recovery path for a blocked closing."
+  },
+  {
+   "id": "D5",
+   "title": "A refused sale or a printed draft leaves a draft that blocks closing, and cashiers cannot list drafts",
+   "severity": "Medium (proposed); depends on role setup",
+   "tests": [
+    "CON-04e",
+    "CON-08a",
+    "CON-08e",
+    "FUNC-01"
+   ],
+   "what": "When the stock a sale needs is short, the profile's automatic Stock Reconciliation runs as the cashier. That needs a permission cashier roles lack, so the sale is refused with a raw 403 PermissionError, not a clear 'out of stock'. The refused sale leaves a draft, and closing the shift deletes drafts, which needs Sales Invoice delete rights, so the close is refused with 403 too. The same missing Sales Invoice rights show up in three more places: closing a shift that holds a printed draft is refused (403) because the closing submits it as the cashier; Load Draft sales is refused (403, get_draft_invoices) for the plain cashier roles; and a cashier cannot delete a leftover draft. The Sales Return screen is also unusable for the plain cashier roles: the invoice search (search_invoices_for_return) is refused with 403, so the cashier sees 'No invoices found'.",
+   "impact": "The cashier cannot close the shift until an administrator removes the draft, and is not told why.",
+   "repro": [
+    "Leave 1 unit in stock. Two cashiers sell it at the same moment.",
+    "One sale succeeds. The other is refused with HTTP 403 PermissionError and leaves a draft.",
+    "Close that cashier's shift: refused with 403. Without the draft the same close succeeds (proved in a rolled-back transaction). A cashier who also holds Accounts Manager can close with drafts present.",
+    "Hold a draft with the plain cashier role and press Load Draft sales: the list is refused with HTTP 403 (Insufficient Permission for Sales Invoice). A cashier who also holds Accounts Manager can use it."
+   ],
+   "likelyCause": "Role permissions on the seeded cashier roles. In your production role setup this may not occur: check before treating it as a product defect.",
+   "decision": "Decide whether cashiers should be told clearly when stock is short, and whether closing should clean up drafts without needing delete rights."
+  },
+  {
+   "id": "D6",
+   "title": "Store credit can be spent more than once",
+   "severity": "High (proposed)",
+   "tests": [
+    "CON-08d0",
+    "CON-08d"
+   ],
+   "what": "When a sale is paid with a customer's store credit (a credit note), the server uses the credit amount and credit note named in the request and does not check that the credit is still available. Two sales, each paid entirely with the same 1,000 credit note, were both accepted.",
+   "impact": "A customer's credit can be used for more than it holds. The credit note ended at +1,000 outstanding (it began at -1,000), so 2,000 of credit was applied against 1,000. A cashier whose screen loaded the credit list before another redeemed it can reuse it.",
+   "repro": [
+    "Make a sale of 2 units to a customer, then return 1 unit as store credit (not cash): a credit note of 1,000 exists.",
+    "Cashier A and cashier B each draft a 1,000 sale to that customer and submit it paid entirely with that credit note (redeemed_customer_credit 1000).",
+    "Both are accepted. The same happens when B submits after A has finished (sequential control)."
+   ],
+   "likelyCause": "The redemption code books a Journal Entry from the client-supplied credit_to_redeem without re-reading the note's outstanding or locking it. This was found by calling the API with the screen's payload, not by operating the screen.",
+   "decision": "Decide whether the server must verify and lock the credit at redemption (recommended): the screen's stale credit list cannot be the only guard."
+  },
+  {
+   "id": "D7",
+   "title": "Any logged-in cashier can create invoices in another user's name through the offline replay endpoint",
+   "severity": "High (proposed)",
+   "tests": [
+    "CON-04f",
+    "CON-04g",
+    "OFF-07b"
+   ],
+   "what": "pospire.pospire.api.offline.submit_invoice reads the owner of the bill (owner_user) from the request, and the server then acts as that user. Cashier 7, who holds only plain cashier roles, called the endpoint as themselves, named cashier 6 as the owner, and got submitted invoices owned by cashier 6: once on cashier 7's own shift and once on cashier 6's open shift. A control request naming themselves was accepted, so the payload was valid. The screen never offers this.",
+   "impact": "Sales can be recorded under, and counted in the closing of, a cashier who did not make them; the audit trail shows the wrong person. It extends D1 (billing onto another user's shift) from the shift to the person.",
+   "repro": [
+    "Log in as cashier 7 and open a shift on PERF-P1; cashier 6 also has an open shift.",
+    "POST pospire.pospire.api.offline.submit_invoice as cashier 7 with data = a one-item cash invoice that includes owner_user = perf.cashier06@pospire.test and posa_pos_opening_shift = either shift, plus a new offline_id and device_id (UUIDs).",
+    "Result: HTTP 200, a submitted Sales Invoice whose owner is cashier 6."
+   ],
+   "likelyCause": "By design for replaying a previous cashier's queue from a shared browser (offline.py, _apply_payload_metadata and _acting_as_user), but with no check that the caller is allowed to act for the named owner. Three invoices were created on the dev site by these runs (SINV-26-07295 to 07298 and the OFF-07b bills).",
+   "decision": "Decide whether the server should refuse an owner_user that differs from the caller unless the caller holds a role allowed to act for others (recommended), and how a shared browser should replay a departed cashier's bills instead."
+  },
+  {
+   "id": "D8",
+   "title": "Replaying a bill for another user ends the replaying user's session",
+   "severity": "Medium (proposed)",
+   "tests": [
+    "CON-04f",
+    "OFF-07b"
+   ],
+   "what": "After one offline replay in which the named owner differed from the logged-in user, the caller's own session was refused (HTTP 403 'No App', user Guest) on the next request. In OFF-07b the first of two replays returned 200 and the second returned 403 as Guest, so the second bill went to needs_review. In the direct test the caller's session was dead immediately after a single call.",
+   "impact": "On a shared browser, a cashier replaying a previous cashier's backlog loses their session after the first bill and the remaining bills fail; the cashier is signed out without being told. A plain replay by the same user is not affected.",
+   "repro": [
+    "Run the D7 request as cashier 7, then call frappe.auth.get_logged_user with the same session.",
+    "Result: HTTP 403 'No App' instead of the user's name."
+   ],
+   "likelyCause": "Not investigated. The code swaps frappe.session.user to the owner and back (_acting_as_user); the session record appears to be left unusable afterwards. Confirm by reading the session row before and after the call.",
+   "decision": "Fix together with D7: whatever replaces the user swap must leave the caller's session intact."
+  },
+  {
+   "id": "D9",
+   "title": "A sale containing a non-stock item is refused when automatic stock reconciliation is on",
+   "severity": "High (proposed)",
+   "tests": [
+    "FUNC-02",
+    "PERF-02"
+   ],
+   "what": "On PERF-P1 (posa_auto_stock_reconcile = 1) a sale of a non-stock item (PERF-NOSTOCK-001, and the first PERF-LINE items before they were made stock items) is refused with HTTP 417 'Unable to determine a positive valuation rate for Item ... in Warehouse ... Auto Stock Reconciliation'. A control sale of a stock item in the same session was accepted. A sale that mixes a stock and a non-stock item is refused too.",
+   "impact": "Services and fees (delivery, repair, gift wrap) cannot be sold on a profile that has automatic stock reconciliation on. The refused sale leaves a draft that blocks closing the shift for cashier roles (D5).",
+   "repro": [
+    "Create a non-stock sales item with a price (is_stock_item = 0).",
+    "On a profile with automatic stock reconciliation, submit a sale of one unit of it.",
+    "Result: HTTP 417 with the valuation-rate message; the same sale of a stock item succeeds."
+   ],
+   "likelyCause": "stock_reconcile._calculate_shortfalls never checks is_stock_item, so a non-stock item looks like a shortage (its bin quantity is 0) and the app tries to reconcile stock for it. Confirmed from the code and the error text; the code was not changed to prove it.",
+   "decision": "Skip non-stock items in the shortfall check (recommended)."
+  },
+  {
+   "id": "D10",
+   "title": "A submit that is lost leaves an orphan draft next to the invoice the queue creates",
+   "severity": "Medium (proposed)",
+   "tests": [
+    "PERF-04b"
+   ],
+   "what": "When the submit request never gets an answer and the connection drops, the app queues the sale offline (it tells the cashier 'Queued OFFLINE-INV-... Will sync when online') and the queue creates a NEW invoice. The draft that the screen had already saved on the server stays behind. One sale ended as one submitted invoice and one orphan draft with the same total.",
+   "impact": "The orphan draft blocks closing the shift for cashier roles (D5) and appears in the draft list of anyone who can open it, where it could be resumed and sold a second time. The money and stock are right: exactly one submitted invoice.",
+   "repro": [
+    "Hold the submit request so it is never answered, then drop the connection.",
+    "The screen queues the sale; reconnect and let it sync.",
+    "Result: the shift holds one submitted invoice and one draft."
+   ],
+   "likelyCause": "Not investigated. The queued bill is an invoice with its own offline id, and the draft saved earlier has none, so the two are not linked.",
+   "decision": "Link the queued bill to the existing draft so the replay completes it (the offline endpoint already resumes a draft that carries the offline id), or delete the draft when the bill is queued."
+  },
+  {
+   "id": "D11",
+   "title": "Offline bills are posted on the day they sync, not the day they were made",
+   "severity": "High (proposed)",
+   "tests": [
+    "OFF-08a"
+   ],
+   "what": "A bill made offline with the device clock on 2026-10-17 carried posting_date 2026-10-17 in the queue, but the invoice SINV-26-07311 / 07312 and every ledger entry were dated 2026-10-19, the sync day. The offline replay does not set set_posting_time, so ERPNext replaces the date with today. The online path (posapp.py, update_invoice) sets set_posting_time=1 whenever the date is not today.",
+   "impact": "A shop that trades offline across midnight, over a weekend or at a period end posts its sales into the wrong day (and possibly the wrong accounting period), so day books, tax returns and shift reports will not match the receipts.",
+   "repro": [
+    "Open a shift, set the device clock two days back, make one offline sale.",
+    "Restore the clock, go online and let the queue drain.",
+    "Compare the invoice posting date with the date on the queue entry."
+   ],
+   "expected": "Invoice and ledger entries carry the date the bill was made.",
+   "suggestedFix": "In offline.submit_invoice set set_posting_time = 1 when posting_date is not today, as the online path does."
+  },
+  {
+   "id": "D12",
+   "title": "An offline bill dated inside any accounting period is refused, even if the period does not close Sales Invoices",
+   "severity": "Medium (proposed)",
+   "tests": [
+    "OFF-08d"
+   ],
+   "what": "_check_accounting_period_open refuses any posting date inside any non-cancelled Accounting Period for the company and never reads the closed flags. Period 'May - LRS - LRS' has Sales Invoice closed = 0, yet the bill dated 2026-08-15 was refused with accounting_period_closed and handed to review row OSR-2026-00021/22.",
+   "impact": "The cashier is not told at sale time. The review row cannot be retried successfully while the period exists, so the only action left is voiding it and the sale never reaches the books.",
+   "repro": [
+    "Choose a date inside an Accounting Period where Sales Invoice is not closed.",
+    "Make an offline sale with the device clock on that date and sync it."
+   ],
+   "expected": "Accepted unless the period closes Sales Invoices (closed = 1).",
+   "suggestedFix": "Query the period's Closed Document rows for Sales Invoice with closed = 1, as ERPNext does."
+  }
+ ],
+ "observations": [
+  "Offline Sales Return: the dialog opens and says only 'Failed to load invoices'; it does not say returns need a connection.",
+  "After an expired session (401) nothing appears on screen; the cashier must open the sync status panel to see that bills were handed off.",
+  "A bill that exhausts its retries took about 8 minutes (473 s) for 8 attempts. The code's own backoff sums to about 4 minutes; the difference was not investigated.",
+  "A failed bill whose item did not exist is labelled 'customer_missing': the app maps any 404 to that category.",
+  "Offline draining takes roughly 6 to 8 s per bill per device, and devices drain in parallel.",
+  "The frontend calls a method that does not exist, hardware_manager.get_offline_print_config, which fills the Error Log.",
+  "Each OFF-04 run creates one customer named 'PERF OFF04 <run id>' on the dev site; these accumulate.",
+  "FUNC-01 under a continuous load of 10 cashiers: background sales took p50 about 11 s and p95 about 12 s (one earlier run saw 43 s); journey sales took 5 to 12 s to confirm and the payment dialog about 7 s to open. The proposed target is p95 3 s. This is one dev machine running both the server and the load, so it shows the shape, not capacity.",
+  "PERF-P1 has a hardware printer configured, so 'Print Last Invoice' sends a print request (hardware_manager.generate_print_xml) instead of opening a browser print window. Physical printer output was not tested.",
+  "The Sales Return dialog lists only the invoices of the customer currently selected in the cart; after a sale the cart resets to the default customer, so a cashier must select the customer again to find the invoice.",
+  "Creating a customer from the screen under load took long enough that the Submit button spun for more than 5 s.",
+  "CON-08f needs two cashiers who can use the Sales Return screen. The test gives cashier 54 the Accounts Manager role for its own duration and removes it again; cashier 55 holds it permanently (see perf_seed.py).",
+  "Offline recovery throughput plateaued at about 1 bill per second in total: 40 bills in 54 s (2 devices), 250 in 252 s (5 devices), 500 in 490 s (10 devices). Per device that is 2.6, 5 and 9.8 s per bill. The same machine runs the server and every browser (peak load 25 on 8 CPUs, free memory down to 408 MB of 7.8 GB at 10 browsers), so this is a limit of this setup, not a measured server capacity; it needs repeating with the load generator on a separate machine.",
+  "Draining alone is much faster than draining together: one device took 12 s for 20 bills (about 0.6 s per bill) when the other was still offline, but each device took about 52 s for the same 20 bills when both drained at once. Total throughput fell from about 1.7 to 0.74 bills per second when a second device joined, and then plateaued near 1 bill per second at 5 and 10 devices. A stock hotspot is NOT the explanation: two devices on different profiles and warehouses (OFF-01b, 20 bills each) drained in 59 s, no faster than two devices on the same warehouse (52 to 54 s). The cause is still unknown: general load on the single machine, the number of server workers, or the cost of running two drains at once. It needs a run with the load generator on another machine and a look at server worker and database metrics.",
+  "The screen has no time limit on a submit that gets no answer: with the server silent for 60 s the Submit button stayed disabled with a spinner and no message, and the cashier had nothing to press. The sale was only queued when the connection dropped.",
+  "OFF-08c left a disabled tax template 'PERF-TAX-10 - LRS' on the site: it is linked to submitted invoice SINV-26-07315 so it could not be deleted. PERF-P1 and the PERF-LINE-010 price were restored.",
+  "PERF-RAMP: the server completed about 1.2 sales per second at every load level (5, 10, 25 and 50 cashiers) while the machine load average stayed under 3. Latency therefore grew in step with the number of cashiers (queueing), not because of errors. The same plateau (~1 bill/s) appeared in the offline backlog drain. The server here is the Frappe dev server run under the VS Code debugger (one process); a production setup with several gunicorn workers must be measured before any capacity claim.",
+  "The six skipped placeholder specs from the original suite (chaos-network-flap, chaos-quota-exceeded, chaos-timeout-success, offline-return, offline-sale-standard, offline-session-expiry) were removed because executed tests cover them: OFF-05a, OFF-07c, OFF-05c and CON-07c/d, OFF-04 (returns are online-only in the app), OFF-01a/b, OFF-05b. The suite now has no placeholder skips."
+ ],
+ "validity": [
+  "CON-03b: an early 'defect' was a false positive caused by another run using the same accounts at the same time. It was retracted; a run lock now prevents it.",
+  "OFF-03b and OFF-06: earlier 'supported' results were vacuous (no sale actually raced the close; all sales had been refused for lack of stock). The tests now fail as test problems in that case.",
+  "OFF-05a was timing-dependent and could miss the fault. It is now deterministic.",
+  "OFF-05e passed once headless and failed once headed with the browser closing at about 8.7 minutes; the cause is not known.",
+  "An OFF-06 run was lost when a second bench using the same Redis and web ports was started on the machine; it was rerun after.",
+  "CON-06 was run through headless API sessions, not 50 browser windows. The load tested is the server's, not the browser's."
+ ],
+ "notTested": [
+  "The ticket's 10 devices x 100 bills (1,000 bills) run: not made. Projected at about 16 minutes at the measured 1 bill per second, which would miss the 10-minute target; the run also needs more memory than this machine has. Also not tested: 50 devices offline, sustained and soak runs, and WebKit and iPad emulation.",
+  "A real-browser burst (the 50-cashier burst used headless API sessions).",
+  "Server CPU, RAM, lock-wait and slow-query measurements, and load-generator resources.",
+  "Approvals during FUNC-01: the approval workflow is off on PERF-P1, so approval dialogs were not exercised.",
+  "Physical printer output (hardware check). A user whose role holds Sales Invoice submit rights triggering submission of another cashier's printed draft (CON-04c with a privileged role).",
+  "OFF-07: a full browser restart on a persistent profile (only a page reload was tested), real disk-quota exhaustion (it was simulated), and the case where site data is cleared while bills are queued.",
+  "PERF-01 to PERF-04 on WebKit or iPad emulation, and at a 10,000-item catalogue (the optional extension).",
+  "The PERF load numbers were taken on one machine that also runs the server and the browser; they show the shape, not capacity.",
+  "OFF-08: changes to the profile's offline settings while a device is disconnected (price, tax and posting date/period boundaries are tested: OFF-08a-d).",
+  "PERF-RAMP (5 to 50 cashiers, 2 minutes each) was run on a single dev server under the debugger with the load on the same machine; it has not been run on a production-style server (several workers) or with the load generated from a second machine. The 30-minute sustained run and the 2-hour soak are not run."
+ ],
+ "howToRun": [
+  "Only ONE bench may run on the machine: another bench with the same default Redis and web ports takes the server down mid-run.",
+  "Seed (dry run first): bench --site pospire_dev execute pospire.pospire.tests.perf_seed.seed --kwargs '{\"dry_run\": 1, \"burst\": 55}'; then with dry_run 0. It prints the burst password once.",
+  "Copy tests/e2e/.env.test.example to tests/e2e/.env.test and fill in the site URL, the admin API key and secret, and the PERF cashier passwords (01 to 05, LOW, BURST).",
+  "Run a spec: npx playwright test --config=tests/e2e/playwright.config.ts --project=chromium tests/e2e/<spec>. Runs are serialised by a lock; a second run is refused while one is active.",
+  "Useful settings: PERF_BURST_SIZES (default 10,25,50), PERF_OFF_SALES (bills per device), PERF_RACE_ROUNDS (rounds for the close races).",
+  "Each run tops PERF-STOCK up to 1,000 per warehouse first, and writes evidence to perf-results/evidence and manifests to perf-results/manifests.",
+  "Rebuild this report: node tests/e2e/report/build-report.mjs (writes perf-results/report/index.html and measurements.json)."
+ ]
+}
