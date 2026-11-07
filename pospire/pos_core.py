@@ -1,8 +1,7 @@
 """
 Utilities for identifying ERPNext Core POS resources.
 
-This module is shared by boot.py and workspace_filter.py to avoid
-duplicating Core POS constants and matching logic.
+Core POS constants and matching logic used by boot.py.
 """
 
 CORE_POS_DOCTYPES = {
