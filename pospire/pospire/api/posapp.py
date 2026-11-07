@@ -44,7 +44,6 @@ from erpnext.stock.doctype.batch.batch import (
 	get_batch_qty,
 )
 from erpnext.stock.get_item_details import (
-	_get_item_tax_template_from_item_group,
 	get_item_details,
 	get_item_tax_template,
 )
@@ -410,8 +409,11 @@ def get_items(
 
 			def group_tax_template(item_group):
 				if item_group not in group_tax_map:
-					group_tax_map[item_group] = _get_item_tax_template_from_item_group(
-						{"company": pos_profile.get("company"), "posting_date": today}, item_group
+					# An item with no tax rows makes ERPNext walk the group tree. Public on all of v16,
+					# unlike _get_item_tax_template_from_item_group (16.18+).
+					group_tax_map[item_group] = get_item_tax_template(
+						{"company": pos_profile.get("company"), "posting_date": today},
+						frappe._dict(taxes=[], item_group=item_group),
 					)
 				return group_tax_map[item_group]
 
