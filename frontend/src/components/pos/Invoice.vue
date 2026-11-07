@@ -2318,6 +2318,8 @@ export default {
 			// sys_defaults). Stamp what was actually used here so the two
 			// never disagree on a reprint.
 			doc.currency_precision = this.currency_precision;
+			// Undefined here poisons Payments.vue's total_payments sum (NaN).
+			doc.loyalty_amount = doc.loyalty_amount || 0;
 			doc.discount_amount = flt(this.discount_amount);
 			doc.additional_discount_percentage = flt(this.additional_discount_percentage);
 			doc.custom_delivery_charge_rate = this.delivery_charges_rate || 0;
