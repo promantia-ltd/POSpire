@@ -1,21 +1,15 @@
 import json
 
 import frappe
-from frappe import _
-from frappe.desk import desk_page
 
 from pospire.pos_core import CORE_POS_DOCTYPES, CORE_POS_PAGES, is_core_pos, route_slug
 
-BLOCKED_PAGES = {
-	"point-of-sale",
-}
-
-# Core POS DocTypes are not Pages — these are Frappe's auto-generated route
-# slugs for each DocType's list view (frappe.router.setup() builds them from
-# bootinfo.user.can_read, which is deliberately left unfiltered below). DocType
-# routes never call desk_page.getpage(), so BLOCKED_PAGES/getpage() can't
-# block them; pos_core_route_guard.js blocks these client-side instead.
-BLOCKED_DOCTYPE_ROUTES = {route_slug(doctype) for doctype in CORE_POS_DOCTYPES}
+# Desk routes pos_core_route_guard.js redirects to POSpire: each Core POS
+# DocType's list slug (frappe.router builds these from bootinfo.user.can_read,
+# which is deliberately left unfiltered below) and the Core POS page itself.
+# Blocking the page here instead of overriding desk_page.getpage keeps the app
+# free of whitelisted-method overrides.
+BLOCKED_ROUTES = {route_slug(doctype) for doctype in CORE_POS_DOCTYPES} | CORE_POS_PAGES
 
 
 def _filter_doctypes(doctypes):
@@ -51,10 +45,9 @@ def _remove_workspace_layout_gap(pages):
 	"""
 	Drop the "Point of Sale" card's layout block from workspace content.
 
-	workspace_filter.py already removes the empty card from the desktop
-	response, but the card's position is stored separately in the
-	Workspace doc's `content` field. Without this, the Selling workspace
-	shows an empty gap where the card used to be.
+	The desk draws a workspace from these content blocks, so without the
+	block the card is never rendered, even though get_desktop_page still
+	returns its links.
 	"""
 
 	for page in pages or []:
@@ -94,11 +87,11 @@ def extend_bootinfo(bootinfo):
 	    workspace.
 
 	Layer 4
-	    Expose blocked DocType route slugs so pos_core_route_guard.js can
-	    block direct navigation to them (e.g. "pos-invoice").
+	    Expose blocked route slugs so pos_core_route_guard.js can block
+	    direct navigation to them (e.g. "pos-invoice", "point-of-sale").
 	"""
 
-	bootinfo["core_pos_blocked_routes"] = sorted(BLOCKED_DOCTYPE_ROUTES)
+	bootinfo["core_pos_blocked_routes"] = sorted(BLOCKED_ROUTES)
 
 	user = bootinfo.get("user")
 
@@ -120,9 +113,9 @@ def extend_bootinfo(bootinfo):
 		bootinfo["workspace_sidebar_item"] = _filter_workspace_sidebar(sidebar)
 
 	# NOTE:
-	# This also removes the page from frappe.boot.allowed_pages, so a user
-	# who navigates straight to the POS URL gets a plain "not found" instead
-	# of the friendly message in getpage() below.
+	# This only hides the page from the Awesome Bar and allowed_pages; the desk
+	# still asks the server for it on navigation, so the route guard is what
+	# actually keeps cashiers out.
 	bootinfo["page_info"] = {
 		name: info for name, info in (bootinfo.get("page_info") or {}).items() if name not in CORE_POS_PAGES
 	}
@@ -131,25 +124,3 @@ def extend_bootinfo(bootinfo):
 
 	if workspaces:
 		_remove_workspace_layout_gap(workspaces.get("pages"))
-
-
-# `getpage` must remain guest-callable because it overrides the guest-accessible
-# desk page entry point; it only blocks the POS page and delegates all other
-# page handling to the ERPNext implementation.
-@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
-def getpage(name: str):
-	"""
-	Block access to the ERPNext Core Point of Sale page.
-
-	All other desk pages continue to use the standard behaviour.
-	"""
-
-	if name in BLOCKED_PAGES:
-		frappe.throw(
-			_("The page has been disabled. Please use POSpire."),
-			frappe.PermissionError,
-		)
-
-	# Delegate to the original implementation.
-	doc = desk_page.get(name)
-	frappe.response.docs.append(doc)
