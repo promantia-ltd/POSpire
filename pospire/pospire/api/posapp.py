@@ -43,7 +43,10 @@ from erpnext.stock.doctype.batch.batch import (
 	get_batch_no,
 	get_batch_qty,
 )
-from erpnext.stock.get_item_details import get_item_details
+from erpnext.stock.get_item_details import (
+	get_item_details,
+	get_item_tax_template,
+)
 from erpnext.stock.stock_ledger import NegativeStockError
 from frappe import _
 from frappe.query_builder import Field
@@ -376,6 +379,14 @@ def get_items(
 
 			# Per-item default tax template, forwarded for offline tax estimation
 			# and item-level re-derivation on sync.
+			# Item Tax rows span companies; only this profile's company's templates apply.
+			company_templates = set(
+				frappe.get_all(
+					"Item Tax Template",
+					filters={"company": pos_profile.get("company"), "disabled": 0},
+					pluck="name",
+				)
+			)
 			item_tax_map = {}
 			for tax_row in frappe.get_all(
 				"Item Tax",
@@ -389,7 +400,22 @@ def get_items(
 				order_by="valid_from asc",
 			):
 				# ascending order -> latest valid row wins
-				item_tax_map[tax_row.parent] = tax_row.item_tax_template
+				if tax_row.item_tax_template in company_templates:
+					item_tax_map[tax_row.parent] = tax_row.item_tax_template
+
+			# No item-level template for this company: fall back to the item group tree, as
+			# ERPNext does on save, so the offline estimate charges what the synced invoice will.
+			group_tax_map = {}
+
+			def group_tax_template(item_group):
+				if item_group not in group_tax_map:
+					# An item with no tax rows makes ERPNext walk the group tree. Public on all of v16,
+					# unlike _get_item_tax_template_from_item_group (16.18+).
+					group_tax_map[item_group] = get_item_tax_template(
+						{"company": pos_profile.get("company"), "posting_date": today},
+						frappe._dict(taxes=[], item_group=item_group),
+					)
+				return group_tax_map[item_group]
 
 			for item in items_data:
 				item_code = item.item_code
@@ -464,7 +490,8 @@ def get_items(
 							"batch_no_data": batch_no_data or [],
 							"attributes": attributes or "",
 							"item_attributes": item_attributes or "",
-							"item_tax_template": item_tax_map.get(item_code),
+							"item_tax_template": item_tax_map.get(item_code)
+							or group_tax_template(item.item_group),
 						}
 					)
 					result.append(row)
@@ -542,16 +569,37 @@ def get_offline_tax_config(pos_profile: str | dict) -> dict:
 	return {
 		"sales_taxes_and_charges": sales_taxes,
 		"item_tax_templates": item_tax_templates,
+		# Whether ERPNext itself adds a tax row for every account head in an
+		# item's tax template (add_taxes_from_tax_template in
+		# erpnext/controllers/accounts_controller.py). Off by default, in which
+		# case an item tax template only overrides the rate of a head the
+		# invoice already charges. The offline estimate has to follow the same
+		# setting or its tax lines cannot match the synced invoice's.
+		"add_taxes_from_item_tax_template": cint(
+			frappe.db.get_single_value("Accounts Settings", "add_taxes_from_item_tax_template")
+		),
 	}
 
 
 def get_item_group_condition(pos_profile):
-	cond = " and 1=1"
-	item_groups = get_item_groups(pos_profile)
-	if item_groups:
-		cond = " and item_group in (%s)" % (", ".join(["%s"] * len(item_groups)))  # noqa: UP031
+	"""SQL fragment limiting items to the profile's item groups.
 
-	return cond % tuple(item_groups)
+	ERPNext 16.31+ returns plain names from get_item_groups. Earlier 16.x
+	returned names already wrapped by frappe.db.escape. Quote exactly once.
+	"""
+	item_groups = [_plain_item_group(name) for name in get_item_groups(pos_profile)]
+	if not item_groups:
+		return " and 1=1"
+
+	escaped = ", ".join(frappe.db.escape(name) for name in item_groups)
+	return f" and item_group in ({escaped})"
+
+
+def _plain_item_group(name):
+	name = str(name)
+	if len(name) >= 2 and name[0] == "'" and name[-1] == "'":
+		return name[1:-1].replace("''", "'").replace("\\'", "'").replace("%%", "%")
+	return name
 
 
 def get_root_of(doctype):
@@ -679,6 +727,7 @@ def get_sales_person_names() -> list:
 
 
 def add_taxes_from_tax_template(item, parent_doc):
+	_set_company_item_tax_template(item, parent_doc)
 	accounts_settings = frappe.get_cached_doc("Accounts Settings")
 	add_taxes_from_item_tax_template = accounts_settings.add_taxes_from_item_tax_template
 	if item.get("item_tax_template") and add_taxes_from_item_tax_template:
@@ -706,6 +755,29 @@ def add_taxes_from_tax_template(item, parent_doc):
 				if parent_doc.doctype == "Purchase Order":
 					tax_row.update({"category": "Total", "add_deduct_tax": "Add"})
 				tax_row.db_insert()
+
+
+def _set_company_item_tax_template(item, parent_doc):
+	"""Replace an item tax template from another company with the one ERPNext picks for this company.
+
+	Item and Item Group tax tables hold templates for every company. One from another company
+	adds that company's tax account to the invoice and fails the account-company validation.
+	"""
+	# Returns keep the sale's template, same as ERPNext's validate_item_tax_template.
+	if not item.get("item_code") or (parent_doc.get("is_return") and parent_doc.get("return_against")):
+		return
+	template = item.get("item_tax_template")
+	if template and frappe.get_cached_value("Item Tax Template", template, "company") == parent_doc.company:
+		return
+	item.item_tax_template = get_item_tax_template(
+		{
+			"item_code": item.item_code,
+			"company": parent_doc.company,
+			"tax_category": parent_doc.get("tax_category"),
+			"posting_date": parent_doc.get("posting_date"),
+			"base_net_rate": item.get("base_net_rate"),
+		}
+	)
 
 
 def _expand_offline_taxes(invoice_doc):
@@ -961,9 +1033,17 @@ def update_invoice(data: str | dict):
 			item.is_free_item = 0
 		add_taxes_from_tax_template(item, invoice_doc)
 
+	if invoice_doc.is_return and invoice_doc.return_against:
+		set_return_additional_discount(invoice_doc)
+
 	if invoice_doc.get("inclusive_tax"):
 		invoice_doc.ignore_pricing_rule = 1
-		invoice_doc.apply_discount_on = "Grand Total"
+		# A return keeps the discount base of the sale it reverses, set just above.
+		# Its discount is a percentage read against that base, so switching bases
+		# here would resize it -- and submit_invoice has no matching override, so
+		# the draft the cashier paid against would disagree with what is booked.
+		if not invoice_doc.is_return:
+			invoice_doc.apply_discount_on = "Grand Total"
 
 		if invoice_doc.get("taxes"):
 			for tax in invoice_doc.taxes:
@@ -1074,6 +1154,9 @@ def submit_invoice(invoice: str | dict, data: str | dict, offline_id: str | None
 		is_cashback = is_cashback.lower() == "true"
 
 	if invoice_doc.is_return and invoice_doc.return_against:
+		# `invoice_doc.update(invoice)` above re-applied the client payload, so
+		# size the discount again before the doc is submitted.
+		set_return_additional_discount(invoice_doc)
 		invoice_doc.update_outstanding_for_self = 0 if is_cashback else 1
 
 		# Only add payments for cashback (immediate refund)
@@ -1850,6 +1933,52 @@ def search_invoices_with_items(invoice_name: str, company: str) -> list:
 	for invoice in invoices_list:
 		data.append(frappe.get_doc("Sales Invoice", invoice["name"]))
 	return data
+
+
+def get_return_discount_percentage(invoice) -> float:
+	"""The invoice-level Additional Discount the sale gave, as a percentage.
+
+	Returns carry the discount as a percentage rather than an amount so ERPNext
+	sizes it against the returned lines instead of the whole original invoice.
+	A percentage is also the only form that stays exact when lines are taxed at
+	different rates: ERPNext splits a discount amount across lines in proportion
+	to their tax-exclusive value, so reusing per-line amounts under-refunds the
+	lower-taxed lines and over-refunds the higher-taxed ones.
+	"""
+	discount = flt(invoice.discount_amount)
+	if not discount:
+		return 0.0
+
+	# The total ERPNext subtracted the discount from, before it did so.
+	charged = flt(invoice.net_total if invoice.apply_discount_on == "Net Total" else invoice.grand_total)
+	base = charged + discount
+	if not base:
+		return 0.0
+
+	return discount / base * 100
+
+
+def set_return_additional_discount(invoice_doc) -> None:
+	"""Size a return's Additional Discount to the lines actually being returned.
+
+	A return refunds what the customer paid, so it reverses only the discount
+	that belongs to the returned qty. Copying the whole invoice discount onto a
+	partial return overshoots the returned lines and turns the credit note into
+	a debit, which ERPNext then refuses to submit.
+
+	The cart sends its own figure so the cashier sees the right total before
+	paying; this recomputes it from the original invoice so a stale tab, a
+	replayed offline row or a direct API caller cannot book the wrong discount.
+	`calculate_taxes_and_totals` derives `discount_amount` from the percentage
+	on validate, which is what prorates it to the returned lines.
+	"""
+	original = frappe.get_cached_doc("Sales Invoice", invoice_doc.return_against)
+	# The percentage is read against this base, so it has to be the sale's own.
+	invoice_doc.apply_discount_on = original.apply_discount_on or invoice_doc.apply_discount_on
+	invoice_doc.additional_discount_percentage = get_return_discount_percentage(original)
+	# Never carry the sale's amount over: on a return it is both unprorated and
+	# the wrong sign, and a stale value here would survive an empty percentage.
+	invoice_doc.discount_amount = 0
 
 
 @frappe.whitelist()

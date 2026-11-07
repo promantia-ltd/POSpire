@@ -1,8 +1,8 @@
 <template>
 	<v-dialog
 		v-model="closingDialog"
-		max-width="1300"
-		width="95vw"
+		:max-width="isFullscreen ? undefined : 1300"
+		:width="isFullscreen ? undefined : '95vw'"
 		persistent
 		scrollable
 		:fullscreen="isFullscreen"

@@ -1175,6 +1175,9 @@ export default {
 			stock_settings: "",
 			invoice_doc: "",
 			return_doc: "",
+			// Percentage form of the original sale's Additional Discount. null
+			// outside return mode; see recompute_return_discount().
+			return_discount_percentage: null,
 			customer: "",
 			// Set when the cart's customer was offline-created. Forwarded onto
 			// the invoice doc as `customer_offline_id`; server resolves to the
@@ -1941,6 +1944,7 @@ export default {
 			this.customer_offline_id = null;
 			this.invoice_doc = "";
 			this.return_doc = "";
+			this.return_discount_percentage = null;
 			this.discount_amount = 0;
 			this.additional_discount_percentage = 0;
 			this.delivery_charges_rate = 0;
@@ -2020,8 +2024,11 @@ export default {
 				}
 			});
 			if (data.is_return) {
-				this.discount_amount = -data.discount_amount;
-				this.additional_discount_percentage = -data.additional_discount_percentage;
+				// A return's discount is already stored negative, so negating it
+				// here would turn it back into an amount the customer owes.
+				this.discount_amount = flt(data.discount_amount);
+				this.additional_discount_percentage = flt(data.additional_discount_percentage);
+				this.return_discount_percentage = this.get_return_discount_percentage(data);
 				this.return_doc = data;
 			} else {
 				this.eventBus.emit("set_pos_coupons", data.posa_coupons);
@@ -2113,6 +2120,7 @@ export default {
 			this.eventBus.emit("set_pos_coupons", []);
 			this.posa_coupons = [];
 			this.return_doc = "";
+			this.return_discount_percentage = null;
 			if (!data.name && !data.is_return) {
 				this.items = [];
 				this.deleted_items = [];
@@ -2145,6 +2153,9 @@ export default {
 				this.posting_date = data.posting_date || datetime.nowdate();
 				this.discount_amount = data.discount_amount;
 				this.additional_discount_percentage = data.additional_discount_percentage;
+				if (data.is_return) {
+					this.return_discount_percentage = this.get_return_discount_percentage(data);
+				}
 				this.items.forEach((item) => {
 					if (item.serial_no) {
 						item.serial_no_selected = [];
@@ -2257,6 +2268,8 @@ export default {
 				doc.rounded_total = this.subtotal;
 				doc.net_total = this.subtotal;
 			}
+			// Undefined here poisons Payments.vue's total_payments sum (NaN).
+			doc.loyalty_amount = doc.loyalty_amount || 0;
 			doc.discount_amount = flt(this.discount_amount);
 			doc.additional_discount_percentage = flt(this.additional_discount_percentage);
 			doc.custom_delivery_charge_rate = this.delivery_charges_rate || 0;
@@ -2727,7 +2740,15 @@ export default {
 						value = false;
 					}
 				}
-				if (this.pos_profile.posa_allow_user_to_edit_additional_discount) {
+				// The cap limits what a cashier may give away, not what a return
+				// reverses: a return's discount was already granted and approved on
+				// the sale. On a return both figures are negative, so the ratio
+				// below reads as the sale's own discount percentage and would block
+				// PAY on any sale discounted above the cap.
+				if (
+					this.pos_profile.posa_allow_user_to_edit_additional_discount &&
+					!this.invoice_doc.is_return
+				) {
 					const clac_percentage = (this.discount_amount / this.Total) * 100;
 					if (clac_percentage > this.pos_profile.posa_max_discount_allowed) {
 						toast.error(
@@ -3113,6 +3134,39 @@ export default {
 			}
 			this.eventBus.emit("update_customer_price_list", price_list);
 		},
+		// The original sale's Additional Discount as a percentage of the total it
+		// was taken off. Mirrors get_return_discount_percentage() on the server,
+		// and works unchanged on a return doc, whose figures are all negative.
+		get_return_discount_percentage(sale) {
+			const discount = flt(sale?.discount_amount);
+			if (!discount) return 0;
+			const charged = flt(
+				sale.apply_discount_on === "Net Total" ? sale.net_total : sale.grand_total,
+			);
+			const base = charged + discount;
+			return base ? (discount / base) * 100 : 0;
+		},
+
+		// A return reverses only the discount belonging to the goods coming back.
+		// The customer never paid the discounted portion, so copying the whole
+		// invoice discount onto a partial return overshoots the returned lines and
+		// turns the credit note into a debit, which blocks PAY. Applying the
+		// sale's percentage to the return's own total is what prorates it, and
+		// keeps it exact when lines are taxed at different rates. Recomputed from
+		// the lines rather than copied once, so qty edits and removals stay in step.
+		//
+		// This is the cashier's figure: `Total` is pre-tax, while the server reads
+		// the same percentage against the return's pre-discount grand total. They
+		// agree for tax-inclusive lines, and the server stays authoritative for
+		// what is actually booked (see set_return_additional_discount).
+		recompute_return_discount() {
+			if (!this.invoice_doc?.is_return || this.return_discount_percentage === null) return;
+			this.discount_amount = this.flt(
+				(this.Total * this.return_discount_percentage) / 100,
+				this.currency_precision,
+			);
+		},
+
 		update_discount_umount() {
 			let value = flt(this.additional_discount_percentage);
 			value = parseFloat(value.toFixed(11));
@@ -4442,9 +4496,9 @@ export default {
 		});
 		this.onBus("load_return_invoice", (data) => {
 			this.load_invoice(data.invoice_doc);
-			this.discount_amount = -data.return_doc.discount_amount;
-			this.additional_discount_percentage = -data.return_doc.additional_discount_percentage;
 			this.return_doc = data.return_doc;
+			this.return_discount_percentage = this.get_return_discount_percentage(data.return_doc);
+			this.recompute_return_discount();
 		});
 		this.onBus("set_new_line", (data) => {
 			this.new_line = data;
@@ -4501,6 +4555,7 @@ export default {
 				// Sales Person
 				this.updateSalesTeam();
 				//
+				this.recompute_return_discount();
 				this.handelOffers();
 				this.$forceUpdate();
 			},

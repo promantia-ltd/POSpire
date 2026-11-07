@@ -9,6 +9,10 @@ def after_install():
 
 def after_migrate():
 	"""Refresh cached desk metadata after migrations."""
+	from pospire.patches.v1_1.add_strict_closure_compound_index import execute as add_closure_index
+
+	# The patch runs before fixtures add its column, so on upgraded sites it skipped. Idempotent.
+	add_closure_index()
 	frappe.clear_cache()
 
 
