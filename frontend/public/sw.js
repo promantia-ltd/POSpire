@@ -138,8 +138,9 @@ function isShellAsset(url) {
 	}
 	if (/\.(?:js|css|woff2?|ttf|otf|eot|svg|png|jpg|jpeg|gif|webp|ico)$/.test(url.pathname)) {
 		// Only treat app assets as shell — Frappe-served assets under
-		// /files/ are user content and should pass through.
-		if (!url.pathname.startsWith("/files/")) {
+		// /files/ and /private/files/ are user content and should pass through.
+		// Caching private files would keep them on a shared till after logout.
+		if (!url.pathname.startsWith("/files/") && !url.pathname.startsWith("/private/")) {
 			return true;
 		}
 	}
