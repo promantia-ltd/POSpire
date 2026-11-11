@@ -36,7 +36,12 @@ from pospire.pospire.api.customer import (
 )
 from pospire.pospire.api.posapp import submit_sales_invoice
 from pospire.pospire.api.stock_reconcile import ensure_typed_batches_exist_for_invoice
-from pospire.pospire.api.terminal_number import TerminalNumberConflict, release_stale_draft
+from pospire.pospire.api.terminal_number import (
+	REVIEW_MANAGERS,
+	TerminalNumberConflict,
+	assert_can_use_profile,
+	release_stale_draft,
+)
 
 # ---------------------------------------------------------------------------
 # Error taxonomy (see docs/offline/12-server-side-changes.md §5)
@@ -1281,8 +1286,12 @@ def submit_invoice(
 	# `name` is bound, then call posapp_submit_invoice which updates + submits.
 	# Wrap insert+submit in _acting_as_user so the doc owner reflects the
 	# original cashier (P-5) instead of the replay session.
+	number = payload.get("pospire_terminal_number")
+	# The real caller, before owner_user (client-chosen) is impersonated: only a till the
+	# caller may use. Managers replay any till's sales from Sync Review.
+	if number and not REVIEW_MANAGERS & set(frappe.get_roles()):
+		assert_can_use_profile(payload.get("pos_profile"))
 	with _acting_as_user(owner_user), _offline_replay_context():
-		number = payload.get("pospire_terminal_number")
 		if number:
 			# Run as the original cashier so their profile access applies, not the replaying manager's.
 			try:

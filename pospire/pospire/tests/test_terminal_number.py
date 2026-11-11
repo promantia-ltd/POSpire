@@ -61,11 +61,11 @@ def _ensure_terminal_test_profile(name, prefix=None):
 
 class TestNumberFormat(FrappeTestCase):
 	def test_format_and_parse_round_trip(self):
-		self.assertEqual(format_number("T01", "26", 123), "T01/26/000123")
-		self.assertEqual(parse_number("T01/26/000123"), ("T01", "26", 123))
+		self.assertEqual(format_number("ZT1", "26", 123), "ZT1/26/000123")
+		self.assertEqual(parse_number("ZT1/26/000123"), ("ZT1", "26", 123))
 
 	def test_parse_rejects_other_names(self):
-		for name in ("ACC-SINV-2026-00001", "T01/26/000123-1", "T01/2627/00123", "t01/26/000123", None):
+		for name in ("ACC-SINV-2026-00001", "ZT1/26/000123-1", "ZT1/2627/00123", "zt1/26/000123", None):
 			self.assertIsNone(parse_number(name))
 
 	def test_fy_code_uses_fiscal_year_start(self):
@@ -83,18 +83,18 @@ class TestPrefixValidation(FrappeTestCase):
 
 	def test_prefix_upper_cased_and_validated(self):
 		doc = self._profiles()[0]
-		doc.pospire_invoice_prefix = "t01"
+		doc.pospire_invoice_prefix = "zt1"
 		doc.save()
-		self.assertEqual(doc.pospire_invoice_prefix, "T01")
+		self.assertEqual(doc.pospire_invoice_prefix, "ZT1")
 		for bad in ("1AB", "ABCDE", "T-1"):
 			doc.pospire_invoice_prefix = bad
 			self.assertRaises(frappe.ValidationError, doc.save)
 
 	def test_prefix_unique_across_profiles(self):
 		first, second = self._profiles()
-		first.pospire_invoice_prefix = "T01"
+		first.pospire_invoice_prefix = "ZT1"
 		first.save()
-		second.pospire_invoice_prefix = "T01"
+		second.pospire_invoice_prefix = "ZT1"
 		self.assertRaises(frappe.ValidationError, second.save)
 
 
@@ -187,29 +187,29 @@ def _payment_request(invoice, docstatus=0):
 
 class TestTerminalNumbering(FrappeTestCase):
 	def setUp(self):
-		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal A", "T01")
+		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal A", "ZT1")
 		company = frappe.db.get_value("POS Profile", self.profile, "company")
 		self.addCleanup(frappe.db.rollback)  # FrappeTestCase only rolls back per class
 		self.fy = fy_code(company, nowdate())
 
 	def test_terminal_number_becomes_name(self):
-		si = _make_si(self.profile, f"T01/{self.fy}/000007")
-		self.assertEqual(si.name, f"T01/{self.fy}/000007")
+		si = _make_si(self.profile, f"ZT1/{self.fy}/000007")
+		self.assertEqual(si.name, f"ZT1/{self.fy}/000007")
 		self.assertNotIn("pospire_terminal_number", frappe.db.get_table_columns("Sales Invoice"))
 
 	def test_no_number_uses_naming_series(self):
 		self.assertIsNone(parse_number(_make_si(self.profile).name))
 
 	def test_wrong_prefix_or_year_throws(self):
-		for bad in (f"T02/{self.fy}/000001", "T01/99/000001"):
+		for bad in (f"ZT2/{self.fy}/000001", "ZT1/99/000001"):
 			self.assertRaises(frappe.ValidationError, _make_si, self.profile, bad)
 
 	def test_return_ignores_terminal_number(self):
-		si = _make_si(self.profile, f"T01/{self.fy}/000008", is_return=1)
+		si = _make_si(self.profile, f"ZT1/{self.fy}/000008", is_return=1)
 		self.assertIsNone(parse_number(si.name))
 
 	def test_last_number_and_floor(self):
-		_make_si(self.profile, f"T01/{self.fy}/000005", submit=True)
+		_make_si(self.profile, f"ZT1/{self.fy}/000005", submit=True)
 		self.assertEqual(get_last_number(self.profile, self.fy), 5)
 		frappe.db.set_value(
 			"POS Profile", self.profile, {"pospire_floor_fy": self.fy, "pospire_floor_number": 60}
@@ -217,11 +217,11 @@ class TestTerminalNumbering(FrappeTestCase):
 		self.assertEqual(get_last_number(self.profile, self.fy), 60)
 
 	def test_last_number_counts_used_numbers_only(self):
-		_make_si(self.profile, f"T01/{self.fy}/000003", submit=True).cancel()
+		_make_si(self.profile, f"ZT1/{self.fy}/000003", submit=True).cancel()
 		self.assertEqual(get_last_number(self.profile, self.fy), 3)  # cancelled counts
-		_make_si(self.profile, f"T01/{self.fy}/000004", submit=True)
+		_make_si(self.profile, f"ZT1/{self.fy}/000004", submit=True)
 		self.assertEqual(get_last_number(self.profile, self.fy), 4)  # submitted counts
-		unused = _make_si(self.profile, f"T01/{self.fy}/000005")
+		unused = _make_si(self.profile, f"ZT1/{self.fy}/000005")
 		self.assertEqual(get_last_number(self.profile, self.fy), 4)  # unused Pay draft does not
 		_payment_request(unused.name, docstatus=2)
 		self.assertEqual(get_last_number(self.profile, self.fy), 4)  # cancelled request does not
@@ -229,20 +229,20 @@ class TestTerminalNumbering(FrappeTestCase):
 		self.assertEqual(get_last_number(self.profile, self.fy), 5)  # draft with a request does
 
 	def test_last_number_ignores_non_numeric_names(self):
-		_make_si(self.profile, f"T01/{self.fy}/000005", submit=True)
+		_make_si(self.profile, f"ZT1/{self.fy}/000005", submit=True)
 		lookalike = _make_si(self.profile)
-		frappe.rename_doc("Sales Invoice", lookalike.name, f"T01/{self.fy}/CN0001", force=True)
-		_payment_request(f"T01/{self.fy}/CN0001")  # used, and sorts above every digit
+		frappe.rename_doc("Sales Invoice", lookalike.name, f"ZT1/{self.fy}/CN0001", force=True)
+		_payment_request(f"ZT1/{self.fy}/CN0001")  # used, and sorts above every digit
 		self.assertEqual(get_last_number(self.profile, self.fy), 5)
 
 	def test_number_needs_a_user_of_the_till(self):
 		email = _plain_user()
 		with _as_user(email):
-			self.assertRaises(frappe.PermissionError, _make_si, self.profile, f"T01/{self.fy}/000017")
-		self.assertFalse(frappe.db.exists("Sales Invoice", f"T01/{self.fy}/000017"))
+			self.assertRaises(frappe.PermissionError, _make_si, self.profile, f"ZT1/{self.fy}/000017")
+		self.assertFalse(frappe.db.exists("Sales Invoice", f"ZT1/{self.fy}/000017"))
 
 	def test_release_draft_with_payment_request_conflicts(self):
-		name = f"T01/{self.fy}/000014"
+		name = f"ZT1/{self.fy}/000014"
 		_make_si(self.profile, name)
 		_payment_request(name)
 		self.assertRaises(TerminalNumberConflict, release_stale_draft, name, self.profile)
@@ -257,15 +257,15 @@ class TestTerminalNumbering(FrappeTestCase):
 
 		with patch("frappe.model.naming.set_naming_from_document_naming_rule", side_effect=rule):
 			with self.assertRaises(frappe.ValidationError) as cm:
-				_make_si(self.profile, f"T01/{self.fy}/000015")
+				_make_si(self.profile, f"ZT1/{self.fy}/000015")
 			self.assertIn("was not applied", str(cm.exception))
 			_make_si(self.profile)  # no terminal number: rule name is fine
-		si = _make_si(self.profile, f"T01/{self.fy}/000016")
+		si = _make_si(self.profile, f"ZT1/{self.fy}/000016")
 		si.save()  # later save of the same doc keeps working
-		self.assertEqual(si.name, f"T01/{self.fy}/000016")
+		self.assertEqual(si.name, f"ZT1/{self.fy}/000016")
 
 	def test_amended_name_ignored_by_last_number(self):
-		name = f"T01/{self.fy}/000009"
+		name = f"ZT1/{self.fy}/000009"
 		si = _make_si(self.profile, name, submit=True)
 		si.cancel()
 		amended = frappe.copy_doc(si)
@@ -276,20 +276,20 @@ class TestTerminalNumbering(FrappeTestCase):
 		self.assertEqual(get_last_number(self.profile, self.fy), 9)
 
 	def test_release_stale_draft(self):
-		name = f"T01/{self.fy}/000011"
+		name = f"ZT1/{self.fy}/000011"
 		_make_si(self.profile, name)
 		release_stale_draft(name, self.profile)
 		self.assertFalse(frappe.db.exists("Sales Invoice", name))
 		release_stale_draft(name, self.profile)  # no row: no-op
 
 	def test_release_submitted_raises_conflict(self):
-		name = f"T01/{self.fy}/000012"
+		name = f"ZT1/{self.fy}/000012"
 		_make_si(self.profile, name, submit=True)
 		self.assertRaises(TerminalNumberConflict, release_stale_draft, name, self.profile)
 
 	def test_prefix_locked_after_use(self):
-		_make_si(self.profile, f"T01/{self.fy}/000013")
-		for new in ("", "T02"):
+		_make_si(self.profile, f"ZT1/{self.fy}/000013")
+		for new in ("", "ZT2"):
 			doc = frappe.get_doc("POS Profile", self.profile)
 			doc.pospire_invoice_prefix = new
 			with self.assertRaises(frappe.ValidationError) as cm:
@@ -303,7 +303,7 @@ DEVICE_2 = "22222222-2222-4222-8222-222222222222"
 
 class TestTerminalDevice(FrappeTestCase):
 	def setUp(self):
-		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal B", "T02")
+		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal B", "ZT2")
 		frappe.db.set_value(
 			"POS Profile",
 			self.profile,
@@ -315,7 +315,7 @@ class TestTerminalDevice(FrappeTestCase):
 
 	def test_claim_links_first_device(self):
 		res = claim_terminal(self.profile, DEVICE_1)
-		self.assertEqual(res["prefix"], "T02")
+		self.assertEqual(res["prefix"], "ZT2")
 		self.assertEqual(frappe.db.get_value("POS Profile", self.profile, "pospire_linked_device"), DEVICE_1)
 		claim_terminal(self.profile, DEVICE_1)  # same device again is fine
 
@@ -324,8 +324,8 @@ class TestTerminalDevice(FrappeTestCase):
 		self.assertRaises(TerminalDeviceMismatch, claim_terminal, self.profile, DEVICE_2)
 
 	def test_claim_returns_last_numbers(self):
-		_make_si(self.profile, f"T02/{self.fy}/000005", submit=True)
-		_make_si(self.profile, f"T02/{self.fy}/000006")  # unused draft: next cart reuses 6
+		_make_si(self.profile, f"ZT2/{self.fy}/000005", submit=True)
+		_make_si(self.profile, f"ZT2/{self.fy}/000006")  # unused draft: next cart reuses 6
 		res = claim_terminal(self.profile, DEVICE_1)
 		self.assertEqual(res["last"][self.fy], 5)
 		self.assertIn(self.fy, [f["code"] for f in res["fiscal_years"]])
@@ -353,7 +353,7 @@ class TestTerminalDevice(FrappeTestCase):
 		)
 
 	def test_unlink_sets_floor_and_logs(self):
-		_make_si(self.profile, f"T02/{self.fy}/000005", submit=True)
+		_make_si(self.profile, f"ZT2/{self.fy}/000005", submit=True)
 		claim_terminal(self.profile, DEVICE_1)
 		self.assertEqual(unlink_terminal_device(self.profile, "tablet replaced"), {"floor": 55})
 		self.assertFalse(frappe.db.get_value("POS Profile", self.profile, "pospire_linked_device"))
@@ -379,7 +379,7 @@ class TestTerminalDevice(FrappeTestCase):
 			self.assertRaises(frappe.PermissionError, claim_terminal, self.profile, DEVICE_1)
 		_list_user_on_profile(self.profile, email)
 		with _as_user(email):
-			self.assertEqual(claim_terminal(self.profile, DEVICE_1)["prefix"], "T02")
+			self.assertEqual(claim_terminal(self.profile, DEVICE_1)["prefix"], "ZT2")
 
 	def test_second_open_shift_refused(self):
 		from pospire.pospire.api.posapp import create_opening_voucher
@@ -396,7 +396,7 @@ class TestTerminalDevice(FrappeTestCase):
 
 class TestOnlinePaths(FrappeTestCase):
 	def setUp(self):
-		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal C", "T03")
+		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal C", "ZT3")
 		self.company = frappe.db.get_value("POS Profile", self.profile, "company")
 		self.addCleanup(frappe.db.rollback)
 		self.fy = fy_code(self.company, nowdate())
@@ -416,7 +416,7 @@ class TestOnlinePaths(FrappeTestCase):
 	def test_update_invoice_reuses_abandoned_slot(self):
 		from pospire.pospire.api.posapp import update_invoice
 
-		name = f"T03/{self.fy}/000001"
+		name = f"ZT3/{self.fy}/000001"
 		update_invoice(self._data(name, 100))
 		update_invoice(self._data(name, 250))
 		self.assertEqual(frappe.db.count("Sales Invoice", {"name": name}), 1)
@@ -425,7 +425,7 @@ class TestOnlinePaths(FrappeTestCase):
 	def test_update_invoice_conflict_on_submitted(self):
 		from pospire.pospire.api.posapp import update_invoice
 
-		name = f"T03/{self.fy}/000002"
+		name = f"ZT3/{self.fy}/000002"
 		_make_si(self.profile, name, submit=True)
 		self.assertRaises(TerminalNumberConflict, update_invoice, self._data(name, 100))
 
@@ -433,7 +433,7 @@ class TestOnlinePaths(FrappeTestCase):
 		from pospire.pospire.api.posapp import get_draft_invoices
 
 		shift = create_test_opening_shift(self.company, self.profile)
-		slot = _make_si(self.profile, f"T03/{self.fy}/000003")
+		slot = _make_si(self.profile, f"ZT3/{self.fy}/000003")
 		held = _make_si(self.profile)
 		for si in (slot, held):
 			frappe.db.set_value("Sales Invoice", si.name, "posa_pos_opening_shift", shift.name)
@@ -445,7 +445,7 @@ class TestOnlinePaths(FrappeTestCase):
 		from pospire.pospire.api.posapp import get_draft_invoices
 
 		shift = create_test_opening_shift(self.company, self.profile)
-		requested = _make_si(self.profile, f"T03/{self.fy}/000004")
+		requested = _make_si(self.profile, f"ZT3/{self.fy}/000004")
 		frappe.db.set_value("Sales Invoice", requested.name, "posa_pos_opening_shift", shift.name)
 		_payment_request(requested.name)
 		self.assertIn(requested.name, [d.name for d in get_draft_invoices(shift.name)])
@@ -463,8 +463,8 @@ class TestOnlinePaths(FrappeTestCase):
 		self.assertIn(lookalike, [d.name for d in get_draft_invoices(shift.name)])  # feature off
 
 	def test_release_refuses_other_profile_number(self):
-		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "T02")
-		name = f"T02/{self.fy}/000020"
+		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "ZT2")
+		name = f"ZT2/{self.fy}/000020"
 		_make_si(other, name)
 		self.assertRaises(frappe.ValidationError, release_stale_draft, name, self.profile)
 		self.assertRaises(frappe.ValidationError, release_stale_draft, name, None)
@@ -487,7 +487,7 @@ class TestOnlinePaths(FrappeTestCase):
 				}
 			)
 
-		name = f"T03/{self.fy}/000030"
+		name = f"ZT3/{self.fy}/000030"
 		stale = _make_si(self.profile, name)
 		with patch("pospire.pospire.api.posapp.make_sales_invoice", side_effect=lambda *a, **k: unsaved()):
 			si = create_sales_invoice_from_order("SO-X", name, self.profile)
@@ -500,8 +500,8 @@ class TestOnlinePaths(FrappeTestCase):
 
 		from pospire.pospire.api.posapp import create_sales_invoice_from_order
 
-		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "T02")
-		name = f"T02/{self.fy}/000031"
+		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "ZT2")
+		name = f"ZT2/{self.fy}/000031"
 		_make_si(other, name)
 		order_si = frappe.get_doc(
 			{
@@ -522,7 +522,7 @@ class TestOnlinePaths(FrappeTestCase):
 
 	def test_release_needs_listed_user(self):
 		email = _plain_user()
-		name = f"T03/{self.fy}/000032"
+		name = f"ZT3/{self.fy}/000032"
 		_make_si(self.profile, name)
 		with _as_user(email):
 			self.assertRaises(frappe.PermissionError, release_stale_draft, name, self.profile)
@@ -533,12 +533,12 @@ class TestOnlinePaths(FrappeTestCase):
 		self.assertFalse(frappe.db.exists("Sales Invoice", name))
 
 	def test_release_requires_profile(self):
-		self.assertRaises(frappe.ValidationError, release_stale_draft, f"T03/{self.fy}/000033", "")
+		self.assertRaises(frappe.ValidationError, release_stale_draft, f"ZT3/{self.fy}/000033", "")
 
 
 class TestOfflinePaths(FrappeTestCase):
 	def setUp(self):
-		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal D", "T04")
+		self.profile = _ensure_terminal_test_profile("_Test POSpire Terminal D", "ZT4")
 		self.company = frappe.db.get_value("POS Profile", self.profile, "company")
 		self.addCleanup(frappe.db.rollback)
 		self.fy = fy_code(self.company, nowdate())
@@ -564,7 +564,7 @@ class TestOfflinePaths(FrappeTestCase):
 	def test_offline_submit_replaces_pay_draft(self):
 		from pospire.pospire.api.posapp import update_invoice
 
-		name = f"T04/{self.fy}/000001"
+		name = f"ZT4/{self.fy}/000001"
 		update_invoice(self._data(name, 50))
 		offline_id = str(uuid.uuid4())
 		from pospire.pospire.api import offline
@@ -577,19 +577,26 @@ class TestOfflinePaths(FrappeTestCase):
 	def test_offline_submit_number_conflict(self):
 		from pospire.pospire.api.offline import OfflineSubmitError
 
-		name = f"T04/{self.fy}/000002"
+		name = f"ZT4/{self.fy}/000002"
 		_make_si(self.profile, name, submit=True)
 		with self.assertRaises(OfflineSubmitError) as cm:
 			self._submit(name)
 		self.assertEqual(cm.exception.error_code, "number_conflict")
 
-	def _review_row(self, number):
+	def test_offline_submit_needs_caller_on_till(self):
+		name = f"ZT4/{self.fy}/000005"
+		_make_si(self.profile, name)  # another cart's unused Pay slot
+		with _as_user(_plain_user()):  # owner_user stays Administrator, who may use the till
+			self.assertRaises(frappe.PermissionError, self._submit, name)
+		self.assertEqual(frappe.db.get_value("Sales Invoice", name, "docstatus"), 0)
+
+	def _review_row(self, number, cashier="Administrator"):
 		return frappe.get_doc(
 			{
 				"doctype": "POSpire Offline Sync Review",
 				"offline_id": str(uuid.uuid4()),
 				"entry_type": "invoice",
-				"cashier_user": "Administrator",
+				"cashier_user": cashier,
 				"error_category": "validation_error",
 				"payload": json.dumps({"data": json.dumps(self._data(number))}),
 				"original_payload": "{}",
@@ -601,7 +608,7 @@ class TestOfflinePaths(FrappeTestCase):
 
 		from pospire.pospire.api.recovery import void_entry
 
-		name = f"T04/{self.fy}/000004"
+		name = f"ZT4/{self.fy}/000004"
 		_make_si(self.profile, name)
 		row = self._review_row(name)
 		with patch("frappe.db.commit"):
@@ -614,12 +621,27 @@ class TestOfflinePaths(FrappeTestCase):
 		)
 		self.assertTrue(any(name in c and "customer left" in c for c in comments))
 
+	def test_void_keeps_number_of_till_the_cashier_cannot_use(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.recovery import void_entry
+
+		name = f"ZT4/{self.fy}/000006"
+		_make_si(self.profile, name)
+		row = self._review_row(name, cashier=_plain_user())
+		with patch("frappe.db.commit"):
+			void_entry(row.name, "planted row")
+		self.assertTrue(frappe.db.exists("Sales Invoice", name))
+		row.reload()
+		self.assertEqual(row.status, "Voided")
+		self.assertTrue(any("not released" in (a.detail or "") for a in row.activity))
+
 	def test_void_keeps_submitted_invoice(self):
 		from unittest.mock import patch
 
 		from pospire.pospire.api.recovery import void_entry
 
-		name = f"T04/{self.fy}/000005"
+		name = f"ZT4/{self.fy}/000005"
 		_make_si(self.profile, name, submit=True)
 		row = self._review_row(name)
 		with patch("frappe.db.commit"):
@@ -641,7 +663,7 @@ class TestOfflinePaths(FrappeTestCase):
 
 		from pospire.pospire.api.recovery import void_entry
 
-		name = f"T04/{self.fy}/000006"
+		name = f"ZT4/{self.fy}/000006"
 		_make_si(self.profile, name)
 		_payment_request(name)
 		row = self._review_row(name)
@@ -658,7 +680,7 @@ class TestOfflinePaths(FrappeTestCase):
 
 		from pospire.pospire.api.recovery import void_entry
 
-		name = f"T04/{self.fy}/000007"
+		name = f"ZT4/{self.fy}/000007"
 		_make_si(self.profile, name)
 		row = self._review_row(name)
 
@@ -677,10 +699,10 @@ class TestOfflinePaths(FrappeTestCase):
 
 		from pospire.pospire.api.recovery import void_entry
 
-		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "T02")
-		name = f"T02/{self.fy}/000008"
+		other = _ensure_terminal_test_profile("_Test POSpire Terminal B", "ZT2")
+		name = f"ZT2/{self.fy}/000008"
 		_make_si(other, name)
-		row = self._review_row(name)  # payload profile is T04's, number is T02's
+		row = self._review_row(name)  # payload profile is ZT4's, number is ZT2's
 		with patch("frappe.db.commit"):
 			void_entry(row.name, "mismatch")
 		self.assertEqual(frappe.db.get_value("POSpire Offline Sync Review", row.name, "status"), "Voided")

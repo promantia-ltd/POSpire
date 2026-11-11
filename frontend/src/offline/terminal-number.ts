@@ -84,6 +84,14 @@ export async function currentNumber(profile: string, postingDate: string): Promi
 	return formatTerminalNumber(row.prefix, fy, Math.max(c.next, c.server_last + 1));
 }
 
+/** True when `number` is the till's current, not yet used number (an unused Pay slot). */
+export async function isCurrentNumber(profile: string, number: string): Promise<boolean> {
+	const p = parseTerminalNumber(number);
+	const row = p && (await getMetadata<TerminalSeq>(key(profile)));
+	const c = row && row.prefix === p.prefix ? row.counters[p.fy] : undefined;
+	return !!c && Math.max(c.next, c.server_last + 1) === p.n;
+}
+
 export async function consumeNumber(profile: string, number: string): Promise<void> {
 	const p = parseTerminalNumber(number);
 	if (!p) return;

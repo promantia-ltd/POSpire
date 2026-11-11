@@ -1142,6 +1142,7 @@ def _release_voided_number(row, reason: str) -> None:
 	from pospire.pospire.api.terminal_number import (
 		TerminalNumberConflict,
 		_delete_stale_draft,
+		can_use_profile,
 		log_voided_number,
 		parse_number,
 	)
@@ -1161,6 +1162,15 @@ def _release_voided_number(row, reason: str) -> None:
 	prefix = frappe.db.get_value("POS Profile", profile, "pospire_invoice_prefix")
 	if not (parsed and prefix and parsed[0] == prefix):
 		return  # not this till's number: never touch or log it
+	# The payload is the cashier's: only free the number if the sale really was on that till.
+	if not (_shift_on_profile(row, profile) or can_use_profile(profile, row.cashier_user)):
+		row.append_activity(
+			action="note",
+			outcome="info",
+			actor=frappe.session.user,
+			detail=f"Invoice number {number} not released: {row.cashier_user} cannot use POS Profile {profile}.",
+		)
+		return
 	try:
 		_delete_stale_draft(number)
 	except (TerminalNumberConflict, frappe.LinkExistsError) as exc:
@@ -1173,6 +1183,16 @@ def _release_voided_number(row, reason: str) -> None:
 		)
 		return
 	log_voided_number(profile, number, reason.strip())
+
+
+def _shift_on_profile(row, profile: str) -> bool:
+	"""The row's shift is on the server, on this POS Profile, and opened by the row's cashier."""
+	if not row.shift_offline_id:
+		return False
+	shift = frappe.db.get_value(
+		"POS Opening Shift", {"pos_offline_id": row.shift_offline_id}, ["pos_profile", "user"], as_dict=True
+	)
+	return bool(shift and shift.pos_profile == profile and shift.user == row.cashier_user)
 
 
 @frappe.whitelist()

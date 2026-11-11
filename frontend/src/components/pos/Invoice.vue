@@ -1138,7 +1138,7 @@ import {
 	applyClaim,
 	currentNumber,
 	forgetTerminal,
-	parseTerminalNumber,
+	isCurrentNumber,
 	TerminalDateError,
 	TerminalNotReadyError,
 } from "@/offline/terminal-number";
@@ -1215,8 +1215,6 @@ export default {
 			raw_posting_date: new Date(),
 			posting_date: datetime.now_date(),
 			savingDraft: false,
-			// A numbered draft opened from Load Draft; its number is already used, so Hold keeps it on the server.
-			loadedNumberedDraft: null,
 			processingPayment: false,
 			cancellingInvoice: false,
 			printingDraft: false,
@@ -2013,7 +2011,6 @@ export default {
 			// clear_invoice cancels any Pending approvals from the previous cart.
 			// We pass submitted=false so orphaned Pending requests are cancelled.
 			this.clear_invoice();
-			this.loadedNumberedDraft = parseTerminalNumber(data.name) ? data.name : null;
 			if (data.is_return) {
 				this.eventBus.emit("set_customer_readonly", true);
 				this.invoiceType = "Return";
@@ -2084,10 +2081,11 @@ export default {
 			// so the held cart takes the next free number when it is paid. An older
 			// naming-series server draft is held on the server as before, so it stays
 			// the only copy.
+			// A numbered draft whose number is used (payment request, or opened from Load Draft)
+			// stays on the server: a local copy would be a second sellable cart.
 			if (
 				this.pos_profile?.pospire_invoice_prefix &&
-				(!doc.name ||
-					(parseTerminalNumber(doc.name) && doc.name !== this.loadedNumberedDraft))
+				(!doc.name || (await isCurrentNumber(this.pos_profile.name, doc.name)))
 			) {
 				const held = { ...doc };
 				// Drop the server name too: the local copy is the only cart to resume.

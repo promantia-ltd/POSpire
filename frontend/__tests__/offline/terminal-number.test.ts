@@ -7,6 +7,7 @@ import {
 	consumeNumber,
 	currentNumber,
 	formatTerminalNumber,
+	isCurrentNumber,
 	parseTerminalNumber,
 } from "@/offline/terminal-number";
 
@@ -48,6 +49,15 @@ describe("terminal-number", () => {
 		expect(await currentNumber(P, "2026-05-01")).toBe("T01/26/000079");
 		await applyClaim(P, claim(77));
 		expect(await currentNumber(P, "2026-05-01")).toBe("T01/26/000079");
+	});
+
+	it("tells the unused Pay slot apart from a used number", async () => {
+		await applyClaim(P, claim());
+		expect(await isCurrentNumber(P, "T01/26/000078")).toBe(true); // Pay slot: Hold keeps it local
+		await consumeNumber(P, "T01/26/000078"); // e.g. a payment request used it
+		expect(await isCurrentNumber(P, "T01/26/000078")).toBe(false);
+		expect(await isCurrentNumber(P, "T02/26/000079")).toBe(false);
+		expect(await isCurrentNumber(P, "ACC-SINV-2026-00001")).toBe(false);
 	});
 
 	it("ignores numbers with another prefix", async () => {

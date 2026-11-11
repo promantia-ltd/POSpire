@@ -32,7 +32,8 @@ def validate_prefix(doc) -> None:
 	prefix = (doc.get("pospire_invoice_prefix") or "").strip().upper()
 	doc.pospire_invoice_prefix = prefix
 
-	old = None if doc.is_new() else frappe.db.get_value("POS Profile", doc.name, "pospire_invoice_prefix")
+	# A new profile has no saved row yet, so this is None for it.
+	old = doc.get("name") and frappe.db.get_value("POS Profile", doc.name, "pospire_invoice_prefix")
 	if old and old != prefix and frappe.db.exists("Sales Invoice", {"name": ["like", f"{old}/%"]}):
 		frappe.throw(_("Invoice Prefix cannot be changed after invoices have used it."))
 
@@ -111,13 +112,22 @@ def get_last_number(pos_profile: str, fy: str) -> int:
 	return last
 
 
-def assert_can_use_profile(pos_profile: str) -> None:
-	"""Cashiers lack POS Profile read; being listed in its applicable users is enough."""
-	if frappe.has_permission("POS Profile", "read", pos_profile) or frappe.db.exists(
-		"POS Profile User", {"parent": pos_profile, "user": frappe.session.user}
-	):
-		return
-	frappe.throw(_("Not permitted"), frappe.PermissionError)
+# May replay or void any till's offline sales from Sync Review (same roles as recovery.void_entry).
+REVIEW_MANAGERS = {"System Manager", "Sales Manager"}
+
+
+def can_use_profile(pos_profile: str, user: str | None = None) -> bool:
+	"""Cashiers may lack POS Profile read; being listed in its applicable users is enough."""
+	user = user or frappe.session.user
+	return bool(
+		frappe.has_permission("POS Profile", "read", pos_profile, user=user)
+		or frappe.db.exists("POS Profile User", {"parent": pos_profile, "user": user})
+	)
+
+
+def assert_can_use_profile(pos_profile: str, user: str | None = None) -> None:
+	if not can_use_profile(pos_profile, user):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
 def release_stale_draft(name: str, pos_profile: str) -> None:
