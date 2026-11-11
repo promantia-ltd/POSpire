@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
+	TerminalDateError,
 	TerminalNotReadyError,
 	applyClaim,
 	consumeNumber,
@@ -30,7 +31,9 @@ describe("terminal-number", () => {
 	});
 
 	it("throws when the till has no row", async () => {
-		await expect(currentNumber(P, "2026-05-01")).rejects.toBeInstanceOf(TerminalNotReadyError);
+		const err = await currentNumber(P, "2026-05-01").catch((e) => e);
+		expect(err).toBeInstanceOf(TerminalNotReadyError);
+		expect(err).not.toBeInstanceOf(TerminalDateError);
 	});
 
 	it("reuses an unconsumed number", async () => {
@@ -55,7 +58,7 @@ describe("terminal-number", () => {
 
 	it("needs the fiscal year for the posting date", async () => {
 		await applyClaim(P, claim());
-		await expect(currentNumber(P, "2027-04-02")).rejects.toBeInstanceOf(TerminalNotReadyError);
+		await expect(currentNumber(P, "2027-04-02")).rejects.toBeInstanceOf(TerminalDateError);
 		await applyClaim(P, claim(77, [fy26, fy27]));
 		expect(await currentNumber(P, "2027-04-02")).toBe("T01/27/000001");
 	});

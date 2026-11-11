@@ -1139,6 +1139,7 @@ import {
 	currentNumber,
 	forgetTerminal,
 	parseTerminalNumber,
+	TerminalDateError,
 	TerminalNotReadyError,
 } from "@/offline/terminal-number";
 
@@ -1214,6 +1215,8 @@ export default {
 			raw_posting_date: new Date(),
 			posting_date: datetime.now_date(),
 			savingDraft: false,
+			// A numbered draft opened from Load Draft; its number is already used, so Hold keeps it on the server.
+			loadedNumberedDraft: null,
 			processingPayment: false,
 			cancellingInvoice: false,
 			printingDraft: false,
@@ -2010,6 +2013,7 @@ export default {
 			// clear_invoice cancels any Pending approvals from the previous cart.
 			// We pass submitted=false so orphaned Pending requests are cancelled.
 			this.clear_invoice();
+			this.loadedNumberedDraft = parseTerminalNumber(data.name) ? data.name : null;
 			if (data.is_return) {
 				this.eventBus.emit("set_customer_readonly", true);
 				this.invoiceType = "Return";
@@ -2082,7 +2086,8 @@ export default {
 			// the only copy.
 			if (
 				this.pos_profile?.pospire_invoice_prefix &&
-				(!doc.name || parseTerminalNumber(doc.name))
+				(!doc.name ||
+					(parseTerminalNumber(doc.name) && doc.name !== this.loadedNumberedDraft))
 			) {
 				const held = { ...doc };
 				// Drop the server name too: the local copy is the only cart to resume.
@@ -2608,6 +2613,10 @@ export default {
 			}
 			// A brand-new till gets its counter from the claim started at profile load.
 			await this.terminalClaim;
+			// Without backdating, a cart held from an earlier day is sold today.
+			if (!this.pos_profile.posa_allow_change_posting_date) {
+				doc.posting_date = this.posting_date = datetime.nowdate();
+			}
 			try {
 				doc.pospire_terminal_number = await currentNumber(
 					this.pos_profile.name,
@@ -2617,9 +2626,14 @@ export default {
 			} catch (err) {
 				if (!(err instanceof TerminalNotReadyError)) throw err;
 				toast.error(
-					__(
-						"Invoice numbers for this till are not ready. Connect to the internet and reopen POSpire.",
-					),
+					err instanceof TerminalDateError
+						? __(
+								"This till cannot number a sale dated {0}. Choose a date in this or the last financial year.",
+								[doc.posting_date],
+							)
+						: __(
+								"Invoice numbers for this till are not ready. Connect to the internet and reopen POSpire.",
+							),
 				);
 				return false;
 			}
@@ -3058,13 +3072,8 @@ export default {
 					// Terminal-numbered tills hold carts locally even when online.
 					vm.eventBus.emit(
 						"open_drafts",
-						// The server already hides terminal-named drafts; this filter is a backstop
-						// so a held cart is never listed twice.
 						vm.pos_profile?.pospire_invoice_prefix
-							? [
-									...r.filter((d) => !parseTerminalNumber(d.name)),
-									...vm.getLocalOfflineDrafts(),
-								]
+							? [...r, ...vm.getLocalOfflineDrafts()]
 							: r,
 					);
 				}

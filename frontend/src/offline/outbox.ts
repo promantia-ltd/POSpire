@@ -77,6 +77,7 @@ const NEEDS_REVIEW_CATEGORIES = new Set<NonNullable<LastErrorCategory>>([
 	"accounting_period_closed",
 	"retry_exhausted",
 	"schema_mismatch",
+	"number_conflict",
 ]);
 
 /** Retry / backoff (05-outbox-and-sync.md §4.3). */

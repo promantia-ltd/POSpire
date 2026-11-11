@@ -8,7 +8,7 @@ from contextlib import contextmanager
 import frappe
 from erpnext.accounts.utils import get_fiscal_year
 from frappe.tests.utils import FrappeTestCase
-from frappe.utils import nowdate
+from frappe.utils import add_days, nowdate
 
 from pospire.pospire.api.terminal_number import (
 	TerminalDeviceMismatch,
@@ -228,6 +228,19 @@ class TestTerminalNumbering(FrappeTestCase):
 		_payment_request(unused.name)
 		self.assertEqual(get_last_number(self.profile, self.fy), 5)  # draft with a request does
 
+	def test_last_number_ignores_non_numeric_names(self):
+		_make_si(self.profile, f"T01/{self.fy}/000005", submit=True)
+		lookalike = _make_si(self.profile)
+		frappe.rename_doc("Sales Invoice", lookalike.name, f"T01/{self.fy}/CN0001", force=True)
+		_payment_request(f"T01/{self.fy}/CN0001")  # used, and sorts above every digit
+		self.assertEqual(get_last_number(self.profile, self.fy), 5)
+
+	def test_number_needs_a_user_of_the_till(self):
+		email = _plain_user()
+		with _as_user(email):
+			self.assertRaises(frappe.PermissionError, _make_si, self.profile, f"T01/{self.fy}/000017")
+		self.assertFalse(frappe.db.exists("Sales Invoice", f"T01/{self.fy}/000017"))
+
 	def test_release_draft_with_payment_request_conflicts(self):
 		name = f"T01/{self.fy}/000014"
 		_make_si(self.profile, name)
@@ -316,6 +329,22 @@ class TestTerminalDevice(FrappeTestCase):
 		res = claim_terminal(self.profile, DEVICE_1)
 		self.assertEqual(res["last"][self.fy], 5)
 		self.assertIn(self.fy, [f["code"] for f in res["fiscal_years"]])
+
+	def test_claim_adds_last_year_only_with_backdating(self):
+		start = get_fiscal_year(nowdate(), company=self.company, as_dict=True).year_start_date
+		try:
+			last = get_fiscal_year(add_days(start, -1), company=self.company, as_dict=True)
+		except frappe.ValidationError:
+			self.skipTest("previous fiscal year not set up on this site")
+		last_start = str(last.year_start_date)
+
+		def starts():
+			return [f["start"] for f in claim_terminal(self.profile, DEVICE_1)["fiscal_years"]]
+
+		frappe.db.set_value("POS Profile", self.profile, "posa_allow_change_posting_date", 0)
+		self.assertNotIn(last_start, starts())
+		frappe.db.set_value("POS Profile", self.profile, "posa_allow_change_posting_date", 1)
+		self.assertIn(last_start, starts())
 
 	def test_claim_without_prefix(self):
 		frappe.db.set_value("POS Profile", self.profile, "pospire_invoice_prefix", "")
@@ -411,6 +440,15 @@ class TestOnlinePaths(FrappeTestCase):
 		names = [d.name for d in get_draft_invoices(shift.name)]
 		self.assertIn(held.name, names)
 		self.assertNotIn(slot.name, names)
+
+	def test_drafts_list_keeps_payment_request_draft(self):
+		from pospire.pospire.api.posapp import get_draft_invoices
+
+		shift = create_test_opening_shift(self.company, self.profile)
+		requested = _make_si(self.profile, f"T03/{self.fy}/000004")
+		frappe.db.set_value("Sales Invoice", requested.name, "posa_pos_opening_shift", shift.name)
+		_payment_request(requested.name)
+		self.assertIn(requested.name, [d.name for d in get_draft_invoices(shift.name)])
 
 	def test_drafts_list_keeps_lookalike_names_without_prefix(self):
 		from pospire.pospire.api.posapp import get_draft_invoices

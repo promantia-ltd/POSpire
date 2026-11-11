@@ -24,6 +24,8 @@ interface TerminalSeq {
 }
 
 export class TerminalNotReadyError extends Error {}
+/** The till is ready, but the posting date is outside the financial years it may number. */
+export class TerminalDateError extends TerminalNotReadyError {}
 
 const key = (profile: string) => `terminal_seq:${profile}`;
 const NUMBER_RE = /^([A-Z][A-Z0-9]{0,3})\/(\d{2})\/(\d{6})$/;
@@ -75,8 +77,9 @@ export async function forgetTerminal(profile: string): Promise<void> {
 
 export async function currentNumber(profile: string, postingDate: string): Promise<string> {
 	const row = await getMetadata<TerminalSeq>(key(profile));
-	const fy = row && fyCodeFor(row.fiscal_years, postingDate);
-	if (!row || !fy) throw new TerminalNotReadyError("Terminal numbering is not ready");
+	if (!row) throw new TerminalNotReadyError("Terminal numbering is not ready");
+	const fy = fyCodeFor(row.fiscal_years, postingDate);
+	if (!fy) throw new TerminalDateError(`No invoice numbers for ${postingDate}`);
 	const c = row.counters[fy] ?? { next: 1, server_last: 0 };
 	return formatTerminalNumber(row.prefix, fy, Math.max(c.next, c.server_last + 1));
 }

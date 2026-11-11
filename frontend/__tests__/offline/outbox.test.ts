@@ -180,6 +180,12 @@ describe("state transitions — retry path", () => {
 		expect(row?.next_attempt_at).toBeNull();
 	});
 
+	it("a reused till number goes straight to review", async () => {
+		const ack = await enqueue("invoice", { total: 10 });
+		await markNeedsReview(ack.offline_id, "number_conflict", "number used");
+		expect((await db.outbox.get(ack.offline_id))?.last_error_category).toBe("number_conflict");
+	});
+
 	it("refuses to mark transient categories as needs_review (guard against caller misuse)", async () => {
 		const ack = await enqueue("invoice", { total: 10 });
 		await expect(

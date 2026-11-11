@@ -60,7 +60,7 @@ from pospire.pospire.api.stock_reconcile import (
 	ensure_stock_for_invoice,
 	ensure_typed_batches_exist_for_invoice,
 )
-from pospire.pospire.api.terminal_number import parse_number, release_stale_draft
+from pospire.pospire.api.terminal_number import _has_payment_request, parse_number, release_stale_draft
 from pospire.pospire.doctype.delivery_charges.delivery_charges import (
 	get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
@@ -1579,7 +1579,8 @@ def get_draft_invoices(pos_opening_shift: str) -> list:
 	data = []
 	for invoice in invoices_list:
 		parsed = parse_number(invoice["name"])
-		if prefix and parsed and parsed[0] == prefix:  # this till's numbered draft = unused Pay slot
+		# This till's numbered draft is an unused Pay slot, unless a payment request used the number.
+		if prefix and parsed and parsed[0] == prefix and not _has_payment_request(invoice["name"]):
 			continue
 		data.append(frappe.get_cached_doc("Sales Invoice", invoice["name"]))
 	return data

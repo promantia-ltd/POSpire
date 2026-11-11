@@ -66,6 +66,7 @@ def autoname(doc, method=None) -> None:
 				number, doc.pos_profile
 			)
 		)
+	assert_can_use_profile(doc.pos_profile)  # a direct insert must not take another till's number
 	doc.name = number
 
 
@@ -93,7 +94,7 @@ def get_last_number(pos_profile: str, fy: str) -> int:
 		top = frappe.db.sql(
 			"""
 			SELECT MAX(si.name) FROM `tabSales Invoice` si
-			WHERE si.name LIKE %s AND (
+			WHERE si.name LIKE %s AND si.name REGEXP %s AND (
 				si.docstatus IN (1, 2) OR EXISTS (
 					SELECT 1 FROM `tabPayment Request` pr
 					WHERE pr.reference_doctype = 'Sales Invoice'
@@ -101,7 +102,7 @@ def get_last_number(pos_profile: str, fy: str) -> int:
 				)
 			)
 			""",
-			(f"{prefix}/{fy}/______",),
+			(f"{prefix}/{fy}/______", f"^{prefix}/{fy}/[0-9]{{6}}$"),  # LIKE for the index, REGEXP for digits
 		)[0][0]
 		parsed = parse_number(top)
 		last = parsed[2] if parsed else 0
@@ -171,10 +172,10 @@ def claim_terminal(pos_profile: str, device_id: str) -> dict:
 	assert_can_use_profile(pos_profile)
 	_validate_uuid(device_id, "device_id")
 
-	prefix, linked, company = frappe.db.get_value(
+	prefix, linked, company, backdate = frappe.db.get_value(
 		"POS Profile",
 		pos_profile,
-		["pospire_invoice_prefix", "pospire_linked_device", "company"],
+		["pospire_invoice_prefix", "pospire_linked_device", "company", "posa_allow_change_posting_date"],
 		for_update=True,  # serialize concurrent claims
 	)
 	if not prefix:
@@ -193,10 +194,14 @@ def claim_terminal(pos_profile: str, device_id: str) -> dict:
 
 	today_fy = get_fiscal_year(nowdate(), company=company, as_dict=True)
 	years = [today_fy]
-	try:
-		years.append(get_fiscal_year(add_days(today_fy.year_end_date, 1), company=company, as_dict=True))
-	except frappe.ValidationError:  # next FY not created yet
-		pass
+	edges = [add_days(today_fy.year_end_date, 1)]
+	if backdate:  # the till may post into last year
+		edges.append(add_days(today_fy.year_start_date, -1))
+	for day in edges:
+		try:
+			years.append(get_fiscal_year(day, company=company, as_dict=True))
+		except frappe.ValidationError:  # that FY is not created
+			pass
 	fiscal_years = [
 		{
 			"code": str(y.year_start_date.year)[-2:],
