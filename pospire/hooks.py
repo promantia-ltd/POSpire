@@ -230,9 +230,10 @@ scheduler_events = {
 # 	"Task": "pospire.task.get_dashboard_data"
 # }
 
-# override_doctype_class = {
-# "doctype": "method",
-# }
+extend_doctype_class = {
+	"Sales Invoice": ["pospire.pospire.overrides.sales_invoice.CustomSalesInvoice"],
+	"Loyalty Program": ["pospire.pospire.overrides.loyalty_program.CustomLoyaltyProgram"],
+}
 
 # exempt linked doctypes from being automatically cancelled
 #
@@ -399,6 +400,8 @@ fixtures = [
 					"Sales Invoice-posa_pos_opening_shift-no_copy",
 					"Sales Invoice-main-field_order",
 					"POS Profile-main-field_order",
+					"Loyalty Program Collection-min_spent-default",
+					"Sales Invoice-loyalty_points_redemption-hidden",
 				),
 			]
 		],
