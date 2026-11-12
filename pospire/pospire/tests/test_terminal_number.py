@@ -155,12 +155,17 @@ def _list_user_on_profile(profile, email):
 	).insert(ignore_permissions=True)
 
 
+# Device secrets as a till creates them (the server needs at least 32 characters).
+KEY_1 = "k1" * 20
+KEY_2 = "k2" * 20
+
+
 @contextmanager
-def _sending_keys(*keys):
-	"""Simulates the device-key request header."""
+def _sending_key(key):
+	"""Simulates the device-key request header (None: no header)."""
 	from unittest.mock import patch
 
-	with patch("pospire.pospire.api.terminal_number._presented_keys", return_value=list(keys)):
+	with patch("pospire.pospire.api.terminal_number._presented_key", return_value=key):
 		yield
 
 
@@ -323,13 +328,14 @@ class TestTerminalDevice(FrappeTestCase):
 		self.company = frappe.db.get_value("POS Profile", self.profile, "company")
 		self.addCleanup(frappe.db.rollback)
 		self.fy = fy_code(self.company, nowdate())
+		self.enterContext(_sending_key(KEY_1))
 
 	def test_claim_links_first_device(self):
 		res = claim_terminal(self.profile, DEVICE_1)
 		self.assertEqual(res["prefix"], "ZT2")
 		self.assertEqual(frappe.db.get_value("POS Profile", self.profile, "pospire_linked_device"), DEVICE_1)
-		with _sending_keys(res["device_key"]):
-			claim_terminal(self.profile, DEVICE_1)  # same device again is fine
+		# Same device again, e.g. two claims in flight on boot or one whose response was lost.
+		claim_terminal(self.profile, DEVICE_1)
 
 	def test_claim_refuses_other_device(self):
 		claim_terminal(self.profile, DEVICE_1)
@@ -350,11 +356,8 @@ class TestTerminalDevice(FrappeTestCase):
 			self.skipTest("previous fiscal year not set up on this site")
 		last_start = str(last.year_start_date)
 
-		key = claim_terminal(self.profile, DEVICE_1)["device_key"]
-
 		def starts():
-			with _sending_keys(key):
-				return [f["start"] for f in claim_terminal(self.profile, DEVICE_1)["fiscal_years"]]
+			return [f["start"] for f in claim_terminal(self.profile, DEVICE_1)["fiscal_years"]]
 
 		frappe.db.set_value("POS Profile", self.profile, "posa_allow_change_posting_date", 0)
 		self.assertNotIn(last_start, starts())
@@ -388,46 +391,57 @@ class TestTerminalDevice(FrappeTestCase):
 		with _as_user(_plain_user()):
 			self.assertRaises(frappe.PermissionError, unlink_terminal_device, self.profile, "x")
 
-	def test_claim_issues_a_device_key_once(self):
-		key = claim_terminal(self.profile, DEVICE_1)["device_key"]
-		# The device id is not secret: the same id without the device's key is another device.
-		self.assertRaises(TerminalDeviceMismatch, claim_terminal, self.profile, DEVICE_1)
-		with _sending_keys(key):
-			self.assertNotIn("device_key", claim_terminal(self.profile, DEVICE_1))
+	def test_linking_needs_a_device_key(self):
+		with _sending_key(None):  # a page from before device secrets
+			self.assertRaises(frappe.ValidationError, claim_terminal, self.profile, DEVICE_1)
+		self.assertFalse(frappe.db.get_value("POS Profile", self.profile, "pospire_linked_device"))
 
-	def test_claim_gives_a_key_to_a_till_linked_before_keys(self):
+	def test_linked_device_proves_itself_with_its_key(self):
+		claim_terminal(self.profile, DEVICE_1)
+		# The device id is not secret: the same id without the device's key is another device.
+		for key in (None, KEY_2):
+			with _sending_key(key):
+				self.assertRaises(TerminalDeviceMismatch, claim_terminal, self.profile, DEVICE_1)
+		claim_terminal(self.profile, DEVICE_1)
+
+	def test_till_linked_before_keys_takes_its_first_key(self):
 		frappe.db.set_value("POS Profile", self.profile, "pospire_linked_device", DEVICE_1)
-		self.assertIn("device_key", claim_terminal(self.profile, DEVICE_1))
+		number = format_number("ZT2", self.fy, get_last_number(self.profile, self.fy) + 1)
+		with _sending_key(None):  # an old page still gets its counters, but cannot use numbers
+			self.assertEqual(claim_terminal(self.profile, DEVICE_1)["prefix"], "ZT2")
+			self.assertFalse(holds_number(self.profile, number))
+		claim_terminal(self.profile, DEVICE_1)
+		self.assertTrue(holds_number(self.profile, number))
+		with _sending_key(KEY_2):
+			self.assertRaises(TerminalDeviceMismatch, claim_terminal, self.profile, DEVICE_1)
 
 	def test_numbers_need_the_device_key(self):
-		key = claim_terminal(self.profile, DEVICE_1)["device_key"]
+		claim_terminal(self.profile, DEVICE_1)
 		email = _plain_user()
 		_list_user_on_profile(self.profile, email)
 		name = format_number("ZT2", self.fy, get_last_number(self.profile, self.fy) + 1)
 		with _as_user(email):
-			self.assertRaises(TerminalDeviceMismatch, _make_si, self.profile, name)
-			with _sending_keys("not-the-key"):
-				self.assertRaises(TerminalDeviceMismatch, _make_si, self.profile, name)
-			with _sending_keys("another-till-key", key):
-				# Naming only: the plain test user lacks the accounts access a full insert needs.
-				doc = frappe.get_doc(
-					{"doctype": "Sales Invoice", "company": self.company, "pos_profile": self.profile}
-				)
-				doc.pospire_terminal_number = name
-				autoname(doc)
+			for key in (None, KEY_2):
+				with _sending_key(key):
+					self.assertRaises(TerminalDeviceMismatch, _make_si, self.profile, name)
+			# Naming only: the plain test user lacks the accounts access a full insert needs.
+			doc = frappe.get_doc(
+				{"doctype": "Sales Invoice", "company": self.company, "pos_profile": self.profile}
+			)
+			doc.pospire_terminal_number = name
+			autoname(doc)
 		self.assertEqual(doc.name, name)
 		self.assertFalse(frappe.db.exists("Sales Invoice", name))
 
 	def test_replaced_device_key_covers_only_its_skipped_block(self):
-		old_key = claim_terminal(self.profile, DEVICE_1)["device_key"]
+		claim_terminal(self.profile, DEVICE_1)
 		last = get_last_number(self.profile, self.fy)
 		floor = unlink_terminal_device(self.profile, "replaced")["floor"]
-		with _sending_keys(old_key):
-			self.assertTrue(holds_number(self.profile, format_number("ZT2", self.fy, last + 1)))
-			self.assertTrue(holds_number(self.profile, format_number("ZT2", self.fy, floor)))
-			self.assertFalse(holds_number(self.profile, format_number("ZT2", self.fy, floor + 1)))
-		new_key = claim_terminal(self.profile, DEVICE_2)["device_key"]
-		with _sending_keys(new_key):
+		self.assertTrue(holds_number(self.profile, format_number("ZT2", self.fy, last + 1)))
+		self.assertTrue(holds_number(self.profile, format_number("ZT2", self.fy, floor)))
+		self.assertFalse(holds_number(self.profile, format_number("ZT2", self.fy, floor + 1)))
+		with _sending_key(KEY_2):
+			claim_terminal(self.profile, DEVICE_2)
 			self.assertTrue(holds_number(self.profile, format_number("ZT2", self.fy, floor + 1)))
 
 	def test_claim_needs_listed_user(self):
@@ -470,6 +484,7 @@ class TestOnlinePaths(FrappeTestCase):
 		self.company = frappe.db.get_value("POS Profile", self.profile, "company")
 		self.addCleanup(frappe.db.rollback)
 		self.fy = fy_code(self.company, nowdate())
+		self.enterContext(_sending_key(KEY_1))
 
 	def _data(self, number, rate):
 		return {
@@ -598,12 +613,12 @@ class TestOnlinePaths(FrappeTestCase):
 			self.assertRaises(frappe.PermissionError, release_stale_draft, name, self.profile)
 		self.assertTrue(frappe.db.exists("Sales Invoice", name))
 		frappe.db.set_value("POS Profile", self.profile, "pospire_linked_device", "")
-		key = claim_terminal(self.profile, DEVICE_1)["device_key"]
+		claim_terminal(self.profile, DEVICE_1)
 		_list_user_on_profile(self.profile, email)
 		with _as_user(email):
-			self.assertRaises(TerminalDeviceMismatch, release_stale_draft, name, self.profile)
-			with _sending_keys(key):
-				release_stale_draft(name, self.profile)
+			with _sending_key(None):
+				self.assertRaises(TerminalDeviceMismatch, release_stale_draft, name, self.profile)
+			release_stale_draft(name, self.profile)
 		self.assertFalse(frappe.db.exists("Sales Invoice", name))
 
 	def test_release_requires_profile(self):
@@ -663,8 +678,12 @@ class TestOfflinePaths(FrappeTestCase):
 		_list_user_on_profile(self.profile, "Administrator")
 		name = f"ZT4/{self.fy}/000009"
 		# owner_user in the payload is Administrator, a manager; the real caller is not.
-		with _as_user(email):
-			self.assertRaises(TerminalDeviceMismatch, self._submit, name)
+		from pospire.pospire.api.offline import OfflineSubmitError
+
+		with _as_user(email), self.assertRaises(OfflineSubmitError) as cm:
+			self._submit(name)
+		# A permission problem in Sync Review, not a bare 417 the till would file as a closed period.
+		self.assertEqual(cm.exception.error_code, "permission_error")
 		self.assertFalse(frappe.db.exists("Sales Invoice", name))
 
 	def test_offline_submit_needs_caller_on_till(self):

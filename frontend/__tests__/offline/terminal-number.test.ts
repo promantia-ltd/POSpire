@@ -10,7 +10,7 @@ import {
 	isCurrentNumber,
 	parseTerminalNumber,
 } from "@/offline/terminal-number";
-import { readDeviceKeys, saveDeviceKey } from "@/offline/device-keys";
+import { ensureDeviceKey, readDeviceKey } from "@/offline/device-keys";
 
 import { setupOfflineStorage, teardownOfflineStorage } from "../helpers/offline-fixture";
 
@@ -23,15 +23,23 @@ beforeEach(setupOfflineStorage);
 afterEach(teardownOfflineStorage);
 
 describe("terminal-number", () => {
-	it("keeps the device key a claim issues, a few per till, newest first", async () => {
+	it("creates one device key, keeps it, and refuses one it cannot store", () => {
 		localStorage.clear();
-		await applyClaim(P, { ...claim(), device_key: "k1" });
-		await applyClaim(P, claim()); // a later claim without a new key keeps it
-		expect(readDeviceKeys()).toEqual(["k1"]);
-		for (const k of ["k2", "k3", "k4", "k5", "k6", "k2"]) saveDeviceKey(P, k);
-		saveDeviceKey("Other Till", "o1");
-		expect(readDeviceKeys()).toEqual(["k2", "k6", "k5", "k4", "k3", "o1"]);
+		expect(readDeviceKey()).toBeNull();
+		const key = ensureDeviceKey();
+		expect(key).toMatch(/^[0-9a-f]{64}$/);
+		expect(ensureDeviceKey()).toBe(key); // a second claim in flight sends the same key
+		expect(readDeviceKey()).toBe(key);
 		localStorage.clear();
+		const setItem = Storage.prototype.setItem;
+		Storage.prototype.setItem = () => {
+			throw new Error("QuotaExceededError");
+		};
+		try {
+			expect(ensureDeviceKey()).toBeNull();
+		} finally {
+			Storage.prototype.setItem = setItem;
+		}
 	});
 
 	it("formats and parses strictly", () => {

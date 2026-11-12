@@ -7,6 +7,8 @@
  * Run: npx playwright test -c tests/e2e/playwright.config.ts tests/e2e/terminal-number --project=chromium
  */
 
+import { execFileSync } from "node:child_process";
+import path from "node:path";
 import {
   expect,
   test,
@@ -195,6 +197,64 @@ test("3. reload after an abandoned Pay still uses the unused number", async ({
   expect(await pay(page)).toBe(h.fmt(fy, n));
   expect(await submitOnline(page)).toBe(h.fmt(fy, n));
   expect(await h.terminalDrafts(api, fy)).toEqual([]);
+});
+
+test("3b. a reload claims the till twice at once and the counter survives", async ({
+  page,
+}) => {
+  await openTill(page);
+  const n = (await h.lastUsed(api, fy)) + 1;
+  await addItem(page);
+  await pay(page);
+  expect(await submitOnline(page)).toBe(h.fmt(fy, n));
+
+  // As if the till was linked before device keys existed: its first key arrives with this reload.
+  execFileSync(
+    "bench",
+    [
+      "execute", // on the bench's current site, the one this suite runs against
+      "frappe.utils.password.remove_encrypted_password",
+      "--kwargs",
+      JSON.stringify({
+        doctype: "POS Profile",
+        name: h.TILL,
+        fieldname: "pospire_device_keys",
+      }),
+    ],
+    {
+      cwd: path.resolve(import.meta.dirname, "../../../../../.."),
+      stdio: "ignore",
+    },
+  );
+  // A manager saved the POS Profile since the till booted, so the boot registers the till from its
+  // cached shift and again from the server: two claims in flight.
+  const saved = await api.put(
+    `/api/resource/POS Profile/${encodeURIComponent(h.TILL)}`,
+    { data: { pospire_reset_skip: 50 } },
+  );
+  expect(saved.ok()).toBeTruthy();
+  // Hold the first claim back (a slow till network) so the second is sent before it returns.
+  let claims = 0;
+  await page.route(
+    (url) => url.pathname.endsWith("terminal_number.claim_terminal"),
+    async (route) => {
+      if (claims++ === 0) await new Promise((r) => setTimeout(r, 4000));
+      await route.continue();
+    },
+  );
+  await page.reload();
+  await expect(page.getByPlaceholder(/Search by name/)).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect
+    .poll(() => claims, { timeout: 15_000 })
+    .toBeGreaterThanOrEqual(2);
+  await page.waitForTimeout(6000); // let both claims land
+  await expect(page.getByText(OTHER_DEVICE)).toHaveCount(0);
+
+  await addItem(page);
+  expect(await pay(page)).toBe(h.fmt(fy, n + 1));
+  expect(await submitOnline(page)).toBe(h.fmt(fy, n + 1));
 });
 
 test("4. two offline sales take N and N+1 and sync under those names", async ({

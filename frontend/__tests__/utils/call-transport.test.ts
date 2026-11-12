@@ -102,8 +102,8 @@ describe("liveFetch request shape", () => {
 	});
 });
 
-describe("liveFetch device keys", () => {
-	it("sends this device's till keys only when it has some", async () => {
+describe("liveFetch device key", () => {
+	it("sends this device's key only once it has one", async () => {
 		localStorage.clear();
 		const { call } = await importFresh();
 		const fetchMock = vi
@@ -116,12 +116,11 @@ describe("liveFetch device keys", () => {
 			"X-Pospire-Device-Key",
 		);
 
-		const { saveDeviceKey } = await import("@/offline/device-keys");
-		saveDeviceKey("Till A", "ka");
-		saveDeviceKey("Till B", "kb");
+		const { ensureDeviceKey } = await import("@/offline/device-keys");
+		const key = ensureDeviceKey();
 		await call({ method: METHOD, args: {}, intent: "read" });
 		expect((fetchMock.mock.calls[1] as [string, RequestInit])[1].headers).toMatchObject({
-			"X-Pospire-Device-Key": "ka,kb",
+			"X-Pospire-Device-Key": key,
 		});
 		localStorage.clear();
 	});

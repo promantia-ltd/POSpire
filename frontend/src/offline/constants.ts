@@ -32,9 +32,9 @@ export function buildProvisionalName(prefix: string, offlineId: string): string 
 // ---------------------------------------------------------------------------
 
 export const LS_DEVICE_ID = "pospire.device_id";
-// Per-till device secrets (device-keys.ts). Beside the device id: call() reads them synchronously on
-// every request, and a wiped browser must lose both together.
-export const LS_DEVICE_KEYS = "pospire.device_keys";
+// This device's secret for numbered tills (device-keys.ts). Beside the device id: call() reads it
+// synchronously on every request, and a wiped browser must lose both together.
+export const LS_DEVICE_KEY = "pospire.device_key";
 export const LS_SCHEMA_VERSION = "pospire.schema_version";
 export const LS_LAST_PROFILE_SNAPSHOT_TS = "pospire.last_profile_snapshot_ts";
 

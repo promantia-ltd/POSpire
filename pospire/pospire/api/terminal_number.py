@@ -7,7 +7,6 @@ import hashlib
 import hmac
 import json
 import re
-import secrets
 from contextlib import contextmanager
 
 import frappe
@@ -141,9 +140,10 @@ def assert_can_use_profile(pos_profile: str, user: str | None = None) -> None:
 		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
-# The linked device proves itself with a secret issued at claim time; the device id is not secret
-# (it is stored on invoices, shifts and the POS Profile). Sent as a header so it never lands in a
-# stored payload. Only hashes are kept, in the encrypted password store (not returned by any API).
+# The linked device proves itself with a secret it creates and stores before its first claim; the
+# device id is not secret (it is stored on invoices, shifts and the POS Profile). Sent as a header
+# so it never lands in a stored payload. Only hashes are kept, in the encrypted password store
+# (not returned by any API).
 DEVICE_KEY_HEADER = "X-Pospire-Device-Key"
 _KEYS_FIELD = "pospire_device_keys"
 
@@ -161,25 +161,20 @@ def _save_keys(pos_profile: str, keys: dict) -> None:
 	set_encrypted_password("POS Profile", pos_profile, json.dumps(keys), _KEYS_FIELD)
 
 
-def _presented_keys() -> list[str]:
+def _presented_key() -> str | None:
+	"""The device's own secret, created and stored on the till before its first claim."""
 	request = getattr(frappe.local, "request", None)
-	raw = (request.headers.get(DEVICE_KEY_HEADER) if request else None) or ""
-	return [k.strip() for k in raw.split(",") if k.strip()]
-
-
-def _issue_key(pos_profile: str, keys: dict) -> str:
-	key = secrets.token_urlsafe(32)
-	keys["current"] = _hash_key(key)
-	_save_keys(pos_profile, keys)
-	return key
+	key = ((request.headers.get(DEVICE_KEY_HEADER) if request else None) or "").strip()
+	return key if 32 <= len(key) <= 128 else None  # a short key is a client bug, never a device
 
 
 def _holds(keys: dict, number: str | None = None) -> bool:
 	"""The caller sends the linked device's secret, or a replaced device's secret for a number in its skipped block."""
-	presented = [_hash_key(k) for k in _presented_keys()]
+	key = _presented_key()
+	presented = _hash_key(key) if key else None
 
 	def matches(stored):
-		return any(hmac.compare_digest(stored, p) for p in presented)
+		return bool(presented) and hmac.compare_digest(stored, presented)
 
 	if keys["current"] and matches(keys["current"]):
 		return True
@@ -284,21 +279,31 @@ def claim_terminal(pos_profile: str, device_id: str) -> dict:
 		return {"prefix": None, "fiscal_years": [], "last": {}}
 
 	keys = _stored_keys(pos_profile)
-	device_key = None
+	key = _presented_key()
+	# The device sends a secret it created and stored before claiming, so a repeated or overlapping
+	# claim, or one whose response was lost, proves itself the same way.
 	if not linked:
+		if not key:  # a page from before device secrets: linking it would strand the till
+			frappe.throw(
+				_("Reopen POSpire on this computer to link it to POS Profile {0}.").format(pos_profile)
+			)
 		frappe.db.set_value(
 			"POS Profile", pos_profile, "pospire_linked_device", device_id, update_modified=False
 		)
 		frappe.get_doc("POS Profile", pos_profile).add_comment("Info", f"Linked device {device_id}")
-		device_key = _issue_key(pos_profile, keys)
+		keys["current"] = _hash_key(key)
+		_save_keys(pos_profile, keys)
 	elif linked != device_id or (keys["current"] and not _holds(keys)):
 		# The device id alone is not proof: a copied id without the device's secret is another device.
 		frappe.throw(
 			_("This POS Profile is linked to another device. Ask a manager to unlink it."),
 			TerminalDeviceMismatch,
 		)
-	elif not keys["current"]:
-		device_key = _issue_key(pos_profile, keys)  # linked before device secrets existed
+	elif key and not keys["current"]:
+		keys["current"] = _hash_key(key)  # linked before device secrets existed: its first secret
+		_save_keys(pos_profile, keys)
+	# A linked till on a page from before device secrets still gets its counters; its numbered
+	# writes are refused until it reloads and sends a secret.
 
 	today_fy = get_fiscal_year(nowdate(), company=company, as_dict=True)
 	years = [today_fy]
@@ -318,14 +323,11 @@ def claim_terminal(pos_profile: str, device_id: str) -> dict:
 		}
 		for y in years
 	]
-	res = {
+	return {
 		"prefix": prefix,
 		"fiscal_years": fiscal_years,
 		"last": {y["code"]: get_last_number(pos_profile, y["code"]) for y in fiscal_years},
 	}
-	if device_key:
-		res["device_key"] = device_key
-	return res
 
 
 @frappe.whitelist(methods=["POST"])

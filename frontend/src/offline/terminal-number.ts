@@ -5,7 +5,6 @@
  */
 
 import { assertWritable, db } from "./db";
-import { saveDeviceKey } from "./device-keys";
 import { deleteMetadata, getMetadata, setMetadata } from "./repos/metadata";
 
 export interface FiscalYearRange {
@@ -17,8 +16,6 @@ export interface TerminalClaim {
 	prefix: string | null;
 	fiscal_years: FiscalYearRange[];
 	last: Record<string, number>;
-	/** Only when the server links this device (or first gives it a secret). */
-	device_key?: string;
 }
 interface TerminalSeq {
 	prefix: string;
@@ -49,7 +46,6 @@ export function fyCodeFor(fiscalYears: FiscalYearRange[], postingDate: string): 
 }
 
 export async function applyClaim(profile: string, claim: TerminalClaim): Promise<void> {
-	if (claim.device_key) saveDeviceKey(profile, claim.device_key);
 	if (claim.prefix === null) {
 		await deleteMetadata(key(profile));
 		return;

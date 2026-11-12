@@ -38,6 +38,7 @@ from pospire.pospire.api.posapp import submit_sales_invoice
 from pospire.pospire.api.stock_reconcile import ensure_typed_batches_exist_for_invoice
 from pospire.pospire.api.terminal_number import (
 	REVIEW_MANAGERS,
+	TerminalDeviceMismatch,
 	TerminalNumberConflict,
 	assert_can_use_profile,
 	number_writer_decided,
@@ -1300,6 +1301,10 @@ def submit_invoice(
 				release_stale_draft(number, payload.get("pos_profile"))
 			except TerminalNumberConflict as exc:
 				_throw(ERROR_NUMBER_CONFLICT, str(exc), {"name": number})
+			except TerminalDeviceMismatch as exc:
+				# A bare ValidationError reaches the till as 417, which sync files as accounting_period_closed.
+				# autoname runs the same check on the same request, so this is the only place it can fail.
+				_throw(ERROR_PERMISSION, str(exc), {"name": number})
 		try:
 			# Strip `name` from the insert payload too: the cart may have
 			# stamped a stale online-draft name onto invoice_doc, but the

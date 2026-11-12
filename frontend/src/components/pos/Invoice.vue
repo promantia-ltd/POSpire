@@ -1134,6 +1134,7 @@ import { datetime } from "@/utils/datetime";
 import connectivity from "@/offline/connectivity";
 import { computeOfflineTax } from "@/offline/tax";
 import { readDeviceId } from "@/offline/outbox";
+import { ensureDeviceKey } from "@/offline/device-keys";
 import {
 	applyClaim,
 	currentNumber,
@@ -2642,6 +2643,15 @@ export default {
 		async refreshTerminalClaim() {
 			const profile = this.pos_profile?.name;
 			if (!profile || !this.pos_profile.pospire_invoice_prefix || !connectivity.isOnline()) {
+				return;
+			}
+			// The device secret must be stored before claiming: the server links the till to it.
+			if (!ensureDeviceKey()) {
+				toast.error(
+					__(
+						"This browser cannot store data for POSpire, so it cannot hand out this till's invoice numbers. Allow this site to store data, then reopen POSpire.",
+					),
+				);
 				return;
 			}
 			try {

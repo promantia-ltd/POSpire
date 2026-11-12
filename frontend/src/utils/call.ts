@@ -35,7 +35,7 @@ import {
 	type WriteMethodConfig,
 } from "./call-registry";
 import { connectivity } from "@/offline/connectivity";
-import { DEVICE_KEY_HEADER, readDeviceKeys } from "@/offline/device-keys";
+import { DEVICE_KEY_HEADER, readDeviceKey } from "@/offline/device-keys";
 import { getOutboxEnqueue, getReadCache } from "@/offline/runtime";
 import type { OutboxEnqueueAck } from "@/offline/types";
 
@@ -693,8 +693,8 @@ async function liveFetch<T>(opts: CallOptions): Promise<T> {
 	if (csrfToken && csrfToken !== "{{ csrf_token }}") {
 		headers["X-Frappe-CSRF-Token"] = csrfToken;
 	}
-	const deviceKeys = readDeviceKeys();
-	if (deviceKeys.length) headers[DEVICE_KEY_HEADER] = deviceKeys.join(",");
+	const deviceKey = readDeviceKey();
+	if (deviceKey) headers[DEVICE_KEY_HEADER] = deviceKey;
 
 	const response = await fetch(path, {
 		method: "POST",
