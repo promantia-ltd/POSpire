@@ -117,12 +117,16 @@ REVIEW_MANAGERS = {"System Manager", "Sales Manager"}
 
 
 def can_use_profile(pos_profile: str, user: str | None = None) -> bool:
-	"""Cashiers may lack POS Profile read; being listed in its applicable users is enough."""
+	"""Till access is the profile's Applicable for Users list (cashiers may lack POS Profile read).
+
+	Profile read alone (Accounts User/Manager have it on every profile) does not open a till that
+	lists its users; only an unrestricted till falls back to it, as ERPNext's own POS does.
+	"""
 	user = user or frappe.session.user
-	return bool(
-		frappe.has_permission("POS Profile", "read", pos_profile, user=user)
-		or frappe.db.exists("POS Profile User", {"parent": pos_profile, "user": user})
-	)
+	users = frappe.get_all("POS Profile User", filters={"parent": pos_profile}, pluck="user")
+	if users:
+		return user in users
+	return bool(frappe.has_permission("POS Profile", "read", pos_profile, user=user))
 
 
 def assert_can_use_profile(pos_profile: str, user: str | None = None) -> None:

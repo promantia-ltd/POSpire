@@ -381,6 +381,19 @@ class TestTerminalDevice(FrappeTestCase):
 		with _as_user(email):
 			self.assertEqual(claim_terminal(self.profile, DEVICE_1)["prefix"], "ZT2")
 
+	def test_claim_refuses_profile_reader_not_on_restricted_till(self):
+		# Accounts User can read every POS Profile; that is not cashier access to a till that lists users.
+		email = "pospire-accounts-user@example.com"
+		if not frappe.db.exists("User", email):
+			frappe.get_doc(
+				{"doctype": "User", "email": email, "first_name": "Accounts", "send_welcome_email": 0}
+			).insert(ignore_permissions=True)
+		frappe.get_doc("User", email).add_roles("Accounts User")
+		_list_user_on_profile(self.profile, _plain_user())
+		with _as_user(email):
+			self.assertTrue(frappe.has_permission("POS Profile", "read", self.profile))
+			self.assertRaises(frappe.PermissionError, claim_terminal, self.profile, DEVICE_1)
+
 	def test_second_open_shift_refused(self):
 		from pospire.pospire.api.posapp import create_opening_voucher
 
