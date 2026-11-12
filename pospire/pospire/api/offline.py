@@ -40,6 +40,7 @@ from pospire.pospire.api.terminal_number import (
 	NUMBER_ADMIN_ROLE,
 	TerminalDeviceMismatch,
 	TerminalNumberConflict,
+	TerminalNumberTooFarAhead,
 	assert_can_use_profile,
 	number_writer_decided,
 	release_stale_draft,
@@ -1327,6 +1328,9 @@ def submit_invoice(
 			draft.set_missing_values(for_validate=True)
 			ensure_typed_batches_exist_for_invoice(draft)
 			draft.insert()
+		except TerminalNumberTooFarAhead as exc:
+			# A bare ValidationError reaches the till as 417, which sync files as accounting_period_closed.
+			_throw(ERROR_VALIDATION, str(exc), {"name": number})
 		except frappe.DuplicateEntryError:
 			frappe.db.rollback()
 			existing = _existing_by_offline_id("Sales Invoice", offline_id)

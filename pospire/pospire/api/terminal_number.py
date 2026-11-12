@@ -17,8 +17,10 @@ from frappe.utils.password import get_decrypted_password, set_encrypted_password
 
 PREFIX_RE = re.compile(r"^[A-Z][A-Z0-9]{0,3}$")
 _NUMBER_RE = re.compile(r"^([A-Z][A-Z0-9]{0,3})/(\d{2})/(\d{6})$")
-# How far past the till's last used number (which includes a device-reset floor) a new number may be.
-MAX_NUMBERS_AHEAD = 1000
+# How far past the server's last number (which includes a device-reset floor) a new number may be.
+# The till counts on through an outage while the server's last number waits for the backlog to sync,
+# so this must sit far above any outage; it still stops one invoice running the year out of numbers.
+MAX_NUMBERS_AHEAD = 50000
 
 
 def format_number(prefix: str, fy: str, n: int) -> str:
@@ -60,6 +62,10 @@ class TerminalNumberConflict(frappe.ValidationError):
 	pass
 
 
+class TerminalNumberTooFarAhead(frappe.ValidationError):
+	pass
+
+
 def autoname(doc, method=None) -> None:
 	number = doc.get("pospire_terminal_number")
 	if not number or doc.is_return or doc.amended_from:
@@ -82,7 +88,8 @@ def autoname(doc, method=None) -> None:
 		frappe.throw(
 			_("Invoice number {0} is too far ahead of the last number {1} of POS Profile {2}.").format(
 				number, format_number(prefix, parsed[1], last), doc.pos_profile
-			)
+			),
+			TerminalNumberTooFarAhead,
 		)
 	doc.name = number
 

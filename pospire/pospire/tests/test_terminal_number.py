@@ -231,13 +231,15 @@ class TestTerminalNumbering(FrappeTestCase):
 			self.assertRaises(frappe.ValidationError, _make_si, self.profile, bad)
 
 	def test_number_too_far_ahead_refused(self):
+		from pospire.pospire.api.terminal_number import MAX_NUMBERS_AHEAD, TerminalNumberTooFarAhead
+
 		last = get_last_number(self.profile, self.fy)
 		# A jump (e.g. to 999999) would run the till out of numbers for the year.
-		self.assertRaises(frappe.ValidationError, _make_si, self.profile, f"ZT1/{self.fy}/{last + 1001:06d}")
-		self.assertEqual(
-			_make_si(self.profile, f"ZT1/{self.fy}/{last + 1000:06d}").name,
-			f"ZT1/{self.fy}/{last + 1000:06d}",
-		)
+		too_far = f"ZT1/{self.fy}/{last + MAX_NUMBERS_AHEAD + 1:06d}"
+		self.assertRaises(TerminalNumberTooFarAhead, _make_si, self.profile, too_far)
+		# A till numbering through a long outage runs well past the server's last number; still fine.
+		backlog = f"ZT1/{self.fy}/{last + 5000:06d}"
+		self.assertEqual(_make_si(self.profile, backlog).name, backlog)
 
 	def test_return_ignores_terminal_number(self):
 		si = _make_si(self.profile, f"ZT1/{self.fy}/000008", is_return=1)
@@ -835,6 +837,17 @@ class TestOfflinePaths(FrappeTestCase):
 		self.assertNotEqual(
 			frappe.db.get_value("POSpire Offline Sync Review", row.name, "status"), "Resolved"
 		)
+
+	def test_offline_number_too_far_ahead_is_a_validation_error(self):
+		from pospire.pospire.api.offline import OfflineSubmitError
+		from pospire.pospire.api.terminal_number import MAX_NUMBERS_AHEAD
+
+		name = f"ZT4/{self.fy}/{get_last_number(self.profile, self.fy) + MAX_NUMBERS_AHEAD + 1:06d}"
+		with self.assertRaises(OfflineSubmitError) as cm:
+			self._submit(name)
+		# Not a bare 417, which the till would file as a closed accounting period.
+		self.assertEqual(cm.exception.error_code, "validation_error")
+		self.assertIn("too far ahead", str(cm.exception))
 
 	def test_void_keeps_another_users_draft(self):
 		from unittest.mock import patch
