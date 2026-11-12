@@ -352,9 +352,16 @@ test("6. a held cart takes the next number when it is paid", async ({
 test("7a. a second tab on a numbered till is blocked", async ({ page }) => {
   await openTill(page);
   const second = await page.context().newPage();
+  // The blocked tab must not claim the till (or create a device key) before it is blanked.
+  let claims = 0;
+  second.on("request", (r) => {
+    if (r.url().includes("terminal_number.claim_terminal")) claims++;
+  });
   await second.goto("/pospire");
   await expect(second.getByText(OTHER_TAB)).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(OTHER_TAB)).toHaveCount(0);
+  await second.waitForTimeout(3000);
+  expect(claims).toBe(0);
 });
 
 test("7b. a second tab on a till without a prefix works", async ({ page }) => {

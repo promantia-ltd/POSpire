@@ -37,7 +37,7 @@ from pospire.pospire.api.customer import (
 from pospire.pospire.api.posapp import submit_sales_invoice
 from pospire.pospire.api.stock_reconcile import ensure_typed_batches_exist_for_invoice
 from pospire.pospire.api.terminal_number import (
-	REVIEW_MANAGERS,
+	NUMBER_ADMIN_ROLE,
 	TerminalDeviceMismatch,
 	TerminalNumberConflict,
 	assert_can_use_profile,
@@ -1289,12 +1289,13 @@ def submit_invoice(
 	# Wrap insert+submit in _acting_as_user so the doc owner reflects the
 	# original cashier (P-5) instead of the replay session.
 	number = payload.get("pospire_terminal_number")
-	# The real caller, before owner_user (client-chosen) is impersonated: only a till the
-	# caller may use. Managers replay any till's sales from Sync Review.
-	manager = bool(REVIEW_MANAGERS & set(frappe.get_roles()))
-	if number and not manager:
+	# Decided for the real caller, before owner_user (client-chosen) is impersonated: Sync Review
+	# replays (marked by recovery) and site admins use any till; anyone else needs the till and its
+	# device key. A manager calling this endpoint directly is not a Sync Review replay.
+	trusted = bool(frappe.flags.pospire_trusted_number_writer) or NUMBER_ADMIN_ROLE in frappe.get_roles()
+	if number and not trusted:
 		assert_can_use_profile(payload.get("pos_profile"))
-	with _acting_as_user(owner_user), _offline_replay_context(), number_writer_decided(manager):
+	with _acting_as_user(owner_user), _offline_replay_context(), number_writer_decided(trusted):
 		if number:
 			# Run as the original cashier so their profile access applies, not the replaying manager's.
 			try:

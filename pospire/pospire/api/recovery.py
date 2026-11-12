@@ -443,6 +443,7 @@ def retry(name: str) -> dict[str, Any]:
 	# `owner` is the cashier, not the manager. The manager's identity
 	# stays on the recovery row's `reviewer_user`.
 	from pospire.pospire.api import offline as offline_api
+	from pospire.pospire.api.terminal_number import number_writer_decided
 
 	# Parse + pre-flight checks happen INSIDE the same rollback envelope
 	# as the replay itself. Without this, a malformed payload (corruption,
@@ -504,13 +505,16 @@ def retry(name: str) -> dict[str, Any]:
 			posting_date=row.posting_date,
 		)
 		if current.entry_type == "invoice":
-			result = offline_api.submit_invoice(
-				data=replay_args["data"],
-				offline_id=replay_args["offline_id"],
-				device_id=replay_args["device_id"],
-				opening_entry_offline_id=row.shift_offline_id or replay_args.get("opening_entry_offline_id"),
-				material_receipt_offline_ids=replay_args.get("material_receipt_offline_ids"),
-			)
+			# A manager replaying a till's sale from Sync Review has no device key; the role check above gates it.
+			with number_writer_decided(True):
+				result = offline_api.submit_invoice(
+					data=replay_args["data"],
+					offline_id=replay_args["offline_id"],
+					device_id=replay_args["device_id"],
+					opening_entry_offline_id=row.shift_offline_id
+					or replay_args.get("opening_entry_offline_id"),
+					material_receipt_offline_ids=replay_args.get("material_receipt_offline_ids"),
+				)
 		elif current.entry_type == "customer":
 			result = offline_api.create_customer(
 				data=replay_args["data"],
@@ -1916,6 +1920,7 @@ def dry_run_replay(name: str) -> dict[str, Any]:
 	# Lazy import after argument validation so a failure during these
 	# checks doesn't cost us the import.
 	from pospire.pospire.api import offline as offline_api
+	from pospire.pospire.api.terminal_number import number_writer_decided
 
 	# Savepoint name — Frappe-on-MariaDB supports savepoints but the
 	# wrapper is `frappe.db.savepoint` / `release_savepoint` /
@@ -1934,12 +1939,13 @@ def dry_run_replay(name: str) -> dict[str, Any]:
 		dry_offline_id = str(_uuid.uuid4())
 		# Same per-entry-type dispatch as retry().
 		if row.entry_type == "invoice":
-			result = offline_api.submit_invoice(
-				data=payload,
-				offline_id=dry_offline_id,
-				device_id=device_id,
-				opening_entry_offline_id=row.shift_offline_id,
-			)
+			with number_writer_decided(True):  # manager-only, as in retry()
+				result = offline_api.submit_invoice(
+					data=payload,
+					offline_id=dry_offline_id,
+					device_id=device_id,
+					opening_entry_offline_id=row.shift_offline_id,
+				)
 		elif row.entry_type == "customer":
 			result = offline_api.create_customer(
 				data=payload,

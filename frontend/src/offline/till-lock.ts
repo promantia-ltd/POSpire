@@ -4,19 +4,28 @@
  * without Web Locks are not blocked.
  */
 
-let held = false;
+// Shared by every caller in this tab (Pos.vue and the till claim ask at the same moment); a
+// second request from the same tab would find the lock taken and lock this tab out.
+let pending: Promise<boolean> | null = null;
 
-export async function acquireTillLock(): Promise<boolean> {
+export function acquireTillLock(): Promise<boolean> {
 	const locks = typeof navigator === "undefined" ? undefined : navigator.locks;
-	if (held || !locks) return true;
-	held = await new Promise<boolean>((resolve) => {
-		locks
-			.request("pospire-till", { ifAvailable: true }, (lock) => {
-				resolve(!!lock);
-				return lock ? new Promise<void>(() => {}) : null;
-			})
-			// A broken Locks API must not leave the till on a blank page.
-			.catch(() => resolve(true));
-	});
-	return held;
+	if (!locks) return Promise.resolve(true);
+	if (!pending) {
+		const attempt = new Promise<boolean>((resolve) => {
+			locks
+				.request("pospire-till", { ifAvailable: true }, (lock) => {
+					resolve(!!lock);
+					return lock ? new Promise<void>(() => {}) : null;
+				})
+				// A broken Locks API must not leave the till on a blank page.
+				.catch(() => resolve(true));
+		});
+		pending = attempt;
+		// Not granted: a later call may try again once the other tab has closed.
+		attempt.then((held) => {
+			if (!held && pending === attempt) pending = null;
+		});
+	}
+	return pending;
 }

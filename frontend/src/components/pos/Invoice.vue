@@ -1135,6 +1135,7 @@ import connectivity from "@/offline/connectivity";
 import { computeOfflineTax } from "@/offline/tax";
 import { readDeviceId } from "@/offline/outbox";
 import { ensureDeviceKey } from "@/offline/device-keys";
+import { acquireTillLock } from "@/offline/till-lock";
 import {
 	applyClaim,
 	currentNumber,
@@ -2645,6 +2646,8 @@ export default {
 			if (!profile || !this.pos_profile.pospire_invoice_prefix || !connectivity.isOnline()) {
 				return;
 			}
+			// A second tab is blanked by Pos.vue; it must not create a device key or claim the till first.
+			if (!(await acquireTillLock())) return;
 			// The device secret must be stored before claiming: the server links the till to it.
 			if (!ensureDeviceKey()) {
 				toast.error(

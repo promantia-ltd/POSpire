@@ -118,8 +118,9 @@ def get_last_number(pos_profile: str, fy: str) -> int:
 	return last
 
 
-# May replay or void any till's offline sales from Sync Review (same roles as recovery.void_entry).
-REVIEW_MANAGERS = {"System Manager", "Sales Manager"}
+# Site admins may use any till's numbers without its device key (they can unlink and reconfigure it
+# anyway). Sales Managers only through Sync Review (recovery.retry / dry_run_replay), which mark it.
+NUMBER_ADMIN_ROLE = "System Manager"
 
 
 def can_use_profile(pos_profile: str, user: str | None = None) -> bool:
@@ -204,7 +205,7 @@ def number_writer_decided(trusted: bool):
 def assert_number_writer(pos_profile: str, number: str) -> None:
 	trusted = frappe.flags.pospire_trusted_number_writer
 	if trusted is None:
-		trusted = bool(REVIEW_MANAGERS & set(frappe.get_roles()))  # managers replay any till's sales
+		trusted = NUMBER_ADMIN_ROLE in frappe.get_roles()
 	if trusted:
 		return
 	if not holds_number(pos_profile, number):

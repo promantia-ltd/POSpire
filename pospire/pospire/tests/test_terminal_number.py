@@ -133,6 +133,16 @@ def _plain_user():
 	return email
 
 
+def _sales_manager():
+	email = "pospire-sales-manager@example.com"
+	if not frappe.db.exists("User", email):
+		frappe.get_doc(
+			{"doctype": "User", "email": email, "first_name": "Sales Manager", "send_welcome_email": 0}
+		).insert(ignore_permissions=True)
+	frappe.get_doc("User", email).add_roles("Sales Manager")
+	return email
+
+
 @contextmanager
 def _as_user(email):
 	original = frappe.session.user
@@ -439,6 +449,15 @@ class TestTerminalDevice(FrappeTestCase):
 		self.assertEqual(doc.name, name)
 		self.assertFalse(frappe.db.exists("Sales Invoice", name))
 
+	def test_sales_manager_needs_the_device_key_online(self):
+		claim_terminal(self.profile, DEVICE_1)
+		email = _sales_manager()
+		_list_user_on_profile(self.profile, email)
+		name = format_number("ZT2", self.fy, get_last_number(self.profile, self.fy) + 1)
+		with _as_user(email), _sending_key(None):
+			self.assertRaises(TerminalDeviceMismatch, _make_si, self.profile, name)
+		self.assertFalse(frappe.db.exists("Sales Invoice", name))
+
 	def test_replaced_device_key_covers_only_its_skipped_block(self):
 		claim_terminal(self.profile, DEVICE_1)
 		last = get_last_number(self.profile, self.fy)
@@ -691,6 +710,47 @@ class TestOfflinePaths(FrappeTestCase):
 		# A permission problem in Sync Review, not a bare 417 the till would file as a closed period.
 		self.assertEqual(cm.exception.error_code, "permission_error")
 		self.assertFalse(frappe.db.exists("Sales Invoice", name))
+
+	def test_sales_manager_calling_offline_submit_directly_needs_the_key(self):
+		from pospire.pospire.api.offline import OfflineSubmitError
+
+		email = _sales_manager()
+		_list_user_on_profile(self.profile, email)
+		name = f"ZT4/{self.fy}/000011"
+		data = {**self._data(name), "owner_user": email}
+		with _as_user(email), self.assertRaises(OfflineSubmitError) as cm:
+			from pospire.pospire.api import offline
+
+			offline.submit_invoice(data, str(uuid.uuid4()), str(uuid.uuid4()))
+		self.assertEqual(cm.exception.error_code, "permission_error")
+		self.assertFalse(frappe.db.exists("Sales Invoice", name))
+
+	def test_sync_review_retry_by_sales_manager_skips_the_device_key(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.recovery import retry
+		from pospire.pospire.api.terminal_number import assert_number_writer
+
+		name = f"ZT4/{self.fy}/000012"
+		row = self._review_row(name)
+		row.db_set({"device_id": str(uuid.uuid4()), "status": "Pending Review", "posting_date": nowdate()})
+		_make_si(self.profile, name)  # what the replay lands; retry links the row to it
+		seen = {}
+
+		def replay(**kwargs):
+			seen["marked"] = frappe.flags.pospire_trusted_number_writer
+			assert_number_writer(self.profile, name)  # no device key sent: passes only because it is marked
+			return {"name": name, "docstatus": 1}
+
+		with (
+			_as_user(_sales_manager()),
+			patch("frappe.db.commit"),
+			patch("pospire.pospire.api.offline.submit_invoice", side_effect=replay),
+		):
+			retry(row.name)
+		self.assertIs(seen["marked"], True)
+		self.assertIsNone(frappe.flags.pospire_trusted_number_writer)  # the mark ends with the replay
+		self.assertEqual(frappe.db.get_value("POSpire Offline Sync Review", row.name, "status"), "Resolved")
 
 	def test_offline_submit_needs_caller_on_till(self):
 		name = f"ZT4/{self.fy}/000005"

@@ -41,6 +41,25 @@ describe("acquireTillLock", () => {
 		expect(await second.acquireTillLock()).toBe(false);
 	});
 
+	it("answers two callers in one tab with one request", async () => {
+		const locks = fakeLocks();
+		vi.stubGlobal("navigator", { locks });
+		const { acquireTillLock } = await freshModule();
+		// Pos.vue and the till claim ask at the same moment, before either answer arrives.
+		expect(await Promise.all([acquireTillLock(), acquireTillLock()])).toEqual([true, true]);
+		expect(locks.request).toHaveBeenCalledTimes(1);
+	});
+
+	it("lets a blocked tab try again later", async () => {
+		const locks = fakeLocks();
+		vi.stubGlobal("navigator", { locks });
+		await (await freshModule()).acquireTillLock(); // another tab holds it
+		const { acquireTillLock } = await freshModule();
+		expect(await acquireTillLock()).toBe(false);
+		await acquireTillLock();
+		expect(locks.request).toHaveBeenCalledTimes(3);
+	});
+
 	it("lets the till open when the Locks API rejects", async () => {
 		vi.stubGlobal("navigator", {
 			locks: { request: vi.fn(() => Promise.reject(new Error("SecurityError"))) },
