@@ -425,8 +425,14 @@ class TestTerminalDevice(FrappeTestCase):
 				with _sending_key(key):
 					self.assertRaises(TerminalDeviceMismatch, _make_si, self.profile, name)
 			# Naming only: the plain test user lacks the accounts access a full insert needs.
+			# posting_date: autoname reads the financial year from it, as every real invoice has one.
 			doc = frappe.get_doc(
-				{"doctype": "Sales Invoice", "company": self.company, "pos_profile": self.profile}
+				{
+					"doctype": "Sales Invoice",
+					"company": self.company,
+					"pos_profile": self.profile,
+					"posting_date": nowdate(),
+				}
 			)
 			doc.pospire_terminal_number = name
 			autoname(doc)
