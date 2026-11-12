@@ -35,6 +35,7 @@ import {
 	type WriteMethodConfig,
 } from "./call-registry";
 import { connectivity } from "@/offline/connectivity";
+import { DEVICE_KEY_HEADER, readDeviceKey } from "@/offline/device-keys";
 import { getOutboxEnqueue, getReadCache } from "@/offline/runtime";
 import type { OutboxEnqueueAck } from "@/offline/types";
 
@@ -605,6 +606,7 @@ async function enqueueWrite(
 	let shiftOfflineId: string | null = null;
 	let postingDate: string | undefined;
 	let ownerUser: string | undefined;
+	let terminal: { profile: string; number: string } | undefined;
 
 	if (config.toOfflinePayload) {
 		const adapted = config.toOfflinePayload(opts.args ?? {}, {
@@ -617,6 +619,7 @@ async function enqueueWrite(
 		shiftOfflineId = adapted.shiftOfflineId ?? null;
 		postingDate = adapted.postingDate;
 		ownerUser = adapted.ownerUser;
+		terminal = adapted.terminal;
 	} else {
 		// Belt-and-braces: an offline-capable write without an adapter can't
 		// produce a server-shaped payload. Fail loud rather than enqueue
@@ -635,6 +638,7 @@ async function enqueueWrite(
 		shiftOfflineId,
 		postingDate,
 		ownerUser,
+		terminal,
 	});
 }
 
@@ -689,6 +693,8 @@ async function liveFetch<T>(opts: CallOptions): Promise<T> {
 	if (csrfToken && csrfToken !== "{{ csrf_token }}") {
 		headers["X-Frappe-CSRF-Token"] = csrfToken;
 	}
+	const deviceKey = readDeviceKey();
+	if (deviceKey) headers[DEVICE_KEY_HEADER] = deviceKey;
 
 	const response = await fetch(path, {
 		method: "POST",

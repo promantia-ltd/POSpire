@@ -22,6 +22,8 @@ import {
 import { currentCashier } from "./cashier";
 import { canonicalIntegrityHash, IntegrityMismatchError } from "./crypto";
 import { db, assertWritable, uuidV4 } from "./db";
+import { consumeNumber } from "./terminal-number";
+import type { Table } from "dexie";
 import {
 	assertOfflineEnabled,
 	OfflineDisabledError,
@@ -75,6 +77,7 @@ const NEEDS_REVIEW_CATEGORIES = new Set<NonNullable<LastErrorCategory>>([
 	"accounting_period_closed",
 	"retry_exhausted",
 	"schema_mismatch",
+	"number_conflict",
 ]);
 
 /** Retry / backoff (05-outbox-and-sync.md §4.3). */
@@ -192,6 +195,8 @@ interface EnqueueExtras {
 	postingDate?: string;
 	/** Cashier user; defaults to `frappe.session.user` proxy if available. */
 	ownerUser?: string;
+	/** Terminal invoice number to consume in the same transaction as the row. */
+	terminal?: { profile: string; number: string };
 }
 
 /**
@@ -264,8 +269,9 @@ export async function enqueue<T>(
 	// shift's status (closed_pending_sync → syncing is the scheduler's job;
 	// here we just mark the closing as queued so the UI stops offering
 	// "reopen shift").
-	const tables =
-		type === "closing_entry" ? [db.outbox, db.shifts] : [db.outbox];
+	const tables: Table[] = [db.outbox];
+	if (type === "closing_entry") tables.push(db.shifts);
+	if (options.terminal) tables.push(db.metadata);
 
 	try {
 		await db.transaction("rw", tables, async () => {
@@ -277,6 +283,9 @@ export async function enqueue<T>(
 			const existing = await db.outbox.get(offlineId);
 			if (!existing) {
 				await db.outbox.put(stored);
+				if (options.terminal) {
+					await consumeNumber(options.terminal.profile, options.terminal.number);
+				}
 			}
 
 			if (type === "closing_entry" && entry.shift_offline_id) {
@@ -343,6 +352,7 @@ async function enqueueFromCall(
 		shiftOfflineId: options.shiftOfflineId,
 		postingDate: options.postingDate,
 		ownerUser: options.ownerUser,
+		terminal: options.terminal,
 	});
 }
 

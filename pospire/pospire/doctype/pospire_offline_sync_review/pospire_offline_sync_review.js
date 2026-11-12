@@ -189,6 +189,15 @@ frappe.ui.form.on("POSpire Offline Sync Review", {
 		const category = frm.doc.error_category;
 		const isTerminal = status === "Resolved" || status === "Voided";
 		const isOpenForActions = status === "Pending Review" || status === "In Review";
+		// Empty text clears an intro left from an earlier refresh.
+		frm.set_intro(
+			isOpenForActions && category === "number_conflict"
+				? __(
+						"Another invoice already uses this sale's invoice number, so Retry will fail again. Check the sale, then Void this row."
+				  )
+				: "",
+			"orange"
+		);
 
 		// ============ Retry ============
 		if (isOpenForActions) {

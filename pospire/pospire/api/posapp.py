@@ -59,6 +59,12 @@ from pospire.pospire.api.stock_reconcile import (
 	ensure_stock_for_invoice,
 	ensure_typed_batches_exist_for_invoice,
 )
+from pospire.pospire.api.terminal_number import (
+	_has_payment_request,
+	assert_can_use_profile,
+	parse_number,
+	release_stale_draft,
+)
 from pospire.pospire.doctype.delivery_charges.delivery_charges import (
 	get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
@@ -175,6 +181,22 @@ def create_opening_voucher(
 	denomination_details: str | list | None = None,
 ) -> dict:
 	balance_details = _load(balance_details)
+
+	# for_update serializes concurrent opens on this profile
+	if frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix", for_update=True):
+		# The one open shift of a numbered till: a user who may not use it must not hold it.
+		assert_can_use_profile(pos_profile)
+		# for_update reads the latest committed row, so a shift opened while we waited is seen
+		open_shift = frappe.db.get_value(
+			"POS Opening Shift",
+			{"pos_profile": pos_profile, "docstatus": 1, "status": "Open"},
+			"name",
+			for_update=True,
+		)
+		if open_shift:
+			frappe.throw(
+				_("POS Profile {0} already has an open shift ({1}).").format(pos_profile, open_shift)
+			)
 
 	new_pos_opening = frappe.get_doc(
 		{
@@ -848,6 +870,8 @@ def update_invoice(data: str | dict):
 			)
 			invoice_doc.title = invoice_doc.customer_name
 	else:
+		if data.get("pospire_terminal_number"):
+			release_stale_draft(data["pospire_terminal_number"], data.get("pos_profile"))
 		invoice_doc = frappe.get_doc(data)
 
 	deleted_items = data.get("custom_deleted_pos_items", [])
@@ -1571,8 +1595,14 @@ def get_draft_invoices(pos_opening_shift: str) -> list:
 		limit_page_length=0,
 		order_by="modified desc",
 	)
+	pos_profile = frappe.db.get_value("POS Opening Shift", pos_opening_shift, "pos_profile")
+	prefix = pos_profile and frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix")
 	data = []
 	for invoice in invoices_list:
+		parsed = parse_number(invoice["name"])
+		# This till's numbered draft is an unused Pay slot, unless a payment request used the number.
+		if prefix and parsed and parsed[0] == prefix and not _has_payment_request(invoice["name"]):
+			continue
 		data.append(frappe.get_cached_doc("Sales Invoice", invoice["name"]))
 	return data
 
@@ -2661,8 +2691,14 @@ def get_seearch_items_conditions(item_code, serial_no, batch_no, barcode):
 
 
 @frappe.whitelist()
-def create_sales_invoice_from_order(sales_order: str):
+def create_sales_invoice_from_order(
+	sales_order: str, terminal_number: str | None = None, pos_profile: str | None = None
+):
 	sales_invoice = make_sales_invoice(sales_order, ignore_permissions=True)
+	if terminal_number:
+		sales_invoice.pos_profile = pos_profile
+		release_stale_draft(terminal_number, pos_profile)
+		sales_invoice.pospire_terminal_number = terminal_number
 	sales_invoice.save()
 	return sales_invoice
 

@@ -490,6 +490,8 @@ export default defineComponent({
           return "mdi-alert-circle-outline";
         case "schema_mismatch":
           return "mdi-database-alert-outline";
+        case "number_conflict":
+          return "mdi-content-duplicate";
         default:
           return "mdi-help-circle-outline";
       }
@@ -500,6 +502,7 @@ export default defineComponent({
         case "permission_error":
         case "accounting_period_closed":
         case "schema_mismatch":
+        case "number_conflict":
           return "error";
         case "stock_shortage":
         case "batch_or_serial_conflict":

@@ -10,6 +10,7 @@
  */
 
 import { currentCashier } from "@/offline/cashier";
+import { parseTerminalNumber } from "@/offline/terminal-number";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,6 +43,8 @@ export interface OfflinePayloadAdapterResult {
 	shiftOfflineId?: string | null;
 	postingDate?: string;
 	ownerUser?: string;
+	/** Terminal invoice number to consume with the outbox write. */
+	terminal?: { profile: string; number: string };
 }
 
 /**
@@ -402,6 +405,11 @@ export const methodRegistry: Record<string, MethodConfig> = {
 				innerData.customer_offline_id = customerOfflineId;
 			}
 
+			const terminalNumber =
+				(invoice.pospire_terminal_number as string | undefined) ||
+				(parseTerminalNumber(invoice.name as string) ? (invoice.name as string) : undefined);
+			if (terminalNumber) innerData.pospire_terminal_number = terminalNumber;
+
 			return {
 				method: "pospire.pospire.api.offline.submit_invoice",
 				payload: {
@@ -432,6 +440,10 @@ export const methodRegistry: Record<string, MethodConfig> = {
 					.filter(Boolean),
 				postingDate,
 				ownerUser,
+				terminal:
+					terminalNumber && invoice.pos_profile
+						? { profile: invoice.pos_profile as string, number: terminalNumber }
+						: undefined,
 			};
 		},
 	},
@@ -593,6 +605,7 @@ export const methodRegistry: Record<string, MethodConfig> = {
 		offline: false,
 	},
 	"pospire.pospire.api.posapp.create_payment_request": { intent: "write", offline: false },
+	"pospire.pospire.api.terminal_number.claim_terminal": { intent: "write", offline: false },
 
 	// Shift close. `make_closing_shift_from_opening` stays live-only — when
 	// offline, Pos.vue catches the failure and synthesises a minimal closing

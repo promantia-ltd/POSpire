@@ -723,6 +723,7 @@
 import { call } from "@/utils/call";
 import { OfflineReturnDeferredError } from "@/utils/call-registry";
 import { uuidV4 } from "@/offline/db";
+import { consumeNumber, parseTerminalNumber } from "@/offline/terminal-number";
 import format from "@/utils/format";
 import hardwareUtils from "@/utils/hardwareUtils";
 import { toast } from "vue3-toastify"; // <-- make sure this is imported
@@ -905,6 +906,14 @@ export default {
 				this.submittingPayment = false;
 			});
 		},
+		// Moves the till counter past a number the server has now used.
+		async consumeTerminalNumber(name) {
+			if (!this.pos_profile?.pospire_invoice_prefix || !parseTerminalNumber(name)) return;
+			// A failed write only means the next Pay hits TerminalNumberConflict and refreshes.
+			await consumeNumber(this.pos_profile.name, name).catch((err) =>
+				console.warn("[Payments] could not advance the till number", err),
+			);
+		},
 		async submit_invoice(print) {
 			let totalPayedAmount = 0;
 			this.invoice_doc.payments.forEach((payment) => {
@@ -1047,10 +1056,18 @@ export default {
 			// the next sale.
 			if (r && r.offline === true && r.status === "enqueued") {
 				const provisionalName = r.provisional_name;
+				// The enqueue already used up this number on the till.
+				const doc = vm.invoice_doc;
+				const number =
+					vm.pos_profile?.pospire_invoice_prefix && !doc.is_return
+						? doc.pospire_terminal_number ||
+							(parseTerminalNumber(doc.name) ? doc.name : null)
+						: null;
 				// Tag the invoice object in-memory so any consumer that fires
 				// off `set_last_invoice` / print paths can render the pending
 				// sync state. The server-side `name` is null until sync.
-				vm.invoice_doc.name = provisionalName;
+				vm.invoice_doc.name = number ?? provisionalName;
+				if (number) vm.invoice_doc.pospire_terminal_number = number;
 				vm.invoice_doc.pospire_pending_sync = true;
 				vm.invoice_doc.pospire_offline_id = r.offline_id;
 
@@ -1068,10 +1085,10 @@ export default {
 					vm.pos_profile && vm.pos_profile.use_cashback == 1 ? true : false;
 				vm.sales_person = "";
 				vm.eventBus.emit("set_last_invoice", {
-					name: provisionalName,
+					name: number ?? provisionalName,
 					offline_id: r.offline_id,
 				});
-				toast.info(`Queued ${provisionalName}. Will sync when online`);
+				toast.info(`Queued ${number ?? provisionalName}. Will sync when online`);
 				playSound("submit");
 				vm.addresses = [];
 				vm.invoice_doc = "";
@@ -1084,6 +1101,7 @@ export default {
 				const { confirmContribution } = await import("@/offline/contribution-ledger");
 				await confirmContribution(invoiceOfflineId);
 			});
+			await vm.consumeTerminalNumber(r.name);
 
 			if (print) {
 				await vm.printReceipt({ invoice: vm.invoice_doc });
@@ -1326,6 +1344,7 @@ export default {
 				toast.error(__(`Payment request failed`));
 				return;
 			}
+			await this.consumeTerminalNumber(vm.invoice_doc.name);
 
 			setTimeout(async () => {
 				const paymentStatus = await call("frappe.client.get_value", {

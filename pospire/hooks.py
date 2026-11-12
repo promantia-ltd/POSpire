@@ -117,7 +117,11 @@ after_uninstall = "pospire.uninstall.after_uninstall"
 
 doc_events = {
 	"Sales Invoice": {
-		"validate": "pospire.pospire.api.invoice.validate",
+		"autoname": "pospire.pospire.api.terminal_number.autoname",
+		"validate": [
+			"pospire.pospire.api.invoice.validate",
+			"pospire.pospire.api.terminal_number.validate_number_applied",
+		],
 		"before_submit": "pospire.pospire.api.invoice.before_submit",
 		"before_cancel": "pospire.pospire.api.invoice.before_cancel",
 	},
@@ -385,6 +389,11 @@ fixtures = [
 					"Stock Reconciliation-posa_sales_invoice",
 					"Payment Entry-custom_pos_opening_shift",
 					"POS Opening Shift-custom_cancelled_count",
+					"POS Profile-pospire_invoice_prefix",
+					"POS Profile-pospire_linked_device",
+					"POS Profile-pospire_reset_skip",
+					"POS Profile-pospire_floor_fy",
+					"POS Profile-pospire_floor_number",
 				),
 			]
 		],

@@ -443,6 +443,7 @@ def retry(name: str) -> dict[str, Any]:
 	# `owner` is the cashier, not the manager. The manager's identity
 	# stays on the recovery row's `reviewer_user`.
 	from pospire.pospire.api import offline as offline_api
+	from pospire.pospire.api.terminal_number import number_writer_decided
 
 	# Parse + pre-flight checks happen INSIDE the same rollback envelope
 	# as the replay itself. Without this, a malformed payload (corruption,
@@ -476,6 +477,8 @@ def retry(name: str) -> dict[str, Any]:
 				).format(type(payload_dict).__name__),
 				frappe.ValidationError,
 			)
+		if current.entry_type == "invoice":
+			_assert_cashier_holds_till(payload_dict, current.cashier_user)
 
 		# Each branch impersonates the original cashier via the offline
 		# endpoint's own `_acting_as_user(owner_user)` wrapper — we restored
@@ -504,13 +507,16 @@ def retry(name: str) -> dict[str, Any]:
 			posting_date=row.posting_date,
 		)
 		if current.entry_type == "invoice":
-			result = offline_api.submit_invoice(
-				data=replay_args["data"],
-				offline_id=replay_args["offline_id"],
-				device_id=replay_args["device_id"],
-				opening_entry_offline_id=row.shift_offline_id or replay_args.get("opening_entry_offline_id"),
-				material_receipt_offline_ids=replay_args.get("material_receipt_offline_ids"),
-			)
+			# A manager replaying a till's sale from Sync Review has no device key; the role check above gates it.
+			with number_writer_decided(True):
+				result = offline_api.submit_invoice(
+					data=replay_args["data"],
+					offline_id=replay_args["offline_id"],
+					device_id=replay_args["device_id"],
+					opening_entry_offline_id=row.shift_offline_id
+					or replay_args.get("opening_entry_offline_id"),
+					material_receipt_offline_ids=replay_args.get("material_receipt_offline_ids"),
+				)
 		elif current.entry_type == "customer":
 			result = offline_api.create_customer(
 				data=replay_args["data"],
@@ -1137,6 +1143,96 @@ def lookup_resolution(
 	return out
 
 
+def _release_voided_number(row, reason: str) -> None:
+	"""Free the terminal number a voided invoice row held and log it on the POS Profile."""
+	from pospire.pospire.api.terminal_number import (
+		TerminalNumberConflict,
+		_delete_stale_draft,
+		can_use_profile,
+		log_voided_number,
+		parse_number,
+	)
+
+	number, profile = _numbered_sale(row.payload)
+	if not (number and profile):
+		return
+	parsed = parse_number(number)
+	prefix = frappe.db.get_value("POS Profile", profile, "pospire_invoice_prefix")
+	if not (parsed and prefix and parsed[0] == prefix):
+		return  # not this till's number: never touch or log it
+	# The payload is the cashier's: only free the number if the sale really was on that till.
+	if not (_shift_on_profile(row, profile) or can_use_profile(profile, row.cashier_user)):
+		row.append_activity(
+			action="note",
+			outcome="info",
+			actor=frappe.session.user,
+			detail=f"Invoice number {number} not released: {row.cashier_user} cannot use POS Profile {profile}.",
+		)
+		return
+	# The payload is client-written: only free a Pay draft this row's own cashier made, never another
+	# device's cart that happens to hold the number.
+	draft_owner = frappe.db.get_value("Sales Invoice", {"name": number, "docstatus": 0}, "owner")
+	if draft_owner and draft_owner != row.cashier_user:
+		row.append_activity(
+			action="note",
+			outcome="info",
+			actor=frappe.session.user,
+			detail=f"Invoice number {number} not released: its draft belongs to {draft_owner}.",
+		)
+		return
+	queued = len(frappe.local.message_log)
+	try:
+		_delete_stale_draft(number)
+	except (TerminalNumberConflict, frappe.LinkExistsError):
+		del frappe.local.message_log[queued:]  # drop its queued error popup; the void itself succeeds
+		frappe.get_doc("POS Profile", profile).add_comment(
+			"Info",
+			f"Invoice number {number} is used by another invoice; this sale was voided without a number. "
+			f"Reason: {reason.strip()}",
+		)
+		return
+	log_voided_number(profile, number, reason.strip())
+
+
+def _numbered_sale(payload) -> tuple[str | None, str | None]:
+	"""(terminal number, POS Profile) an invoice row's payload asks for, or (None, None)."""
+	try:
+		outer = json.loads(payload or "{}") if isinstance(payload, str) else payload
+		data = outer.get("data", outer) if isinstance(outer, dict) else None
+		if isinstance(data, str):
+			data = json.loads(data)
+	except (ValueError, TypeError):
+		return None, None
+	if not isinstance(data, dict):
+		return None, None
+	return data.get("pospire_terminal_number"), data.get("pos_profile")
+
+
+def _assert_cashier_holds_till(payload, cashier_user: str) -> None:
+	"""A Sync Review replay skips the device key, so the till's number may only go to a sale the
+	handing-in cashier (the authenticated user, unlike the payload's owner_user) could make there."""
+	from pospire.pospire.api.terminal_number import can_use_profile
+
+	number, profile = _numbered_sale(payload)
+	if number and not can_use_profile(profile, cashier_user):
+		frappe.throw(
+			_(
+				"{0} handed in this sale but cannot use POS Profile {1}, so it cannot take invoice number {2}. Void this row."
+			).format(cashier_user, profile, number),
+			frappe.PermissionError,
+		)
+
+
+def _shift_on_profile(row, profile: str) -> bool:
+	"""The row's shift is on the server, on this POS Profile, and opened by the row's cashier."""
+	if not row.shift_offline_id:
+		return False
+	shift = frappe.db.get_value(
+		"POS Opening Shift", {"pos_offline_id": row.shift_offline_id}, ["pos_profile", "user"], as_dict=True
+	)
+	return bool(shift and shift.pos_profile == profile and shift.user == row.cashier_user)
+
+
 @frappe.whitelist()
 def void_entry(name: str, reason: str) -> dict[str, Any]:
 	"""Manager-driven void of a recovery row.
@@ -1197,6 +1293,7 @@ def void_entry(name: str, reason: str) -> dict[str, Any]:
 		)
 
 	row = frappe.get_doc("POSpire Offline Sync Review", name)
+	_release_voided_number(row, reason)
 	row.status = "Voided"
 	row.reviewer_user = manager_user
 	row.reviewer_notes = (reason or "").strip()[:1000]
@@ -1846,6 +1943,8 @@ def dry_run_replay(name: str) -> dict[str, Any]:
 			"error_detail": "Payload is not a JSON object.",
 		}
 	payload["owner_user"] = row.cashier_user
+	if row.entry_type == "invoice":
+		_assert_cashier_holds_till(payload, row.cashier_user)
 	device_id = row.device_id or ""
 	if not device_id:
 		return {
@@ -1857,6 +1956,7 @@ def dry_run_replay(name: str) -> dict[str, Any]:
 	# Lazy import after argument validation so a failure during these
 	# checks doesn't cost us the import.
 	from pospire.pospire.api import offline as offline_api
+	from pospire.pospire.api.terminal_number import number_writer_decided
 
 	# Savepoint name — Frappe-on-MariaDB supports savepoints but the
 	# wrapper is `frappe.db.savepoint` / `release_savepoint` /
@@ -1875,12 +1975,13 @@ def dry_run_replay(name: str) -> dict[str, Any]:
 		dry_offline_id = str(_uuid.uuid4())
 		# Same per-entry-type dispatch as retry().
 		if row.entry_type == "invoice":
-			result = offline_api.submit_invoice(
-				data=payload,
-				offline_id=dry_offline_id,
-				device_id=device_id,
-				opening_entry_offline_id=row.shift_offline_id,
-			)
+			with number_writer_decided(True):  # manager-only, as in retry()
+				result = offline_api.submit_invoice(
+					data=payload,
+					offline_id=dry_offline_id,
+					device_id=device_id,
+					opening_entry_offline_id=row.shift_offline_id,
+				)
 		elif row.entry_type == "customer":
 			result = offline_api.create_customer(
 				data=payload,

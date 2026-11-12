@@ -114,7 +114,13 @@ export default {
           .filter((row) => row.owner_user === cashier)
           .sort((a, b) => b.enqueued_at - a.enqueued_at)
           .map((row) => {
-            const provisional = provisionalNameFor("invoice", row.offline_id);
+            let terminalNumber = "";
+            try {
+              terminalNumber = JSON.parse(row.payload.data).pospire_terminal_number || "";
+            } catch {
+              // payload without parseable data: fall back to the provisional name
+            }
+            const provisional = terminalNumber || provisionalNameFor("invoice", row.offline_id);
             const synced = row.status === "synced" && row.server_doc_name;
             // needs_review / handed_off: the server has not accepted this
             // sale and may never accept it (it's stuck pending a manual

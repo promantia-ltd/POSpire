@@ -31,6 +31,34 @@ describe("registry adapter — submit_invoice", () => {
 		expect(cfg.toOfflinePayload).toBeTypeOf("function");
 	});
 
+	it("carries a server-named terminal number into innerData and terminal", () => {
+		const call = (name: string) =>
+			cfg.toOfflinePayload!(
+				{ data: {}, invoice: { name, pos_profile: "Main", posting_date: "2026-05-01" } },
+				CTX,
+			);
+		const r = call("T01/26/000078");
+		expect(JSON.parse(r.payload.data as string).pospire_terminal_number).toBe("T01/26/000078");
+		expect(r.terminal).toEqual({ profile: "Main", number: "T01/26/000078" });
+		const s = call("ACC-SINV-2026-00001");
+		expect(JSON.parse(s.payload.data as string).pospire_terminal_number).toBeUndefined();
+		expect(s.terminal).toBeUndefined();
+	});
+
+	it("keeps the number but returns no terminal without pos_profile; explicit field wins over name", () => {
+		const run = (invoice: Record<string, unknown>) =>
+			cfg.toOfflinePayload!({ data: {}, invoice: { posting_date: "2026-05-01", ...invoice } }, CTX);
+		const r = run({ name: "T01/26/000078" });
+		expect(JSON.parse(r.payload.data as string).pospire_terminal_number).toBe("T01/26/000078");
+		expect(r.terminal).toBeUndefined();
+		const w = run({ name: "T01/26/000078", pospire_terminal_number: "T01/26/000079", pos_profile: "Main" });
+		expect(JSON.parse(w.payload.data as string).pospire_terminal_number).toBe("T01/26/000079");
+		expect(w.terminal?.number).toBe("T01/26/000079");
+		const e = run({ name: "T01/26/000078", pospire_terminal_number: "", pos_profile: "Main" });
+		expect(JSON.parse(e.payload.data as string).pospire_terminal_number).toBe("T01/26/000078");
+		expect(e.terminal?.number).toBe("T01/26/000078");
+	});
+
 	it("places payment metadata under posa_submit_data — NOT merged into invoice fields", () => {
 		const result = cfg.toOfflinePayload!(
 			{

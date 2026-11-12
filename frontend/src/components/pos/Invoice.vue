@@ -1133,9 +1133,24 @@ import { toast } from "vue3-toastify";
 import { datetime } from "@/utils/datetime";
 import connectivity from "@/offline/connectivity";
 import { computeOfflineTax } from "@/offline/tax";
+import { readDeviceId } from "@/offline/outbox";
+import { ensureDeviceKey } from "@/offline/device-keys";
+import { acquireTillLock } from "@/offline/till-lock";
+import {
+	applyClaim,
+	currentNumber,
+	forgetTerminal,
+	isCurrentNumber,
+	TerminalDateError,
+	TerminalNotReadyError,
+} from "@/offline/terminal-number";
 
 import busListeners from "@/utils/busListeners";
 import { loadSalesPersons, readStoredSalesPersons } from "@/utils/salesPersons";
+
+// The storage-persistence check runs once per page load, not on every profile refresh.
+let persistChecked = false;
+
 export default {
 	mixins: [format, hardwareUtils, busListeners],
 	data() {
@@ -1149,6 +1164,8 @@ export default {
 			// Cached printer/template/formatting config for offline receipts
 			// (see @/offline/print). Primed the same way as offline_tax_config.
 			offline_print_config: null,
+			// In-flight claim_terminal (never rejects); Pay waits for it on a new till.
+			terminalClaim: null,
 			sales_persons: [],
 			//
 			pos_profile: "",
@@ -2062,6 +2079,28 @@ export default {
 
 			const doc = this.get_invoice_doc();
 
+			// Terminal-numbered till: hold carts on this till only, without a number,
+			// so the held cart takes the next free number when it is paid. An older
+			// naming-series server draft is held on the server as before, so it stays
+			// the only copy.
+			// A numbered draft whose number is used (payment request, or opened from Load Draft)
+			// stays on the server: a local copy would be a second sellable cart.
+			if (
+				this.pos_profile?.pospire_invoice_prefix &&
+				(!doc.name || (await isCurrentNumber(this.pos_profile.name, doc.name)))
+			) {
+				const held = { ...doc };
+				// Drop the server name too: the local copy is the only cart to resume.
+				delete held.name;
+				delete held.pospire_terminal_number;
+				this.savingDraft = true;
+				try {
+					return this.saveOfflineDraftAndClear(held, __("Draft saved on this till."));
+				} finally {
+					this.savingDraft = false;
+				}
+			}
+
 			// Offline path: persist the cart locally and clear — never call the
 			// server. update_invoice's network-error catch shows a "preparing
 			// payment" toast which is wrong here; bypassing it entirely avoids
@@ -2368,11 +2407,19 @@ export default {
 		async get_invoice_from_order_doc() {
 			let doc = {};
 			if (this.invoice_doc.doctype == "Sales Order") {
+				const args = { sales_order: this.invoice_doc.name };
+				// The server dates the new invoice today.
+				const numbered = { posting_date: datetime.nowdate() };
+				if (!(await this.attachTerminalNumber(numbered))) {
+					return null;
+				}
+				if (numbered.pospire_terminal_number) {
+					args.terminal_number = numbered.pospire_terminal_number;
+					args.pos_profile = this.pos_profile.name;
+				}
 				const r = await call(
 					"pospire.pospire.api.posapp.create_sales_invoice_from_order",
-					{
-						sales_order: this.invoice_doc.name,
-					},
+					args,
 				);
 				if (r) {
 					doc = r;
@@ -2530,6 +2577,10 @@ export default {
 						__("Offline mode: preparing payment from local cart data."),
 					);
 					const localDoc = this.get_invoice_doc();
+					// Keep the till number so the queued sale is named with it.
+					if (doc.pospire_terminal_number) {
+						localDoc.pospire_terminal_number = doc.pospire_terminal_number;
+					}
 					this.invoice_doc = localDoc;
 					return localDoc;
 				}
@@ -2548,12 +2599,91 @@ export default {
 			return this.invoice_doc;
 		},
 
-		process_invoice() {
+		async process_invoice() {
 			const doc = this.get_invoice_doc();
-			if (doc.name) {
-				return this.update_invoice(doc);
-			} else {
-				return this.update_invoice(doc);
+			if (!(await this.attachTerminalNumber(doc))) {
+				return null;
+			}
+			return this.update_invoice(doc);
+		},
+
+		// Puts the till's current number on a new cart. Returns false when Pay must stop.
+		async attachTerminalNumber(doc) {
+			// A cart already saved on the server keeps its name; returns never get a number.
+			if (!this.pos_profile?.pospire_invoice_prefix || doc.is_return || doc.name) {
+				return true;
+			}
+			// A brand-new till gets its counter from the claim started at profile load.
+			await this.terminalClaim;
+			// Without backdating, a cart held from an earlier day is sold today.
+			if (!this.pos_profile.posa_allow_change_posting_date) {
+				doc.posting_date = this.posting_date = datetime.nowdate();
+			}
+			try {
+				doc.pospire_terminal_number = await currentNumber(
+					this.pos_profile.name,
+					doc.posting_date,
+				);
+				return true;
+			} catch (err) {
+				if (!(err instanceof TerminalNotReadyError)) throw err;
+				toast.error(
+					err instanceof TerminalDateError
+						? __(
+								"This till cannot number a sale dated {0}. Choose a date in this or the last financial year.",
+								[doc.posting_date],
+							)
+						: __(
+								"Invoice numbers for this till are not ready. Connect to the internet and reopen POSpire.",
+							),
+				);
+				return false;
+			}
+		},
+
+		async refreshTerminalClaim() {
+			const profile = this.pos_profile?.name;
+			if (!profile || !this.pos_profile.pospire_invoice_prefix || !connectivity.isOnline()) {
+				return;
+			}
+			// A second tab is blanked by Pos.vue; it must not create a device key or claim the till first.
+			if (!(await acquireTillLock())) return;
+			// The device secret must be stored before claiming: the server links the till to it.
+			if (!ensureDeviceKey()) {
+				toast.error(
+					__(
+						"This browser cannot store data for POSpire, so it cannot hand out this till's invoice numbers. Allow this site to store data, then reopen POSpire.",
+					),
+				);
+				return;
+			}
+			try {
+				const claim = await call("pospire.pospire.api.terminal_number.claim_terminal", {
+					pos_profile: profile,
+					device_id: readDeviceId(),
+				});
+				await applyClaim(profile, claim);
+			} catch (err) {
+				if (err?.exc_type === "TerminalDeviceMismatch") {
+					await forgetTerminal(profile).catch(() => {});
+					toast.error(err.messages?.[0] || err.message);
+				} else {
+					console.warn("[Invoice] terminal claim failed", err);
+				}
+				return;
+			}
+			if (persistChecked) return;
+			persistChecked = true;
+			let persisted;
+			try {
+				persisted = await navigator.storage?.persist?.();
+			} catch {
+				return;
+			}
+			if (persisted === false) {
+				toast.warning(
+					__("This browser may clear offline data. Install POSpire as an app on this till."),
+				);
 			}
 		},
 
@@ -2580,6 +2710,9 @@ export default {
 
 		async process_invoice_from_order() {
 			const doc = await this.get_invoice_from_order_doc();
+			if (!doc) {
+				return null;
+			}
 			var up_invoice;
 			if (doc.name) {
 				up_invoice = await this.update_invoice_from_order(doc);
@@ -2695,7 +2828,11 @@ export default {
 				});
 			} catch (error) {
 				const errorMessage = String(error?.message || "");
-				if (errorMessage.includes("TimestampMismatchError")) {
+				if (error?.exc_type === "TerminalNumberConflict") {
+					// The server knows a later number; refresh the till's counter.
+					await this.refreshTerminalClaim();
+					toast.error(__("That invoice number was already used. Press Pay again."));
+				} else if (errorMessage.includes("TimestampMismatchError")) {
 					toast.error(
 						__(
 							"Payment is already being prepared for this return. Please wait and try again.",
@@ -2904,7 +3041,10 @@ export default {
 			}
 		},
 
-		saveOfflineDraftAndClear(doc) {
+		saveOfflineDraftAndClear(
+			doc,
+			message = __("Draft saved offline. Load it from 'Load Draft Sale' while offline."),
+		) {
 			if (!doc.items?.length) {
 				toast.error(__("Nothing to save"));
 				return null;
@@ -2929,10 +3069,7 @@ export default {
 			}
 			this.clear_invoice();
 			this.eventBus.emit("cart_emptied");
-			toast.info(
-				__("Draft saved offline. Load it from 'Load Draft Sale' while offline."),
-				{ autoClose: 4000 },
-			);
+			toast.info(message, { autoClose: 4000 });
 			return draft;
 		},
 
@@ -2945,7 +3082,13 @@ export default {
 					pos_opening_shift: this.pos_opening_shift.name,
 				});
 				if (r) {
-					vm.eventBus.emit("open_drafts", r);
+					// Terminal-numbered tills hold carts locally even when online.
+					vm.eventBus.emit(
+						"open_drafts",
+						vm.pos_profile?.pospire_invoice_prefix
+							? [...r, ...vm.getLocalOfflineDrafts()]
+							: r,
+					);
 				}
 			} catch (err) {
 				if (this.isLikelyNetworkError(err) || !connectivity.isOnline()) {
@@ -4274,6 +4417,12 @@ export default {
 				toast.error(__(`You are not allowed to print draft invoices`));
 				return;
 			}
+			// Held carts on a terminal-numbered till stay on the till, so there is
+			// no server draft to print.
+			if (this.pos_profile.pospire_invoice_prefix) {
+				toast.error(__("Draft invoices cannot be printed on a till with invoice numbers."));
+				return;
+			}
 			this.printingDraft = true;
 			try {
 				let invoice_name = this.get_current_invoice_name();
@@ -4396,6 +4545,7 @@ export default {
 				// Same for the printer/template/formatting config — required
 				// for offline receipts to print at all.
 				this.load_print_config();
+				this.terminalClaim = this.refreshTerminalClaim();
 		});
 		this.onBus("auto_set_delivery_charge", () => {
 			if (this.delivery_charges.length > 0 && !this.selected_delivery_charge) {

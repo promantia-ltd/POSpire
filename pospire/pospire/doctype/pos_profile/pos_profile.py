@@ -4,6 +4,8 @@
 import frappe
 from frappe import _
 
+from pospire.pospire.api.terminal_number import validate_prefix
+
 
 def validate_pos_profile(doc, method):
 	if doc.custom_assortment and doc.item_groups:
@@ -22,7 +24,23 @@ def validate_pos_profile(doc, method):
 				)
 			)
 
+	validate_prefix(doc)
+	_keep_device_link(doc)
 	_validate_approval_actions(doc)
+
+
+_DEVICE_LINK_FIELDS = ("pospire_linked_device", "pospire_floor_fy", "pospire_floor_number")
+
+
+def _keep_device_link(doc):
+	"""Server-owned: only claim_terminal and unlink_terminal_device move them (with db.set_value).
+	A REST/form save keeps the stored values, so neither a user with POS Profile write nor a form
+	opened before the till was claimed can unlink it or lower its number floor."""
+	# By name, not is_new(): a profile not saved yet reads as nothing, so it starts unlinked.
+	name = doc.get("name")
+	saved = name and frappe.db.get_value("POS Profile", name, _DEVICE_LINK_FIELDS, as_dict=True)
+	for field in _DEVICE_LINK_FIELDS:
+		setattr(doc, field, (saved or {}).get(field))
 
 
 def _validate_approval_actions(doc):

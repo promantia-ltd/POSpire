@@ -36,6 +36,15 @@ from pospire.pospire.api.customer import (
 )
 from pospire.pospire.api.posapp import submit_sales_invoice
 from pospire.pospire.api.stock_reconcile import ensure_typed_batches_exist_for_invoice
+from pospire.pospire.api.terminal_number import (
+	NUMBER_ADMIN_ROLE,
+	TerminalDeviceMismatch,
+	TerminalNumberConflict,
+	TerminalNumberTooFarAhead,
+	assert_can_use_profile,
+	number_writer_decided,
+	release_stale_draft,
+)
 
 # ---------------------------------------------------------------------------
 # Error taxonomy (see docs/offline/12-server-side-changes.md §5)
@@ -49,6 +58,7 @@ ERROR_ACCOUNTING_PERIOD_CLOSED = "accounting_period_closed"
 ERROR_VALIDATION = "validation_error"
 ERROR_PERMISSION = "permission_error"
 ERROR_SCHEMA_MISMATCH = "schema_mismatch"
+ERROR_NUMBER_CONFLICT = "number_conflict"
 
 _HTTP_STATUS_BY_CODE: dict[str, int] = {
 	ERROR_PARENT_NOT_READY: 409,
@@ -59,6 +69,7 @@ _HTTP_STATUS_BY_CODE: dict[str, int] = {
 	ERROR_VALIDATION: 400,
 	ERROR_PERMISSION: 403,
 	ERROR_SCHEMA_MISMATCH: 426,
+	ERROR_NUMBER_CONFLICT: 409,
 }
 
 
@@ -1278,7 +1289,24 @@ def submit_invoice(
 	# `name` is bound, then call posapp_submit_invoice which updates + submits.
 	# Wrap insert+submit in _acting_as_user so the doc owner reflects the
 	# original cashier (P-5) instead of the replay session.
-	with _acting_as_user(owner_user), _offline_replay_context():
+	number = payload.get("pospire_terminal_number")
+	# Decided for the real caller, before owner_user (client-chosen) is impersonated: Sync Review
+	# replays (marked by recovery) and site admins use any till; anyone else needs the till and its
+	# device key. A manager calling this endpoint directly is not a Sync Review replay.
+	trusted = bool(frappe.flags.pospire_trusted_number_writer) or NUMBER_ADMIN_ROLE in frappe.get_roles()
+	if number and not trusted:
+		assert_can_use_profile(payload.get("pos_profile"))
+	with _acting_as_user(owner_user), _offline_replay_context(), number_writer_decided(trusted):
+		if number:
+			# Run as the original cashier so their profile access applies, not the replaying manager's.
+			try:
+				release_stale_draft(number, payload.get("pos_profile"))
+			except TerminalNumberConflict as exc:
+				_throw(ERROR_NUMBER_CONFLICT, str(exc), {"name": number})
+			except TerminalDeviceMismatch as exc:
+				# A bare ValidationError reaches the till as 417, which sync files as accounting_period_closed.
+				# autoname runs the same check on the same request, so this is the only place it can fail.
+				_throw(ERROR_PERMISSION, str(exc), {"name": number})
 		try:
 			# Strip `name` from the insert payload too: the cart may have
 			# stamped a stale online-draft name onto invoice_doc, but the
@@ -1300,6 +1328,9 @@ def submit_invoice(
 			draft.set_missing_values(for_validate=True)
 			ensure_typed_batches_exist_for_invoice(draft)
 			draft.insert()
+		except TerminalNumberTooFarAhead as exc:
+			# A bare ValidationError reaches the till as 417, which sync files as accounting_period_closed.
+			_throw(ERROR_VALIDATION, str(exc), {"name": number})
 		except frappe.DuplicateEntryError:
 			frappe.db.rollback()
 			existing = _existing_by_offline_id("Sales Invoice", offline_id)
@@ -1418,7 +1449,7 @@ def _complete_or_resume_invoice(
 	# stays in the transaction so the retry's get_doc still finds it.
 	# A naive frappe.db.rollback() would wipe that insert too, leaving
 	# `frappe.get_doc("Sales Invoice", doc_name)` to throw DoesNotExist.
-	savepoint = f"posapp_submit_{doc_name}".replace("-", "_")
+	savepoint = re.sub(r"\W", "_", f"posapp_submit_{doc_name}")  # terminal numbers contain "/"
 	for attempt in range(1, max_attempts + 1):
 		frappe.db.savepoint(savepoint)
 		try:

@@ -1689,7 +1689,7 @@ function extractErrorCode(err: unknown): string | undefined {
 	return undefined;
 }
 
-function errorCodeToCategory(
+export function errorCodeToCategory(
 	errorCode: string | undefined,
 	fallback: NonNullable<LastErrorCategory>,
 ): NonNullable<LastErrorCategory> {
@@ -1707,6 +1707,8 @@ function errorCodeToCategory(
 			return "batch_or_serial_conflict";
 		case "stock_shortage":
 			return "stock_shortage";
+		case "number_conflict":
+			return "number_conflict";
 		case "accounting_period_closed":
 			return "accounting_period_closed";
 		case "schema_mismatch":

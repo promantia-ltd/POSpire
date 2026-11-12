@@ -102,6 +102,30 @@ describe("liveFetch request shape", () => {
 	});
 });
 
+describe("liveFetch device key", () => {
+	it("sends this device's key only once it has one", async () => {
+		localStorage.clear();
+		const { call } = await importFresh();
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValue(fakeResponse({ status: 200, jsonBody: { message: { ok: true } } }));
+		vi.stubGlobal("fetch", fetchMock);
+
+		await call({ method: METHOD, args: {}, intent: "read" });
+		expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].headers).not.toHaveProperty(
+			"X-Pospire-Device-Key",
+		);
+
+		const { ensureDeviceKey } = await import("@/offline/device-keys");
+		const key = ensureDeviceKey();
+		await call({ method: METHOD, args: {}, intent: "read" });
+		expect((fetchMock.mock.calls[1] as [string, RequestInit])[1].headers).toMatchObject({
+			"X-Pospire-Device-Key": key,
+		});
+		localStorage.clear();
+	});
+});
+
 // ---------------------------------------------------------------------------
 // 2. Success
 // ---------------------------------------------------------------------------
