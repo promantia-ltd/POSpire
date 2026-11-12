@@ -10,6 +10,7 @@ import {
 	isCurrentNumber,
 	parseTerminalNumber,
 } from "@/offline/terminal-number";
+import { readDeviceKeys, saveDeviceKey } from "@/offline/device-keys";
 
 import { setupOfflineStorage, teardownOfflineStorage } from "../helpers/offline-fixture";
 
@@ -22,6 +23,17 @@ beforeEach(setupOfflineStorage);
 afterEach(teardownOfflineStorage);
 
 describe("terminal-number", () => {
+	it("keeps the device key a claim issues, a few per till, newest first", async () => {
+		localStorage.clear();
+		await applyClaim(P, { ...claim(), device_key: "k1" });
+		await applyClaim(P, claim()); // a later claim without a new key keeps it
+		expect(readDeviceKeys()).toEqual(["k1"]);
+		for (const k of ["k2", "k3", "k4", "k5", "k6", "k2"]) saveDeviceKey(P, k);
+		saveDeviceKey("Other Till", "o1");
+		expect(readDeviceKeys()).toEqual(["k2", "k6", "k5", "k4", "k3", "o1"]);
+		localStorage.clear();
+	});
+
 	it("formats and parses strictly", () => {
 		const s = formatTerminalNumber("T01", "26", 123);
 		expect(s).toBe("T01/26/000123");

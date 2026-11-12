@@ -3,12 +3,18 @@
 
 """Per-terminal invoice numbers of the form PREFIX/YY/NNNNNN."""
 
+import hashlib
+import hmac
+import json
 import re
+import secrets
+from contextlib import contextmanager
 
 import frappe
 from erpnext.accounts.utils import get_fiscal_year
 from frappe import _
 from frappe.utils import add_days, getdate, nowdate
+from frappe.utils.password import get_decrypted_password, set_encrypted_password
 
 PREFIX_RE = re.compile(r"^[A-Z][A-Z0-9]{0,3}$")
 _NUMBER_RE = re.compile(r"^([A-Z][A-Z0-9]{0,3})/(\d{2})/(\d{6})$")
@@ -68,6 +74,7 @@ def autoname(doc, method=None) -> None:
 			)
 		)
 	assert_can_use_profile(doc.pos_profile)  # a direct insert must not take another till's number
+	assert_number_writer(doc.pos_profile, number)
 	doc.name = number
 
 
@@ -134,6 +141,86 @@ def assert_can_use_profile(pos_profile: str, user: str | None = None) -> None:
 		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
+# The linked device proves itself with a secret issued at claim time; the device id is not secret
+# (it is stored on invoices, shifts and the POS Profile). Sent as a header so it never lands in a
+# stored payload. Only hashes are kept, in the encrypted password store (not returned by any API).
+DEVICE_KEY_HEADER = "X-Pospire-Device-Key"
+_KEYS_FIELD = "pospire_device_keys"
+
+
+def _hash_key(key: str) -> str:
+	return hashlib.sha256(key.encode()).hexdigest()
+
+
+def _stored_keys(pos_profile: str) -> dict:
+	raw = get_decrypted_password("POS Profile", pos_profile, _KEYS_FIELD, raise_exception=False)
+	return json.loads(raw) if raw else {"current": None, "retired": []}
+
+
+def _save_keys(pos_profile: str, keys: dict) -> None:
+	set_encrypted_password("POS Profile", pos_profile, json.dumps(keys), _KEYS_FIELD)
+
+
+def _presented_keys() -> list[str]:
+	request = getattr(frappe.local, "request", None)
+	raw = (request.headers.get(DEVICE_KEY_HEADER) if request else None) or ""
+	return [k.strip() for k in raw.split(",") if k.strip()]
+
+
+def _issue_key(pos_profile: str, keys: dict) -> str:
+	key = secrets.token_urlsafe(32)
+	keys["current"] = _hash_key(key)
+	_save_keys(pos_profile, keys)
+	return key
+
+
+def _holds(keys: dict, number: str | None = None) -> bool:
+	"""The caller sends the linked device's secret, or a replaced device's secret for a number in its skipped block."""
+	presented = [_hash_key(k) for k in _presented_keys()]
+
+	def matches(stored):
+		return any(hmac.compare_digest(stored, p) for p in presented)
+
+	if keys["current"] and matches(keys["current"]):
+		return True
+	parsed = parse_number(number)
+	return bool(parsed) and any(
+		r["fy"] == parsed[1] and r["from"] <= parsed[2] <= r["to"] and matches(r["hash"])
+		for r in keys["retired"]
+	)
+
+
+def holds_number(pos_profile: str, number: str) -> bool:
+	return _holds(_stored_keys(pos_profile), number)
+
+
+@contextmanager
+def number_writer_decided(trusted: bool):
+	"""Offline replay runs as a client-named owner_user, so whether the real caller is a manager is
+	decided before impersonating and must not be re-read from the impersonated roles."""
+	previous = frappe.flags.pospire_trusted_number_writer
+	frappe.flags.pospire_trusted_number_writer = trusted
+	try:
+		yield
+	finally:
+		frappe.flags.pospire_trusted_number_writer = previous
+
+
+def assert_number_writer(pos_profile: str, number: str) -> None:
+	trusted = frappe.flags.pospire_trusted_number_writer
+	if trusted is None:
+		trusted = bool(REVIEW_MANAGERS & set(frappe.get_roles()))  # managers replay any till's sales
+	if trusted:
+		return
+	if not holds_number(pos_profile, number):
+		frappe.throw(
+			_("Invoice numbers of POS Profile {0} can only be used on its linked device.").format(
+				pos_profile
+			),
+			TerminalDeviceMismatch,
+		)
+
+
 def release_stale_draft(name: str, pos_profile: str) -> None:
 	if not pos_profile:
 		frappe.throw(_("POS Profile is required to use a terminal invoice number."))
@@ -146,6 +233,7 @@ def release_stale_draft(name: str, pos_profile: str) -> None:
 			)
 		)
 	assert_can_use_profile(pos_profile)
+	assert_number_writer(pos_profile, name)
 	_delete_stale_draft(name)
 
 
@@ -195,16 +283,22 @@ def claim_terminal(pos_profile: str, device_id: str) -> dict:
 	if not prefix:
 		return {"prefix": None, "fiscal_years": [], "last": {}}
 
+	keys = _stored_keys(pos_profile)
+	device_key = None
 	if not linked:
 		frappe.db.set_value(
 			"POS Profile", pos_profile, "pospire_linked_device", device_id, update_modified=False
 		)
 		frappe.get_doc("POS Profile", pos_profile).add_comment("Info", f"Linked device {device_id}")
-	elif linked != device_id:
+		device_key = _issue_key(pos_profile, keys)
+	elif linked != device_id or (keys["current"] and not _holds(keys)):
+		# The device id alone is not proof: a copied id without the device's secret is another device.
 		frappe.throw(
 			_("This POS Profile is linked to another device. Ask a manager to unlink it."),
 			TerminalDeviceMismatch,
 		)
+	elif not keys["current"]:
+		device_key = _issue_key(pos_profile, keys)  # linked before device secrets existed
 
 	today_fy = get_fiscal_year(nowdate(), company=company, as_dict=True)
 	years = [today_fy]
@@ -224,11 +318,14 @@ def claim_terminal(pos_profile: str, device_id: str) -> dict:
 		}
 		for y in years
 	]
-	return {
+	res = {
 		"prefix": prefix,
 		"fiscal_years": fiscal_years,
 		"last": {y["code"]: get_last_number(pos_profile, y["code"]) for y in fiscal_years},
 	}
+	if device_key:
+		res["device_key"] = device_key
+	return res
 
 
 @frappe.whitelist(methods=["POST"])
@@ -242,6 +339,12 @@ def unlink_terminal_device(pos_profile: str, reason: str) -> dict:
 	fy = fy_code(company, nowdate())
 	last = get_last_number(pos_profile, fy)
 	floor = last + (skip if skip is not None else 50)
+	keys = _stored_keys(pos_profile)
+	if keys["current"]:
+		# The old device may still sync offline sales it numbered inside the skipped block, and nothing else.
+		keys["retired"].append({"hash": keys["current"], "fy": fy, "from": last + 1, "to": floor})
+		keys["current"] = None
+		_save_keys(pos_profile, keys)
 	frappe.db.set_value(
 		"POS Profile",
 		pos_profile,

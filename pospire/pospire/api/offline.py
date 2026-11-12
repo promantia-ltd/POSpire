@@ -40,6 +40,7 @@ from pospire.pospire.api.terminal_number import (
 	REVIEW_MANAGERS,
 	TerminalNumberConflict,
 	assert_can_use_profile,
+	number_writer_decided,
 	release_stale_draft,
 )
 
@@ -1289,9 +1290,10 @@ def submit_invoice(
 	number = payload.get("pospire_terminal_number")
 	# The real caller, before owner_user (client-chosen) is impersonated: only a till the
 	# caller may use. Managers replay any till's sales from Sync Review.
-	if number and not REVIEW_MANAGERS & set(frappe.get_roles()):
+	manager = bool(REVIEW_MANAGERS & set(frappe.get_roles()))
+	if number and not manager:
 		assert_can_use_profile(payload.get("pos_profile"))
-	with _acting_as_user(owner_user), _offline_replay_context():
+	with _acting_as_user(owner_user), _offline_replay_context(), number_writer_decided(manager):
 		if number:
 			# Run as the original cashier so their profile access applies, not the replaying manager's.
 			try:
