@@ -1171,11 +1171,11 @@ def _release_voided_number(row, reason: str) -> None:
 			detail=f"Invoice number {number} not released: {row.cashier_user} cannot use POS Profile {profile}.",
 		)
 		return
+	queued = len(frappe.local.message_log)
 	try:
 		_delete_stale_draft(number)
-	except (TerminalNumberConflict, frappe.LinkExistsError) as exc:
-		if isinstance(exc, frappe.LinkExistsError):
-			frappe.clear_last_message()  # drop its queued error popup; the void itself succeeds
+	except (TerminalNumberConflict, frappe.LinkExistsError):
+		del frappe.local.message_log[queued:]  # drop its queued error popup; the void itself succeeds
 		frappe.get_doc("POS Profile", profile).add_comment(
 			"Info",
 			f"Invoice number {number} is used by another invoice; this sale was voided without a number. "

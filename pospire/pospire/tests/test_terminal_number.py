@@ -644,8 +644,11 @@ class TestOfflinePaths(FrappeTestCase):
 		name = f"ZT4/{self.fy}/000005"
 		_make_si(self.profile, name, submit=True)
 		row = self._review_row(name)
+		frappe.clear_messages()
 		with patch("frappe.db.commit"):
 			void_entry(row.name, "dup")
+		# The void succeeds, so no "already used" error may reach the desk as a popup.
+		self.assertFalse(any("is already used" in str(m) for m in frappe.get_message_log()))
 		self.assertEqual(frappe.db.get_value("Sales Invoice", name, "docstatus"), 1)
 		comments = self._comments()
 		self.assertTrue(any(f"Invoice number {name} is used by another invoice" in c for c in comments))

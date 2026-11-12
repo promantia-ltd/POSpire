@@ -58,7 +58,10 @@ frappe.ui.form.on("POS Profile", {
 					for (let i = 1; i < 100; i++) {
 						const p = "T" + String(i).padStart(2, "0");
 						if (!used.has(p)) {
-							frm.set_df_property("pospire_invoice_prefix", "placeholder", p);
+							// set_df_property's refresh never reapplies a placeholder to a drawn input.
+							const field = frm.fields_dict.pospire_invoice_prefix;
+							field.df.placeholder = p;
+							field.set_input_attributes();
 							break;
 						}
 					}
