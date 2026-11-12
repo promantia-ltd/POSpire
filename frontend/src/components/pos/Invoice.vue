@@ -125,13 +125,14 @@
 					align="center"
 					class="items px-2 py-1 mt-4 pt-0 flex-wrap"
 					:class="$vuetify.display.mdAndDown ? 'pa-2' : ''"
-					v-if="pos_profile.posa_use_delivery_charges"
+					v-if="pos_profile.posa_use_delivery_charges || pos_profile.posa_allow_change_posting_date"
 					:style="{
 						rowGap: $vuetify.display.mdAndDown ? '0' : '12px',
 						flex: '0 0 auto',
 					}"
 				>
 					<v-col
+						v-if="pos_profile.posa_use_delivery_charges"
 						:cols="$vuetify.display.mdAndDown ? 12 : 3"
 						:class="$vuetify.display.mdAndDown ? '0' : 'pb-0 mb-0 pt-0'"
 					>
@@ -166,6 +167,7 @@
 						</v-autocomplete>
 					</v-col>
 					<v-col
+						v-if="pos_profile.posa_use_delivery_charges"
 						:cols="$vuetify.display.mdAndDown ? 12 : 3"
 						:class="$vuetify.display.mdAndDown ? '0' : 'pb-0 mb-0 pt-0'"
 					>
@@ -1155,6 +1157,7 @@ export default {
 	mixins: [format, hardwareUtils, busListeners],
 	data() {
 		return {
+			datetime, // used by the date pickers' min/max in the template
 			//
 			// Transient until register_pos_profile lands and sets the real value.
 			inclusive_tax: false,
