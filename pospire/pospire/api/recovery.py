@@ -477,6 +477,8 @@ def retry(name: str) -> dict[str, Any]:
 				).format(type(payload_dict).__name__),
 				frappe.ValidationError,
 			)
+		if current.entry_type == "invoice":
+			_assert_cashier_holds_till(payload_dict, current.cashier_user)
 
 		# Each branch impersonates the original cashier via the offline
 		# endpoint's own `_acting_as_user(owner_user)` wrapper — we restored
@@ -1151,15 +1153,7 @@ def _release_voided_number(row, reason: str) -> None:
 		parse_number,
 	)
 
-	try:
-		outer = json.loads(row.payload or "{}")
-		data = outer.get("data", outer)
-		if isinstance(data, str):
-			data = json.loads(data)
-	except (ValueError, AttributeError):
-		return
-	number = data.get("pospire_terminal_number") if isinstance(data, dict) else None
-	profile = data.get("pos_profile") if isinstance(data, dict) else None
+	number, profile = _numbered_sale(row.payload)
 	if not (number and profile):
 		return
 	parsed = parse_number(number)
@@ -1175,6 +1169,17 @@ def _release_voided_number(row, reason: str) -> None:
 			detail=f"Invoice number {number} not released: {row.cashier_user} cannot use POS Profile {profile}.",
 		)
 		return
+	# The payload is client-written: only free a Pay draft this row's own cashier made, never another
+	# device's cart that happens to hold the number.
+	draft_owner = frappe.db.get_value("Sales Invoice", {"name": number, "docstatus": 0}, "owner")
+	if draft_owner and draft_owner != row.cashier_user:
+		row.append_activity(
+			action="note",
+			outcome="info",
+			actor=frappe.session.user,
+			detail=f"Invoice number {number} not released: its draft belongs to {draft_owner}.",
+		)
+		return
 	queued = len(frappe.local.message_log)
 	try:
 		_delete_stale_draft(number)
@@ -1187,6 +1192,35 @@ def _release_voided_number(row, reason: str) -> None:
 		)
 		return
 	log_voided_number(profile, number, reason.strip())
+
+
+def _numbered_sale(payload) -> tuple[str | None, str | None]:
+	"""(terminal number, POS Profile) an invoice row's payload asks for, or (None, None)."""
+	try:
+		outer = json.loads(payload or "{}") if isinstance(payload, str) else payload
+		data = outer.get("data", outer) if isinstance(outer, dict) else None
+		if isinstance(data, str):
+			data = json.loads(data)
+	except (ValueError, TypeError):
+		return None, None
+	if not isinstance(data, dict):
+		return None, None
+	return data.get("pospire_terminal_number"), data.get("pos_profile")
+
+
+def _assert_cashier_holds_till(payload, cashier_user: str) -> None:
+	"""A Sync Review replay skips the device key, so the till's number may only go to a sale the
+	handing-in cashier (the authenticated user, unlike the payload's owner_user) could make there."""
+	from pospire.pospire.api.terminal_number import can_use_profile
+
+	number, profile = _numbered_sale(payload)
+	if number and not can_use_profile(profile, cashier_user):
+		frappe.throw(
+			_(
+				"{0} handed in this sale but cannot use POS Profile {1}, so it cannot take invoice number {2}. Void this row."
+			).format(cashier_user, profile, number),
+			frappe.PermissionError,
+		)
 
 
 def _shift_on_profile(row, profile: str) -> bool:
@@ -1909,6 +1943,8 @@ def dry_run_replay(name: str) -> dict[str, Any]:
 			"error_detail": "Payload is not a JSON object.",
 		}
 	payload["owner_user"] = row.cashier_user
+	if row.entry_type == "invoice":
+		_assert_cashier_holds_till(payload, row.cashier_user)
 	device_id = row.device_id or ""
 	if not device_id:
 		return {

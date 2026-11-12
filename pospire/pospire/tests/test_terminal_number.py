@@ -230,6 +230,15 @@ class TestTerminalNumbering(FrappeTestCase):
 		for bad in (f"ZT2/{self.fy}/000001", "ZT1/99/000001"):
 			self.assertRaises(frappe.ValidationError, _make_si, self.profile, bad)
 
+	def test_number_too_far_ahead_refused(self):
+		last = get_last_number(self.profile, self.fy)
+		# A jump (e.g. to 999999) would run the till out of numbers for the year.
+		self.assertRaises(frappe.ValidationError, _make_si, self.profile, f"ZT1/{self.fy}/{last + 1001:06d}")
+		self.assertEqual(
+			_make_si(self.profile, f"ZT1/{self.fy}/{last + 1000:06d}").name,
+			f"ZT1/{self.fy}/{last + 1000:06d}",
+		)
+
 	def test_return_ignores_terminal_number(self):
 		si = _make_si(self.profile, f"ZT1/{self.fy}/000008", is_return=1)
 		self.assertIsNone(parse_number(si.name))
@@ -489,6 +498,48 @@ class TestTerminalDevice(FrappeTestCase):
 		with _as_user(email):
 			self.assertTrue(frappe.has_permission("POS Profile", "read", self.profile))
 			self.assertRaises(frappe.PermissionError, claim_terminal, self.profile, DEVICE_1)
+
+	def test_open_shift_needs_a_till_user(self):
+		from pospire.pospire.api.posapp import create_opening_voucher
+
+		with _as_user(_plain_user()):
+			self.assertRaises(
+				frappe.PermissionError,
+				create_opening_voucher,
+				self.profile,
+				self.company,
+				[{"mode_of_payment": "Cash", "amount": 0}],
+			)
+		self.assertFalse(
+			frappe.db.exists("POS Opening Shift", {"pos_profile": self.profile, "status": "Open"})
+		)
+
+	def test_profile_save_keeps_device_link(self):
+		claim_terminal(self.profile, DEVICE_1)
+		frappe.db.set_value(
+			"POS Profile", self.profile, {"pospire_floor_fy": self.fy, "pospire_floor_number": 77}
+		)
+		doc = frappe.get_doc("POS Profile", self.profile)
+		doc.pospire_linked_device = ""  # e.g. REST from a user with POS Profile write, or a stale form
+		doc.pospire_floor_number = 0
+		doc.save(ignore_permissions=True)
+		self.assertEqual(
+			frappe.db.get_value(
+				"POS Profile", self.profile, ["pospire_linked_device", "pospire_floor_number"]
+			),
+			(DEVICE_1, 77),
+		)
+
+	def test_unlink_respects_user_permissions(self):
+		email = _sales_manager()
+		with _as_user(email):
+			unlink_terminal_device(self.profile, "allowed")
+		other = _ensure_terminal_test_profile("_Test POSpire Terminal A", "ZT1")
+		frappe.get_doc(
+			{"doctype": "User Permission", "user": email, "allow": "POS Profile", "for_value": other}
+		).insert(ignore_permissions=True)
+		with _as_user(email):
+			self.assertRaises(frappe.PermissionError, unlink_terminal_device, self.profile, "not my company")
 
 	def test_second_open_shift_refused(self):
 		from pospire.pospire.api.posapp import create_opening_voucher
@@ -758,6 +809,49 @@ class TestOfflinePaths(FrappeTestCase):
 		with _as_user(_plain_user()):  # owner_user stays Administrator, who may use the till
 			self.assertRaises(frappe.PermissionError, self._submit, name)
 		self.assertEqual(frappe.db.get_value("Sales Invoice", name, "docstatus"), 0)
+
+	def test_sync_review_refuses_a_till_the_cashier_cannot_use(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.recovery import dry_run_replay, retry
+
+		name = f"ZT4/{self.fy}/000013"
+		# Handed in by a user who cannot use this till; owner_user in the payload names one who can.
+		row = self._review_row(name, cashier=_plain_user())
+		row.db_set({"device_id": str(uuid.uuid4()), "status": "Pending Review", "posting_date": nowdate()})
+		with (
+			_as_user(_sales_manager()),
+			patch("frappe.db.commit"),
+			# retry's failure path rolls back; this test's row was never committed, a real one is.
+			patch("frappe.db.rollback"),
+			patch("pospire.pospire.api.offline.submit_invoice") as replay,
+		):
+			self.assertRaises(frappe.PermissionError, dry_run_replay, row.name)
+			try:
+				retry(row.name)
+			except frappe.PermissionError:
+				pass
+		replay.assert_not_called()
+		self.assertNotEqual(
+			frappe.db.get_value("POSpire Offline Sync Review", row.name, "status"), "Resolved"
+		)
+
+	def test_void_keeps_another_users_draft(self):
+		from unittest.mock import patch
+
+		from pospire.pospire.api.recovery import void_entry
+
+		name = f"ZT4/{self.fy}/000014"
+		_make_si(self.profile, name)  # the till's own cart, made by Administrator
+		email = _plain_user()
+		_list_user_on_profile(self.profile, email)
+		_list_user_on_profile(self.profile, "Administrator")
+		row = self._review_row(name, cashier=email)  # someone else's row naming that cart's number
+		with patch("frappe.db.commit"):
+			void_entry(row.name, "planted row")
+		self.assertTrue(frappe.db.exists("Sales Invoice", name))
+		row.reload()
+		self.assertTrue(any("its draft belongs to" in (a.detail or "") for a in row.activity))
 
 	def _review_row(self, number, cashier="Administrator"):
 		return frappe.get_doc(

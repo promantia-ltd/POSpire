@@ -59,7 +59,12 @@ from pospire.pospire.api.stock_reconcile import (
 	ensure_stock_for_invoice,
 	ensure_typed_batches_exist_for_invoice,
 )
-from pospire.pospire.api.terminal_number import _has_payment_request, parse_number, release_stale_draft
+from pospire.pospire.api.terminal_number import (
+	_has_payment_request,
+	assert_can_use_profile,
+	parse_number,
+	release_stale_draft,
+)
 from pospire.pospire.doctype.delivery_charges.delivery_charges import (
 	get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
@@ -179,6 +184,8 @@ def create_opening_voucher(
 
 	# for_update serializes concurrent opens on this profile
 	if frappe.db.get_value("POS Profile", pos_profile, "pospire_invoice_prefix", for_update=True):
+		# The one open shift of a numbered till: a user who may not use it must not hold it.
+		assert_can_use_profile(pos_profile)
 		# for_update reads the latest committed row, so a shift opened while we waited is seen
 		open_shift = frappe.db.get_value(
 			"POS Opening Shift",

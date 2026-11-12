@@ -17,6 +17,8 @@ from frappe.utils.password import get_decrypted_password, set_encrypted_password
 
 PREFIX_RE = re.compile(r"^[A-Z][A-Z0-9]{0,3}$")
 _NUMBER_RE = re.compile(r"^([A-Z][A-Z0-9]{0,3})/(\d{2})/(\d{6})$")
+# How far past the till's last used number (which includes a device-reset floor) a new number may be.
+MAX_NUMBERS_AHEAD = 1000
 
 
 def format_number(prefix: str, fy: str, n: int) -> str:
@@ -74,6 +76,14 @@ def autoname(doc, method=None) -> None:
 		)
 	assert_can_use_profile(doc.pos_profile)  # a direct insert must not take another till's number
 	assert_number_writer(doc.pos_profile, number)
+	last = get_last_number(doc.pos_profile, parsed[1])
+	if parsed[2] > last + MAX_NUMBERS_AHEAD:
+		# Nothing a till does gets this far ahead; a jump would also run the year out of numbers.
+		frappe.throw(
+			_("Invoice number {0} is too far ahead of the last number {1} of POS Profile {2}.").format(
+				number, format_number(prefix, parsed[1], last), doc.pos_profile
+			)
+		)
 	doc.name = number
 
 
@@ -334,6 +344,9 @@ def claim_terminal(pos_profile: str, device_id: str) -> dict:
 @frappe.whitelist(methods=["POST"])
 def unlink_terminal_device(pos_profile: str, reason: str) -> dict:
 	frappe.only_for(("System Manager", "Sales Manager"))
+	if NUMBER_ADMIN_ROLE not in frappe.get_roles():
+		# Sales Manager: only a till they can see (User Permissions may limit them to some companies).
+		frappe.has_permission("POS Profile", "select", pos_profile, throw=True)
 	reason = (reason or "").strip()
 	if not reason:
 		frappe.throw(_("A reason is required to unlink a device."))

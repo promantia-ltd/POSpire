@@ -272,9 +272,13 @@ export async function resetTill(
       { closing_shift: closing },
     );
   }
-  await rest(api, "put", res("POS Profile", profile), {
-    pospire_linked_device: "",
-  });
+  // The device link is server-owned (a profile save keeps it), so reset it the way a manager does.
+  if ((await getDoc(api, "POS Profile", profile)).pospire_linked_device)
+    await callMethod(
+      api,
+      "pospire.pospire.api.terminal_number.unlink_terminal_device",
+      { pos_profile: profile, reason: "E2E reset" },
+    );
   // Unused Pay drafts left by an earlier test would block a desk insert of that number.
   const drafts = await list(api, "Sales Invoice", [
     ["pos_profile", "=", profile],
