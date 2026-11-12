@@ -38,7 +38,8 @@ frappe.ui.form.on("POS Profile", {
 			// bottom of whichever tab is currently active due to a rendering sequence
 			// gap where field.frm is unset during initial layout render. Fix: start
 			// on Main tab and hide the Name field when switching to other tabs.
-			frm.set_active_tab && frm.set_active_tab(__("Main"));
+			// set_active_tab wants a Tab object; a string breaks every later layout refresh.
+			frm.layout?.tabs?.find((t) => t.df?.label === "Main")?.set_active();
 			frm.page.main
 				.off("click.pos_name_fix")
 				.on("click.pos_name_fix", ".nav-tabs .nav-link", function () {
