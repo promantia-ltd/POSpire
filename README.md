@@ -54,7 +54,7 @@ A modern, feature-rich Point of Sale (POS) application built on the Frappe Frame
 cd $PATH_TO_YOUR_BENCH
 
 # Get the app
-bench get-app https://github.com/promantia-ltd/POSpire.git --branch develop
+bench get-app https://github.com/promantia-ltd/POSpire.git --branch version-16
 
 # Install on your site
 bench --site your-site.local install-app pospire
@@ -211,6 +211,23 @@ POSpire is free software: you can redistribute it and/or modify it under the ter
 
 ## Support
 
+### 💬 Community (Telegram)
+
+Join the **[POSpire Community on Telegram](https://t.me/pospire_community)** for questions, setup help, hardware tips and release announcements. The group covers the **version-16** branch (Frappe v16 + ERPNext v16).
+
+| Topic | Use For |
+|-------|---------|
+| 🛠 Installation & Setup | Install, upgrade, POS Profile → POSpire Settings |
+| 🆘 Technical Support | Problems while using POSpire |
+| 🖨 Hardware & Peripherals | Receipt printers, barcode scanners, scale barcodes |
+| 💳 Payments & Integrations | Cash, card, M-Pesa, reconciliation |
+| 🐞 Bug Reports / 💡 Feature Requests | Quick triage; confirmed items are filed on GitHub |
+| 📢 Announcements | Releases and breaking changes |
+
+New here? Start with the [👋 Welcome & Rules](https://t.me/pospire_community/21) topic.
+
+### 🐞 GitHub Issues
+
 Need help? We have structured issue templates to get you the right assistance:
 
 | Template | Use For |
@@ -221,6 +238,7 @@ Need help? We have structured issue templates to get you the right assistance:
 
 **Before opening an issue:**
 - Check [existing issues](https://github.com/promantia-ltd/POSpire/issues) to avoid duplicates
+- For quick questions and setup help, ask in the [POSpire Telegram community](https://t.me/pospire_community)
 - For general Frappe/ERPNext questions, use the [ERPNext Forum](https://discuss.frappe.io/)
 
 ---
