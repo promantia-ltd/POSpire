@@ -9,11 +9,20 @@ def after_install():
 
 def after_migrate():
 	"""Refresh cached desk metadata after migrations."""
-	from pospire.patches.v1_1.add_strict_closure_compound_index import execute as add_closure_index
-
-	# The patch runs before fixtures add its column, so on upgraded sites it skipped. Idempotent.
-	add_closure_index()
+	_ensure_strict_closure_index()
 	frappe.clear_cache()
+
+
+def _ensure_strict_closure_index():
+	"""Index for the offline strict-closure check (`offline._get_submitted_shift_invoice_offline_ids`).
+
+	Runs here, not as a patch: its column comes from fixtures, which sync after patches.
+	add_index commits pending migrate writes before its DDL and is a no-op once the index exists.
+	"""
+	if frappe.db.has_column("Sales Invoice", "pos_opening_shift_offline_id"):
+		frappe.db.add_index(
+			"Sales Invoice", ["pos_opening_shift_offline_id", "docstatus"], "pospire_strict_closure_idx"
+		)
 
 
 def fix_desktop_icon_on_boot(bootinfo):
