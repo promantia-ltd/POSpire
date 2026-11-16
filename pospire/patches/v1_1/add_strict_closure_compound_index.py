@@ -19,14 +19,13 @@ reads per closing attempt — and the scheduler retries closings every few
 seconds while invoices drain. Adding docstatus to the same compound index
 lets MariaDB satisfy the closure check from the index alone.
 
-Idempotent: checks `INFORMATION_SCHEMA.STATISTICS` before creating, so
-re-running `bench migrate` is a no-op once the index exists.
+Idempotent: `frappe.db.add_index` checks for the index by name before
+creating it, so re-running `bench migrate` is a no-op once the index exists.
 """
 
 import frappe
 
 INDEX_NAME = "pospire_strict_closure_idx"
-TABLE = "tabSales Invoice"
 
 
 def execute() -> None:
@@ -38,33 +37,6 @@ def execute() -> None:
 		frappe.logger().info("[B1] skipping strict-closure index: pos_opening_shift_offline_id missing")
 		return
 
-	if _index_exists(TABLE, INDEX_NAME):
-		return
-
-	# `frappe.db.add_index` would auto-name the index, but we want a stable
-	# name we can reference from the rollback patch and from operator
-	# runbooks. Drop to raw SQL. INDEX_NAME and TABLE are module-level
-	# constants (no user input), so the f-string is safe.
-	frappe.db.sql(  # nosemgrep: frappe-sql-format-injection
-		f"""
-		CREATE INDEX `{INDEX_NAME}`
-		ON `{TABLE}` (`pos_opening_shift_offline_id`, `docstatus`)
-		"""
-	)
-	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- DDL must commit; bench migrate wraps the patch and needs the index visible before the next patch runs.
-	frappe.logger().info(f"[B1] created compound index {INDEX_NAME} on {TABLE}")
-
-
-def _index_exists(table: str, index_name: str) -> bool:
-	rows = frappe.db.sql(
-		"""
-		SELECT 1
-		FROM INFORMATION_SCHEMA.STATISTICS
-		WHERE TABLE_SCHEMA = DATABASE()
-		  AND TABLE_NAME = %s
-		  AND INDEX_NAME = %s
-		LIMIT 1
-		""",
-		(table, index_name),
-	)
-	return bool(rows)
+	# add_index commits pending writes before its DDL; a raw CREATE INDEX raised
+	# ImplicitCommitError when run from after_migrate with writes still open.
+	frappe.db.add_index("Sales Invoice", ["pos_opening_shift_offline_id", "docstatus"], INDEX_NAME)
