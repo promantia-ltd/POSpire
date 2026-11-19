@@ -551,7 +551,9 @@ export default {
 			if (!this.dialog_data.period_start_date) return "—";
 			const d = datetime.str_to_obj(this.dialog_data.period_start_date);
 			if (!d || Number.isNaN(d.getTime())) return "—";
-			return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+			const datePart = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+			const timePart = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+			return `${datePart}, ${timePart}`;
 		},
 		openedByDisplay() {
 			return this.dialog_data.user || "—";

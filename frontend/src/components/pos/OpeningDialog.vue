@@ -728,7 +728,7 @@ export default {
 			});
 			const companySticky = Boolean(this.company) && this.companies.includes(this.company);
 			if (!companySticky) {
-				this.company = this.companies[0];
+				this.company = this.companies.includes(r.default_company) ? r.default_company : this.companies[0];
 			}
 
 			this.pos_profiles_data = r.pos_profiles_data || [];

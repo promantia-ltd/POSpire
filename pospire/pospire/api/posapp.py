@@ -102,6 +102,9 @@ def get_opening_dialog_data() -> dict:
 		limit_page_length=0,
 		order_by="name",
 	)
+	data["default_company"] = frappe.defaults.get_user_default(
+		"Company"
+	) or frappe.defaults.get_global_default("company")
 	data["pos_profiles_data"] = frappe.get_list(
 		"POS Profile",
 		filters={"disabled": 0},
