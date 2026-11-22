@@ -1,0 +1,7 @@
+auth.json
+tests/e2e/.env.test
+
+# perf suite evidence + manifests (see tests/e2e/helpers/evidence.ts)
+perf-results/
+tests/e2e/test-results/
+tests/e2e/playwright-report/
