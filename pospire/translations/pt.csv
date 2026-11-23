@@ -6,12 +6,9 @@ Custom Field - label: Sales Invoice-posa_additional_notes_section,Additional Not
 DocType: POS Closing Shift,Administrator,Administrador
 Custom Field - label: POS Profile-posa_allow_sales_order,Allow Create Sales Order,Permitir Criar Ordem de Vendas
 Custom Field - label: POS Profile-posa_allow_credit_sale,Allow Credit Sale,Permitir Credito de Venda
-Custom Field - label: POS Profile-posa_allow_partial_payment,Allow Partial Payment,Permitir Pagamento Parcial
 Custom Field - label: POS Profile-posa_allow_return,Allow Return,Permitir Devolução
 Custom Field - label: POS Profile-posa_allow_submissions_in_background_job,Allow Submissions in background job,Permitir Submissões em trabalho de segundo plano
-Custom Field - label: POS Profile-posa_allow_user_to_edit_item_discount,Allow User to Edit Item Discount,Permitir Usuário Editar Desconto de Item
 Custom Field - label: POS Profile-posa_allow_user_to_edit_additional_discount,Allow user to edit Additional Discount,Permitir Usuário Editar Desconto Adicional
-Custom Field - label: POS Profile-posa_allow_user_to_edit_rate,Allow user to edit Rate,Permitir Usuário Editar Preço
 DocType: POS Closing Shift,Amended From,Corrigido Apartir
 DocType: POS Closing Shift Taxes,Amount,Valor
 Custom Field - label: POS Profile-posa_apply_customer_discount,Apply Customer Discount,Aplicar Desconto de Cliente
@@ -52,7 +49,6 @@ DocType: POS Offer,Give Product,Producto a Entregar
 DocType: POS Offer,Given Quantity,Quantidade Entregue
 DocType: POS Closing Shift,Grand Total,Total Geral
 Custom Field - label: POS Profile-posa_hide_closing_shift,Hide Close Shift,Esconder o Fecho de turno
-Custom Field - label: POS Profile-posa_display_items_in_stock,Hide Unavailable Items,Esconder Itens não Disponiveis
 Custom Field - label: POS Profile-posa_hide_variants_items,Hide Variants Items,Esconder Variantes de Itens
 apps/pospire/pospire/pospire/doctype/pos_closing_shift/pos_closing_shift.py,Invalid Period,Periodo Invalido
 Custom Field - label: Sales Invoice Item-posa_is_offer,Is Offer,É uma Oferta

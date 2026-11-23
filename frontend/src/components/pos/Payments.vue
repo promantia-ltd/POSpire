@@ -842,7 +842,7 @@ export default {
 
 			if (
 				!this.is_credit_sale &&
-				!this.pos_profile.posa_allow_partial_payment &&
+				!this.pos_profile.allow_partial_payment &&
 				this.total_payments <
 					(this.invoice_doc.rounded_total || this.invoice_doc.grand_total)
 			) {
@@ -852,7 +852,7 @@ export default {
 			}
 
 			if (
-				this.pos_profile.posa_allow_partial_payment &&
+				this.pos_profile.allow_partial_payment &&
 				!this.pos_profile.posa_allow_credit_sale &&
 				this.total_payments == 0
 			) {

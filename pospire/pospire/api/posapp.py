@@ -294,7 +294,7 @@ def get_items(
 		pos_profile = _load(pos_profile)
 		today = nowdate()
 		data = dict()
-		posa_display_items_in_stock = pos_profile.get("posa_display_items_in_stock")
+		hide_unavailable_items = pos_profile.get("hide_unavailable_items")
 		search_serial_no = pos_profile.get("posa_search_serial_no")
 		search_batch_no = pos_profile.get("posa_search_batch_no")
 		posa_show_template_items = pos_profile.get("posa_show_template_items")
@@ -486,7 +486,7 @@ def get_items(
 						fields=["name as serial_no"],
 					)
 				item_stock_qty = 0
-				if pos_profile.get("posa_display_items_in_stock") or use_limit_search:
+				if pos_profile.get("hide_unavailable_items") or use_limit_search:
 					item_stock_qty = get_stock_availability(item_code, pos_profile.get("warehouse"))
 				attributes = ""
 				if pos_profile.get("posa_show_template_items") and item.has_variants:
@@ -498,7 +498,7 @@ def get_items(
 						fields=["attribute", "attribute_value"],
 						filters={"parent": item.item_code, "parentfield": "attributes"},
 					)
-				if posa_display_items_in_stock and (not item_stock_qty or item_stock_qty < 0):
+				if hide_unavailable_items and (not item_stock_qty or item_stock_qty < 0):
 					pass
 				else:
 					row = {}
@@ -521,7 +521,7 @@ def get_items(
 		return result
 
 	# When "display items in stock" is on, row membership depends on live qty — never Redis-cache.
-	stock_drives_list = bool(_pos_profile.get("posa_display_items_in_stock"))
+	stock_drives_list = bool(_pos_profile.get("hide_unavailable_items"))
 	profile_name = _pos_profile.get("name") if isinstance(_pos_profile, dict) else None
 
 	if _pos_profile.get("posa_use_server_cache") and not stock_drives_list:
@@ -1637,7 +1637,7 @@ def get_items_details(pos_profile: str | dict, items_data: str | list) -> list:
 
 	Not Redis-cached: responses include live quantities and serial/batch availability.
 	`posa_use_server_cache` affects `get_customer_names` always; `get_items` only when
-	`posa_display_items_in_stock` is off (see docs/api-caching-and-stale-data.md).
+	`hide_unavailable_items` is off (see docs/api-caching-and-stale-data.md).
 	"""
 	pos_profile = _load(pos_profile)
 	items_data = _load(items_data)

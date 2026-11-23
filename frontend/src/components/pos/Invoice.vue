@@ -310,7 +310,7 @@
 								!!item.posa_is_offer ||
 								!!item.posa_is_replace ||
 								!!item.posa_offer_applied ||
-								!pos_profile.posa_allow_user_to_edit_rate ||
+								!pos_profile.allow_rate_change ||
 								!!invoice_doc.is_return
 									? true
 									: false
@@ -497,7 +497,7 @@
 											!!item.posa_is_offer ||
 											!!item.posa_is_replace ||
 											!!item.posa_offer_applied ||
-											!pos_profile.posa_allow_user_to_edit_rate ||
+											!pos_profile.allow_rate_change ||
 											!!invoice_doc.is_return
 												? true
 												: false
@@ -549,7 +549,7 @@
 											!!item.posa_is_offer ||
 											!!item.posa_is_replace ||
 											item.posa_offer_applied ||
-											!pos_profile.posa_allow_user_to_edit_item_discount ||
+											!pos_profile.allow_discount_change ||
 											!!invoice_doc.is_return
 										"
 										id="discount_percentage"
@@ -578,7 +578,7 @@
 											!!item.posa_is_offer ||
 											!!item.posa_is_replace ||
 											!!item.posa_offer_applied ||
-											!pos_profile.posa_allow_user_to_edit_item_discount ||
+											!pos_profile.allow_discount_change ||
 											!!invoice_doc.is_return
 												? true
 												: false

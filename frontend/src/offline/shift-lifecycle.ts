@@ -428,7 +428,7 @@ export interface QueuedContributionScan extends QueuedPaymentSum {
  *     in this phase), kept as defense-in-depth for a legacy row or future
  *     offline-return support;
  *   - the value is positive (`self.doc.paid_amount > grand_total`) — a
- *     partial-payment invoice (`posa_allow_partial_payment`) can have
+ *     partial-payment invoice (`allow_partial_payment`) can have
  *     paid_amount < total; that must not "net" into a negative-turned-bonus.
  *
  * DELIBERATELY NOT mirrored: `any(d.type == "Cash" for d in payments)`.
