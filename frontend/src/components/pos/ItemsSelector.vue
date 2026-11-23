@@ -563,7 +563,7 @@ export default {
 					// Strip zero-stock items from the hydrated cache immediately so they
 					// are never shown, even before update_items_details returns.
 					if (
-						vm.pos_profile.posa_display_items_in_stock &&
+						vm.pos_profile.hide_unavailable_items &&
 						!vm.pos_profile.posa_auto_stock_reconcile
 					) {
 						vm.items = vm.items.filter((item) => item.actual_qty > 0);
@@ -1051,7 +1051,7 @@ export default {
 				// deplete between the get_items call and this get_items_details
 				// response, leaving items in the list with actual_qty = 0.
 				if (
-					vm.pos_profile.posa_display_items_in_stock &&
+					vm.pos_profile.hide_unavailable_items &&
 					!vm.pos_profile.posa_auto_stock_reconcile
 				) {
 					vm.items = vm.items.filter((item) => item.actual_qty > 0);
@@ -1204,7 +1204,7 @@ export default {
 		 */
 		stockContextReliable() {
 			// Online is necessary but not sufficient: get_items always returns
-			// actual_qty 0 unless posa_display_items_in_stock is set, and only
+			// actual_qty 0 unless hide_unavailable_items is set, and only
 			// a successful get_items_details fills it in. Gating on
 			// connectivity alone showed "OUT" on every item after a reconnect,
 			// before the enrichment call had landed.
